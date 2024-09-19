@@ -17,7 +17,7 @@
             </div>
         </div>
         <!--end breadcrumb-->
-      
+
         <div class="card">
             <div class="card-body">
                 <div class="d-lg-flex align-items-center mb-4 gap-3">
@@ -43,7 +43,7 @@
 
             $('#customer-table').on('click', '.dt-button', function() {
                 var button = $(this).text();
-                
+
                 if (button.includes('Top Customer')) {
                     table.ajax.url('customers.index?filter=top_customers').load();
                 } else if (button.includes('No Sales')) {

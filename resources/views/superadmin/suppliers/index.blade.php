@@ -3,6 +3,7 @@
 
 @section("style")
     <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
+	<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 @endsection
 
 @section("wrapper")
@@ -23,19 +24,24 @@
             <div class="card">
                 <div class="card-body">
                     <div class="d-lg-flex align-items-center gap-2">
+                        <div class="col-lg-3">
+                            <form id="dateRangeForm">
+                                {{-- <label for="date_range" class="form-label">Date Range</label> --}}
+                                <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
+                            </form>
+                        </div>
                         <button id="filter-outstanding" class="btn btn-outline-secondary p-1">Outstanding</button>
-                
+
                         <button id="filter-ageing" class="btn btn-outline-secondary p-1">Overdue</button>
-                    
+
                         <button id="filter-payment" class="btn btn-outline-secondary p-1">Payment</button>
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
-                        
+
                         <table id="supplier-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    {{-- <th>Id</th> --}}
                                     <th>Ledger Name</th>
                                     <th>GSTIN</th>
                                     <th>
@@ -75,39 +81,18 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    {{-- <th>Id</th> --}}
-                                    <th>Ledger Name</th>
-                                    <th>GSTIN</th>
-                                    <th>
-                                        Purchase
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span>
-                                    </th>
-                                    <th>
-                                        Returns
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span>
-                                    </th>
-                                    <th>Net ₹ Due</th>
-                                    <th>₹ Overdue</th>
-                                    <th>
-                                        Overdue<br>
-                                        <span style="font-size: smaller;color: gray;">Since</span>
-                                    </th>
-                                    <th>
-                                        ₹ On Account<br>
-                                        <span style="font-size: smaller;color: gray;">As of Today</span>
-                                    </th>
-                                    <th>
-                                        ₹ Pmt Made
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">FY</span>
-                                    </th>
-                                    <th>
-                                        Last Payment
-                                    </th>
-                                    <th>₹ Credit Limit</th>
-                                    <th>₹ Credit Period</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -120,6 +105,7 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     $(document).ready(function() {
         var urlParams = new URLSearchParams(window.location.search);
@@ -127,6 +113,8 @@
         var filterAgeing = urlParams.get('filter_ageing') === 'true';
         var filterPayment = urlParams.get('filter_payment') === 'true';
 
+        var startDate = urlParams.get('start_date');
+        var endDate = urlParams.get('end_date');
 
 
         new DataTable('#supplier-datatable', {
@@ -144,6 +132,8 @@
                     d.filter_outstanding = filterOutstanding;
                     d.filter_ageing = filterAgeing;
                     d.filter_payment = filterPayment;
+                    d.start_date = startDate;
+                    d.end_date = endDate;
                 }
             },
             columns: [
@@ -162,7 +152,7 @@
                     searchPanes: {
                         orthogonal: 'plain'
                     }
-                }, 
+                },
                 {data: 'return30', name: 'return30',
                     searchPanes: {
                         orthogonal: 'plain'
@@ -227,10 +217,32 @@
             },
             search: {
                 orthogonal: {
-                    search: 'plain' 
+                    search: 'plain'
                 }
             }
         });
+
+        const dateRangeInput = document.querySelector(".date-range");
+        flatpickr(dateRangeInput, {
+            mode: "range",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    let [startDate, endDate] = selectedDates.map(date => date.toISOString().split('T')[0]);
+                    let url = new URL(window.location.href);
+                    url.searchParams.set('start_date', startDate);
+                    url.searchParams.set('end_date', endDate);
+                    window.location.href = url.toString();
+                }
+            }
+        });
+
+        // Prepopulate date range input if already set
+        if (startDate && endDate) {
+            dateRangeInput._flatpickr.setDate([startDate, endDate], false);
+        }
 
         $('#filter-outstanding').on('click', function () {
             filterOutstanding = !filterOutstanding;

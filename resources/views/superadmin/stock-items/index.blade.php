@@ -25,7 +25,7 @@
                     <div class="d-lg-flex align-items-center gap-3"></div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
-                        
+
                         <table id="stockItem-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
@@ -63,31 +63,15 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Stock Group</th>
-                                    <th>
-                                        Stock
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">Qty</span>
-                                    </th>
-                                    <th>
-                                        Stock
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">Value</span>
-                                    </th>
-                                    <th>
-                                        Stock On Hand
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">Qty</span>
-                                    </th>
-                                    <th>Avg Pur Rate</th>
-                                    <th>
-                                        Stock On Hand
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">Value</span>
-                                    </th>
-                                    <th>Stock Category</th>
-                                    <th>Alias</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
                                     {{-- <th>Alias</th> --}}
                                 </tr>
                             </tfoot>
@@ -153,7 +137,7 @@
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
                 var StockHandValueToTotal = 6;
-                var StockHandBalanceToTotal = 3;
+                var StockHandBalanceToTotal = 4;
 
 
                 var StockHandValuetotal = api.column(StockHandValueToTotal).data().reduce(function (a, b) {
@@ -169,7 +153,7 @@
             },
             search: {
                 orthogonal: {
-                    search: 'plain' 
+                    search: 'plain'
                 }
             }
         });

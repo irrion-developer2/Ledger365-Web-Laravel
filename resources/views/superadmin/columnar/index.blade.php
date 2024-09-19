@@ -26,11 +26,11 @@
                     <div class="d-lg-flex align-items-center gap-3">
                         <div class="col-lg-3">
                             <form id="dateRangeForm">
-                                <label for="date_range" class="form-label">Date Range</label>
+                                {{-- <label for="date_range" class="form-label">Date Range</label> --}}
                                 <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
                             </form>
                         </div>
-                        <div class="col-lg-2">
+                        {{-- <div class="col-lg-2">
                             <form id="voucherTypeForm">
                                 <label for="voucher_type" class="form-label">Transaction Type</label>
                                 <select id="voucher_type" name="voucher_type" class="form-select">
@@ -43,7 +43,7 @@
                                     <option value="Payment">Payment</option>
                                 </select>
                             </form>
-                        </div>
+                        </div> --}}
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
@@ -75,24 +75,24 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Particulars</th>
-                                    <th>Voucher No.</th>
-                                    <th>Voucher Type</th>
-                                    <th>Buyer Name</th>
-                                    <th>Buyer Addr</th>
-                                    <th>State</th>
-                                    <th>Country</th>
-                                    <th>GSTIN</th>
-                                    <th>Registration Type</th>
-                                    <th>Place Of Supply</th>
-                                    <th class="text-center">Gross Total</th>
-                                    <th class="text-center">Taxable Value</th>
-                                    <th class="text-center">IGST</th>
-                                    <th class="text-center">SGST</th>
-                                    <th class="text-center">CGST</th>
-                                    <th class="text-center">Round Off</th>
-                                    <th>Product</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th class="text-center"></th>
+                                    <th class="text-center"></th>
+                                    <th class="text-center"></th>
+                                    <th class="text-center"></th>
+                                    <th class="text-center"></th>
+                                    <th class="text-center"></th>
+                                    <th></th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -118,7 +118,7 @@
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
-            orderCellsTop: true, 
+            orderCellsTop: true,
             ajax: {
                 url: "{{ route('columnar.get-data') }}",
                 type: 'GET',
@@ -190,7 +190,7 @@
                     render: function(data, type, row) {
                         var url = '{{ route("sales.items", ":id") }}';
                         url = url.replace(':id', row.id);
-                        
+
                         return '<button class="btn btn-primary btn-sm" onclick="window.location.href=\'' + url + '\'">Product View</button>';
                     }
                 },

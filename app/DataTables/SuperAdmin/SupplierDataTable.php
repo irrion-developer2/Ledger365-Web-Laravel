@@ -56,18 +56,6 @@ class SupplierDataTable extends DataTable
 
                 return number_format(abs($totalPurchase), 2);
             })
-            // ->addColumn('purchase', function ($data) {
-            //     $ledgerIds = TallyVoucher::where('ledger_guid', $data->guid)
-            //         ->where('voucher_type', 'Purchase')
-            //         ->pluck('ledger_guid');
-            
-            //     $totalPurchase = TallyVoucherHead::whereIn('ledger_guid', $ledgerIds)
-            //     ->sum('amount');
-            
-            //     return number_format(abs($totalPurchase), 2);
-            // })
-            
-
             ->addColumn('purchase_last_30_days', function ($data) {
                 $ledgerData = TallyVoucher::where('ledger_guid', $data->guid)
                 ->where('voucher_type', 'Purchase')
@@ -94,7 +82,6 @@ class SupplierDataTable extends DataTable
 
                 return number_format($totalPurchase, 2);
             })
-
             ->addColumn('overdue', function ($data) {
                 $ledgerIds = TallyVoucher::where('ledger_guid', $data->guid)
                     ->where('voucher_type', 'Purchase')
@@ -154,19 +141,19 @@ class SupplierDataTable extends DataTable
                 $ledgerData = TallyVoucher::where('ledger_guid', $data->guid)
                     ->where('voucher_type', 'Purchase')
                     ->pluck('id', 'ledger_guid');
-            
+
                 $ledgerGuids = $ledgerData->keys();
                 $tallyVoucherIds = $ledgerData->values();
 
                 $latestReceipt = TallyVoucher::whereIn('ledger_guid', $ledgerGuids)
                     ->whereIn('id', $tallyVoucherIds)
-                    ->orderBy('voucher_date', 'desc') 
+                    ->orderBy('voucher_date', 'desc')
                     ->first();
-            
+
                 if ($latestReceipt) {
                     return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('j F Y');
                 } else {
-                    return '-'; 
+                    return '-';
                 }
             })->addColumn('voucher_date', function ($data) {
 
@@ -175,19 +162,19 @@ class SupplierDataTable extends DataTable
                     ->pluck('id', 'ledger_guid');
                     // ->get();
                     // dd($ledgerData);
-            
+
                 $ledgerGuids = $ledgerData->keys();
                 $tallyVoucherIds = $ledgerData->values();
 
                 $latestReceipt = TallyVoucher::whereIn('ledger_guid', $ledgerGuids)
                     ->whereIn('id', $tallyVoucherIds)
-                    ->orderBy('voucher_date', 'desc') 
+                    ->orderBy('voucher_date', 'desc')
                     ->first();
-            
+
                 if ($latestReceipt) {
                     return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('j F Y');
                 } else {
-                    return '-'; 
+                    return '-';
                 }
             })
             ->editColumn('language_name', function ($data) {
@@ -223,7 +210,7 @@ class SupplierDataTable extends DataTable
                 searchInput.removeClass(\'form-control form-control-sm\').addClass(\'form-control ps-5 radius-30\').attr(\'placeholder\', \'Search Order\');
                 searchInput.wrap(\'<div class="position-relative pt-1"></div>\');
                 searchInput.parent().append(\'<span class="position-absolute top-50 product-show translate-middle-y"><i class="bx bx-search"></i></span>\');
-                
+
                 var select = $(table.api().table().container()).find(".dataTables_length select").removeClass(\'custom-select custom-select-sm form-control form-control-sm\').addClass(\'form-select form-select-sm\');
             }')
             ->parameters([

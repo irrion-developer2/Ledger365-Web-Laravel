@@ -165,6 +165,35 @@ function changeCompany(companyId) {
         .catch(error => console.error('Error:', error));
 }
 
+// function changeCompany(companyId) {
+//     console.log('Selected Company ID:', companyId);
+
+//     if (!companyId) {
+//         console.error('Company ID is missing.');
+//         return;
+//     }
+
+//     const url = `/fetch-company-data/${companyId}`;
+//     console.log('Request URL:', url);
+
+//     fetch(url)
+//         .then(response => response.json())
+//         .then(data => {
+//             if (data.company) {
+//                 document.querySelector('.company-changes').textContent = data.company.name;
+
+//                 localStorage.setItem('selectedCompanyId', companyId);
+
+//                 if (window.location.href.indexOf(`companyData=${companyId}`) === -1) {
+//                     window.location.search = `?companyData=${companyId}`;
+//                 }
+//             } else {
+//                 console.error('Company data not found');
+//             }
+//         })
+//         .catch(error => console.error('Error:', error));
+// }
+
 
 // function changeCompany(companyId) {
 //     console.log('Selected Company ID:', companyId); // Debugging line

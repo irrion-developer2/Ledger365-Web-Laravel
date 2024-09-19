@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use App\Services\ReportService;
 
 class CashBankDataTable extends DataTable
-{      
+{
     protected $reportService;
 
     public function __construct(ReportService $reportService)
@@ -39,7 +39,7 @@ class CashBankDataTable extends DataTable
                 return Carbon::parse($request->created_at)->format('Y-m-d H:i:s');
             })
             ->editColumn('name', function ($data) {
-                $url = route('reports.CashBank.details', ['CashBank' => $data->id]); // Ensure 'customer' matches the route parameter name
+                $url = route('reports.CashBank.details', ['CashBank' => $data->id]);
                 return '<a href="' . $url . '" style="color: #337ab7;">' . $data->name . '</a>';
             })
             ->editColumn('account_type', function ($data) {
@@ -55,11 +55,11 @@ class CashBankDataTable extends DataTable
                 }
                 return $data->account_type;
             })
-            
+
             ->editColumn('ledger_count', function ($data) {
                 $name = $data->name;
                 $normalizedNames = $this->normalizedNames;
-                
+
                 if (isset($normalizedNames[$name])) {
                     $name = $normalizedNames[$name];
                 }
@@ -83,215 +83,205 @@ class CashBankDataTable extends DataTable
                         break;
                     }
                 }
-                
+
                 $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-            
+
                 if ($groupLedgerIds->isNotEmpty()) {
                     $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
-                        // ->whereIn('company_guid', $companyGuids)
                         ->pluck('guid');
                 } else {
                     $ledgerIds = TallyLedger::where('parent', $name)
-                                // ->whereIn('company_guid', $companyGuids)
                                 ->pluck('guid');
                 }
-            
+
                 $allLedgerIds = $ledgerIds->unique();
-            
+
                 if ($allLedgerIds->isEmpty()) {
-                    return '-';  
+                    return '-';
                 }
-            
-                // $totalCredit = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
-                //     ->where('entry_type', 'credit')
-                //     ->sum('amount');
 
                 $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_heads.entry_type', 'credit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_heads.amount');
 
 
                 $totalCreditBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'credit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
                 $totalCredit = $totalCreditHead + $totalCreditBankHead;
-            
+
                 if ($totalCredit == 0) {
-                    return '-';  
+                    return '-';
                 }
-            
+
                 return number_format($totalCredit, 2);
             })
 
             ->editColumn('total_debit', function ($data) {
                 $companyGuids = $this->reportService->companyData();
                 $name = $data->name;
-                
+
                 foreach ($this->normalizedNames as $pattern => $normalized) {
                     if (strpos($name, $pattern) !== false) {
                         $name = $normalized;
                         break;
                     }
                 }
-                
+
                 $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-                
+
                 if ($groupLedgerIds->isNotEmpty()) {
                     $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
                         ->pluck('guid');
                 } else {
                     $ledgerIds = TallyLedger::where('parent', $name)->pluck('guid');
                 }
-                
+
                 $allLedgerIds = $ledgerIds->unique();
-                
+
                 if ($allLedgerIds->isEmpty()) {
-                    return '-';  // Return empty string instead of '-'
+                    return '-';
                 }
-                
-                // $totalDebit = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
-                //     ->where('entry_type', 'debit')
-                //     ->sum('amount');
 
                 $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_heads.entry_type', 'debit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_heads.amount');
 
 
                 $totalDebitBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'debit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
                 $totalDebit = $totalDebitHead + $totalDebitBankHead;
-                
-                
+
+
                 if ($totalDebit == 0) {
-                    return '-';  // Return empty string instead of '-'
+                    return '-';
                 }
-                
-                return number_format(abs($totalDebit), 2);  // Remove negative sign using abs()
+
+                return number_format(abs($totalDebit), 2);
             })
-            
+
             ->editColumn('opening_balance', function ($data) {
                 $name = $data->name;
-                
+
                 foreach ($this->normalizedNames as $pattern => $normalized) {
                     if (strpos($name, $pattern) !== false) {
                         $name = $normalized;
                         break;
                     }
                 }
-                
+
                 $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-                
+
                 if ($groupLedgerIds->isNotEmpty()) {
                     $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
                         ->pluck('guid');
                 } else {
                     $ledgerIds = TallyLedger::where('parent', $name)->pluck('guid');
                 }
-                
+
                 $allLedgerIds = $ledgerIds->unique();
-                
+
                 if ($allLedgerIds->isEmpty()) {
                     return '-';  // Return empty string instead of '-'
                 }
-                
+
                 $openingBalance = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
                     ->where('entry_type', 'opening')
                     ->sum('amount');
-                
+
                 if ($openingBalance == 0) {
                     return '-';  // Return empty string instead of '-'
                 }
-                
+
                 return number_format(abs($openingBalance), 2);  // Remove negative sign using abs()
             })
-            
+
             ->editColumn('closing_balance', function ($data) {
                 $companyGuids = $this->reportService->companyData();
                 $name = $data->name;
-                
+
                 foreach ($this->normalizedNames as $pattern => $normalized) {
                     if (strpos($name, $pattern) !== false) {
                         $name = $normalized;
                         break;
                     }
                 }
-                
+
                 $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-                
+
                 if ($groupLedgerIds->isNotEmpty()) {
                     $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
                         ->pluck('guid');
                 } else {
                     $ledgerIds = TallyLedger::where('parent', $name)->pluck('guid');
                 }
-                
+
                 $allLedgerIds = $ledgerIds->unique();
-                
+
                 if ($allLedgerIds->isEmpty()) {
-                    return '-';  
+                    return '-';
                 }
-                
+
                 $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_heads.entry_type', 'debit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_heads.amount');
 
 
                 $totalDebitBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'debit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
                 $totalDebit = $totalDebitHead + $totalDebitBankHead;
-                
+
                 $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                 ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                 ->where('tally_voucher_heads.entry_type', 'credit')
-                ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                ->whereIn('tally_vouchers.company_guid', $companyGuids)
                 ->sum('tally_voucher_heads.amount');
 
 
                 $totalCreditBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'credit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
                 $totalCredit = $totalCreditHead + $totalCreditBankHead;
 
-                
+
                 $openingBalance = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
                     ->where('entry_type', 'opening')
                     ->sum('amount');
 
                 $total = $totalDebit + $totalCredit;
-                
+
                 // $closingBalance = $openingBalance + $totalDebit + $totalCredit;
                 $closingBalance = $openingBalance + $total;
-                
+
                 if ($closingBalance == 0) {
-                    return '-'; 
+                    return '-';
                 }
-                
-                return number_format(abs($closingBalance), 2); 
+
+                return number_format(abs($closingBalance), 2);
             })
 
             ->rawColumns(['name']);
@@ -313,7 +303,7 @@ class CashBankDataTable extends DataTable
             ->minifiedAjax()
             ->language([
                 'lengthMenu' => __('Show _MENU_ entries'),
-                "searchPlaceholder" => __('Search...'), 
+                "searchPlaceholder" => __('Search...'),
                 "search" => ""
             ])
             ->initComplete('function() {
@@ -322,7 +312,7 @@ class CashBankDataTable extends DataTable
                 searchInput.removeClass(\'form-control form-control-sm\').addClass(\'form-control ps-5 radius-30\').attr(\'placeholder\', \'Search Order\');
                 searchInput.wrap(\'<div class="position-relative pt-1"></div>\');
                 searchInput.parent().append(\'<span class="position-absolute top-50 product-show translate-middle-y"><i class="bx bx-search"></i></span>\');
-                
+
                 var select = $(table.api().table().container()).find(".dataTables_length select").removeClass(\'custom-select custom-select-sm form-control form-control-sm\').addClass(\'form-select form-select-sm\');
             }')
             ->parameters([

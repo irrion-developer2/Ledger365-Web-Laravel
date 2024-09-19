@@ -14,7 +14,7 @@ use App\Models\TallyLedger;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Services\ReportService;
 use App\DataTables\SuperAdmin\StockItemDataTable;
@@ -35,22 +35,29 @@ class StockItemController extends Controller
 
     public function getData(Request $request)
     {
-        
+
         $companyGuids = $this->reportService->companyData();
 
         if ($request->ajax()) {
-            $societies = TallyItem::with('tallyVoucherItems')
+            $startTime = microtime(true);
+            $stockItems = TallyItem::with('tallyVoucherItems')
                                     ->whereIn('company_guid', $companyGuids);
 
-            return DataTables::of($societies)
+                                // dd($stockItems);
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+
+            Log::info('Total first db request execution time for StockItemController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+
+            $dataTable = DataTables::of($stockItems)
                 ->addIndexColumn()
-                
+
                 ->addColumn('stockonhand_opening_balance', function ($entry) {
                     $openingBalance = trim($entry->opening_balance);
 
                     $numericPart = '';
                     $unitPart = '';
-                    
+
                     if (preg_match('/^([\d.,]+)\s*(.*)$/', $openingBalance, $matches)) {
                         $numericPart = $matches[1];
                         $unitPart = isset($matches[2]) ? $matches[2] : '';
@@ -61,78 +68,38 @@ class StockItemController extends Controller
 
                     $unit = $entry->unit ?? $entry->pluck('unit')->filter()->first();
 
+
                     $stockItemData = $this->calculateStockItemVoucherBalance($entry->name);
                     $stockItemVoucherBalance = $stockItemData['balance'];
-                    // $finalOpeningBalance = $openingBalanceValue + $stockItemVoucherBalance;
-                    // dd($finalOpeningBalance);
-                    
 
                     $stockOnHandBalance = $openingBalanceValue - $stockItemVoucherBalance;
 
                     return $stockOnHandBalance . ' ' . $unit;
                 })
-
-                // ->addColumn('stockonhand_opening_value', function ($entry) {
-                //     $stockOnHandBalance = 0;
-                //     $openingBalance = 0;
-                //     $stockOnHandValue = 0;
-                
-                //     $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
-                //     $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-                
-                //     $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
-                //     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-                //     $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
-                //     $stockItemVoucherHandBalance = $stockItemData['balance'];
-
-                
-                //     $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
-                //     $stockItemVoucherPurchaseAmount = $stockAmountData['purchase_amt'];
-                //     $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
-                    
-                
-                //     $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
-                //     $finalOpeningValue = $openingValue - $openingAmount;
-                //     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
-                
-                //     if ($openingBalance == 0) {
-                //         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                //         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                //     } else {
-                //         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                //         $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', ''); 
-                //         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                //     }
-                
-                //     $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-                
-                //     return number_format($stockOnHandValue, 2);
-                // })
-
                 ->addColumn('stockonhand_opening_value', function ($entry) {
                     $stockOnHandBalance = 0;
                     $openingBalance = 0;
                     $stockOnHandValue = 0;
-                
+
                     // Extract the opening balance and value
                     $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
                     $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-                
+
                     // Calculate stock item voucher balances and amounts
                     $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
                     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
                     $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
                     $stockItemVoucherHandBalance = $stockItemData['balance'];
-                
+
                     $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
                     $stockItemVoucherPurchaseAmount = $stockAmountData['purchase_amt'];
                     $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
-                
+
                     // Calculate opening amount and balances
                     $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
                     $finalOpeningValue = $openingValue - $openingAmount;
                     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
-                
+
                     if ($finalOpeningBalance == 0) {
                         // Prevent division by zero by assigning a default value (e.g., 0 or a calculated fallback)
                         $stockItemVoucherSaleValue = 0;
@@ -142,107 +109,60 @@ class StockItemController extends Controller
                         $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
                         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
                     }
-                
+
                     // Calculate stock on hand value
                     $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-                
+
                     return number_format($stockOnHandValue, 2);
                 })
-                
                 ->addColumn('avg_rate', function ($entry) {
-
-                    // Initialize variables
                     $stockOnHandBalance = 0;
                     $openingBalance = 0;
                     $stockOnHandValue = 0;
-                
-                    // Extract numeric values from opening balance and opening value
+
                     $openingBalance = $this->extractNumericValue($entry->opening_balance);
                     $openingValue = $this->extractNumericValue($entry->opening_value);
-                
-                    // Retrieve stock item data for calculations
+
                     $stockItemData = $this->calculateStockItemVoucherBalance($entry->name);
                     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
                     $stockItemVoucherHandBalance = $stockItemData['balance'];
-                
+
                     $stockAmountData = $this->calculateStockItemVoucherAmount($entry->name);
                     $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
-                
-                    // Calculate final opening values and balances
+
                     $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
                     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
-                
-                    // Prevent division by zero by checking if $finalOpeningBalance is zero
+
                     if ($finalOpeningBalance == 0) {
-                        // If final opening balance is zero, return 0 or a fallback value
                         return number_format(0, 2);
                     }
-                
-                    // Calculate stock on hand value
+
                     $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                    $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', ''); 
+                    $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
                     $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                
-                    // Calculate stock on hand value
+
                     $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-                
-                    // Return the calculated stock item voucher sale value (avg rate)
                     return number_format($stockItemVoucherSaleValue, 2);
                 })
-                
-                // ->addColumn('avg_rate', function ($entry) {
-
-                //     // Initialize variables
-                //     $stockOnHandBalance = 0;
-                //     $openingBalance = 0;
-                //     $stockOnHandValue = 0;
-                
-                //     // Extract numeric values from opening balance and opening value
-                //     $openingBalance = $this->extractNumericValue($entry->opening_balance);
-                //     $openingValue = $this->extractNumericValue($entry->opening_value);
-                
-                //     // Retrieve stock item data for calculations
-                //     $stockItemData = $this->calculateStockItemVoucherBalance($entry->name);
-                //     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-                //     $stockItemVoucherHandBalance = $stockItemData['balance'];
-                
-                //     $stockAmountData = $this->calculateStockItemVoucherAmount($entry->name);
-                //     $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
-                
-                //     // Calculate final opening values and balances
-                //     $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
-                //     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
-                
-                //     // Calculate stock on hand value
-                //     if ($openingBalance == 0) {
-                //         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                //         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                //     } else {
-                //         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                //         $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', ''); 
-                //         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                //     }
-                
-                //     // Calculate stock on hand value
-                //     $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-                
-                //     // Return the calculated stock on hand value
-                //     return number_format($stockItemVoucherSaleValue, 2);
-                // })
-
                 ->addColumn('voucher_date', function ($entry) {
                     // Calculate the stock item voucher amount details
                     $voucherAmountData = $this->calculateStockItemVoucherAmount($entry->name);
-                
+
                     // Retrieve purchase and debit note dates
                     $purchaseDate = $voucherAmountData['purchase_date'] ? \Carbon\Carbon::parse($voucherAmountData['purchase_date'])->format('Y-m-d') : '-';
                     $debitNoteDate = $voucherAmountData['debit_note_date'] ? \Carbon\Carbon::parse($voucherAmountData['debit_note_date'])->format('Y-m-d') : '-';
-                
+
                     // Return the concatenated dates (adjust as needed)
                     return "Purchase Date: $purchaseDate, Debit Note Date: $debitNoteDate";
                 })
-                
                 ->make(true);
+
+                $endTime = microtime(true);
+                $executionTime = $endTime - $startTime;
+
+                Log::info('Total end execution time for StockItemController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+
+                return $dataTable;
         }
     }
 
@@ -354,7 +274,7 @@ class StockItemController extends Controller
         // Convert to float
         return (float) $numericValue;
     }
-    
+
     public function AllStockItemReports($stockItemId)
     {
         $companyGuids = $this->reportService->companyData();
@@ -405,7 +325,7 @@ class StockItemController extends Controller
             $query->where('voucher_type', 'Purchase');
         })
         ->get();
-        
+
         $stockItemVoucherPurchaseItemConnect = [];
         foreach ($stockItemVoucherPurchaseItem as $stockItemVoucher) {
             $id = $stockItemVoucher->tally_voucher_id;
@@ -432,7 +352,7 @@ class StockItemController extends Controller
         $stockItemVoucherDebitNoteBalance =  $stockItemVoucherDebitNoteItem->sum('billed_qty');
         $stockItemVoucherBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) - ($stockItemVoucherPurchaseBalance  - $stockItemVoucherDebitNoteBalance);
 
-        
+
         $stockItemVoucherSaleAmount =  $stockItemVoucherSaleItem->sum('amount');
         $stockItemVoucherPurchaseAmount =  $stockItemVoucherPurchaseItem->sum('amount');
         $stockItemVoucherCreditNoteAmount =  $stockItemVoucherCreditNoteItem->sum('amount');
@@ -443,7 +363,7 @@ class StockItemController extends Controller
         $openingAmount = ($stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount);
 
         $openingAmountSale = ($stockItemVoucherSaleAmount + $stockItemVoucherCreditNoteAmount);
-        
+
         $finalOpeningValue = $openingValue - $openingAmount;
         // $finalOpeningValue = $openingValue - $stockItemVoucherPurchaseAmount;
         $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
@@ -455,7 +375,7 @@ class StockItemController extends Controller
             $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
         } else {
             $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-            $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', ''); 
+            $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
             $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
         }
 
@@ -467,11 +387,11 @@ class StockItemController extends Controller
         $stockItemVoucherSaleHead = [];
         foreach ($stockItemVoucherSaleItem as $stockItemVoucher) {
             $id = $stockItemVoucher->tally_voucher_id;
-        
+
             $tallyVoucherHeads = TallyVoucherHead::where('tally_voucher_id', $id)->get();
             if ($tallyVoucherHeads->isNotEmpty()) {
                 $gstRates = [];
-        
+
                 foreach ($tallyVoucherHeads as $tallyVoucherHead) {
                     // Check if the ledger_name contains specific GST-related keywords
                     if (preg_match('/(SGST|CGST|IGST) @(\d+)%/', $tallyVoucherHead->ledger_name, $matches)) {
@@ -480,7 +400,7 @@ class StockItemController extends Controller
                         $gstRates[] = $rate;
                     }
                 }
-        
+
                 // Combine and format the GST rates, if any
                 if (!empty($gstRates)) {
                     $totalGstRate = array_sum($gstRates);
@@ -488,7 +408,7 @@ class StockItemController extends Controller
                 } else {
                     $formattedGstRate = null;
                 }
-        
+
                 $stockItemVoucherSaleHead[] = [
                     'tally_voucher_items' => $stockItemVoucher,
                     'tally_voucher_heads' => $tallyVoucherHeads,
@@ -552,7 +472,7 @@ class StockItemController extends Controller
     //     })
     //     ->get();
 
-        
+
     //     $stockItemVoucherSaleItemConnect = [];
     //     foreach ($saleStockVoucherItem as $saleStockItemVoucher) {
     //         $id = $saleStockItemVoucher->tally_voucher_id;
@@ -580,7 +500,7 @@ class StockItemController extends Controller
     //         // Find the corresponding party_ledger_name from TallyVoucher
     //         $partyLedgerNames = TallyVoucher::where('party_ledger_name', $ledger->language_name)
     //             ->pluck('party_ledger_name');
-            
+
     //         return [
     //             'language_name' => $ledger->language_name,
     //             'party_ledger_name' => $partyLedgerNames->first(), // Assuming one party_ledger_name per language_name
@@ -604,22 +524,22 @@ class StockItemController extends Controller
                                     ->findOrFail($saleStockItemId);
 
         $saleStockItemName = $saleStockItem->name;
-    
+
         $saleStockVoucherItems = TallyVoucherItem::where('stock_item_name', $saleStockItemName)
             ->whereHas('tallyVoucher', function ($query) {
                 $query->where('voucher_type', 'Sales');
             })
             ->get();
-    
+
         $partyLedgerNames = $saleStockVoucherItems->flatMap(function ($voucherItem) {
             return TallyVoucher::where('id', $voucherItem->tally_voucher_id)
                 ->pluck('party_ledger_name');
         })->unique()->toArray();
-    
+
         $tallyLedgers = TallyLedger::whereIn('language_name', $partyLedgerNames)->whereIn('company_guid', $companyGuids)->get();
-    
+
         $ledgerGuids = $tallyLedgers->pluck('guid');
-    
+
         $query = TallyLedger::select(
                 'tally_ledgers.language_name',
                 'tally_ledgers.guid',
@@ -632,12 +552,12 @@ class StockItemController extends Controller
             )
             ->leftJoin('tally_vouchers', 'tally_ledgers.language_name', '=', 'tally_vouchers.party_ledger_name')
             ->leftJoin('tally_voucher_items', 'tally_vouchers.id', '=', 'tally_voucher_items.tally_voucher_id')
-            ->whereIn('tally_ledgers.guid', $ledgerGuids) 
+            ->whereIn('tally_ledgers.guid', $ledgerGuids)
             ->where('tally_vouchers.voucher_type', 'Sales')
             ->where('tally_voucher_items.stock_item_name', $saleStockItemName)
             ->whereIn('tally_ledgers.company_guid', $companyGuids)
             ->groupBy('tally_ledgers.language_name', 'tally_ledgers.guid', 'tally_vouchers.voucher_number', 'tally_voucher_items.amount', 'tally_voucher_items.stock_item_name', 'tally_voucher_items.billed_qty', 'tally_voucher_items.unit', 'tally_voucher_items.rate');
-    
+
         return DataTables::of($query)
             ->addIndexColumn()
             ->make(true);

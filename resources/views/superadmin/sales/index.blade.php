@@ -28,7 +28,7 @@
                     <div class="d-lg-flex align-items-center">
                         <div class="col-lg-3">
                             <form id="dateRangeForm">
-                                <label for="date_range" class="form-label">Date Range</label>
+                                {{-- <label for="date_range" class="form-label">Date Range</label> --}}
                                 <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
                             </form>
                         </div>
@@ -55,12 +55,12 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th>Ledger Name</th>
-                                    <th>GSTIN</th>
-                                    <th>Invoice Date</th>
-                                    <th>Invoice Number</th>
-                                    <th>Invoice Amount</th>
-                                    <th>Place Of Supply</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -127,7 +127,7 @@
             },
             search: {
                 orthogonal: {
-                    search: 'plain' 
+                    search: 'plain'
                 }
             }
         });

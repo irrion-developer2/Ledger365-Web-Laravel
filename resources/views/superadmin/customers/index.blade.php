@@ -3,6 +3,7 @@
 
 @section("style")
     <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
+	<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 @endsection
 
 @section("wrapper")
@@ -22,24 +23,27 @@
 
             <div class="card">
                 <div class="card-body">
-
-
                     <div class="d-lg-flex align-items-center gap-2">
+                        <div class="col-lg-3">
+                            <form id="dateRangeForm">
+                                {{-- <label for="date_range" class="form-label">Date Range</label> --}}
+                                <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
+                            </form>
+                        </div>
                         <button id="filter-outstanding" class="btn btn-outline-secondary p-1">Outstanding</button>
-                
+
                         <button id="filter-ageing" class="btn btn-outline-secondary p-1">Overdue</button>
-                    
+
                         <button id="filter-collection" class="btn btn-outline-secondary p-1">Collections</button>
 
                         <button id="filter-sale" class="btn btn-outline-secondary p-1">No Sales</button>
                     </div>
-                    
+
                     <div class="table-responsive table-responsive-scroll border-0">
-                        
+
                         <table id="customer-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    {{-- <th>Id</th> --}}
                                     <th>Ledger Name</th>
                                     <th>GSTIN</th>
                                     <th>
@@ -59,7 +63,6 @@
                                     </th>
                                     <th>₹ Credit Limit</th>
                                     <th>₹ Credit Period</th>
-                                    {{-- <th>GSTIN</th> --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -67,27 +70,15 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    {{-- <th>Id</th> --}}
-                                    <th>Ledger Name</th>
-                                    <th>GSTIN</th>
-                                    <th>
-                                        Sales
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span>
-                                    </th>
-                                    <th>Net ₹ Due</th>
-                                    <th>₹ Overdue</th>
-                                    <th>
-                                        ₹ Pmt Collection
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">FY</span>
-                                    </th>
-                                    <th>
-                                        Last Payment
-                                    </th>
-                                    <th>₹ Credit Limit</th>
-                                    <th>₹ Credit Period</th>
-                                    {{-- <th>GSTIN</th> --}}
+                                    <th>Total</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -101,6 +92,7 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     $(document).ready(function() {
         var urlParams = new URLSearchParams(window.location.search);
@@ -108,6 +100,9 @@
         var filterAgeing = urlParams.get('filter_ageing') === 'true';
         var filterCollection = urlParams.get('filter_collection') === 'true';
         var filterSale = urlParams.get('filter_sale') === 'true';
+
+        var startDate = urlParams.get('start_date');
+        var endDate = urlParams.get('end_date');
 
         var table = new DataTable('#customer-datatable', {
             fixedColumns: {
@@ -125,6 +120,8 @@
                     d.filter_ageing = filterAgeing;
                     d.filter_collection = filterCollection;
                     d.filter_sale = filterSale;
+                    d.start_date = startDate;
+                    d.end_date = endDate;
                 }
             },
             columns: [
@@ -151,20 +148,13 @@
                 {data: 'payment_date', name: 'payment_date', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                // {data: 'phone_no', name: 'phone_no', render: function(data, type, row) {
-                //     return data ? data : '-';
-                // }},
-                // {data: 'email', name: 'email', render: function(data, type, row) {
-                //     return data ? data : '-';
-                // }},
                 {data: 'credit_limit', name: 'credit_limit', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'bill_credit_period', name: 'bill_credit_period', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                // {data: 'parent', name: 'parent'},
-               
+
             ],
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
@@ -197,6 +187,28 @@
                 }
             }
         });
+
+        const dateRangeInput = document.querySelector(".date-range");
+        flatpickr(dateRangeInput, {
+            mode: "range",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    let [startDate, endDate] = selectedDates.map(date => date.toISOString().split('T')[0]);
+                    let url = new URL(window.location.href);
+                    url.searchParams.set('start_date', startDate);
+                    url.searchParams.set('end_date', endDate);
+                    window.location.href = url.toString();
+                }
+            }
+        });
+
+        // Prepopulate date range input if already set
+        if (startDate && endDate) {
+            dateRangeInput._flatpickr.setDate([startDate, endDate], false);
+        }
 
         $('#filter-outstanding').on('click', function () {
             filterOutstanding = !filterOutstanding;

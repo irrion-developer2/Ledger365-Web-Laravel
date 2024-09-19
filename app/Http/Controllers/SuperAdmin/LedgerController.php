@@ -20,7 +20,7 @@ use App\Models\TallyBatchAllocation;
 use App\Models\TallyBankAllocation;
 use App\Models\TallyVoucherAccAllocationHead;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
 
 class LedgerController extends Controller
 {
@@ -39,7 +39,7 @@ class LedgerController extends Controller
         }
         return null;
     }
-    
+
     public function companyJsonImport(Request $request)
     {
         try {
@@ -50,52 +50,52 @@ class LedgerController extends Controller
             file_put_contents($jsonFilePath, $jsonData);
             $jsonData = file_get_contents($jsonFilePath);
             $data = json_decode($jsonData, true);
-    
+
             // Find TALLYMESSAGE key in the JSON data
             $result = $this->findTallyMessage($data);
-    
+
             if ($result === null) {
                 throw new \Exception('TALLYMESSAGE key not found in the JSON data.');
             }
-    
+
             $messagesPath = $result['path'];
             $messages = $result['value'];
-    
+
             // Process TALLYMESSAGE array
             // Track company GUIDs to ensure they are inserted only once
             $companyGuids = TallyCompany::pluck('guid')->toArray();
             Log::info('Company GUIDs in Database:', ['companyGuids' => $companyGuids]);
-    
+
             foreach ($messages as $message) {
                 // Handle company data
                 if (isset($message['COMPANY'])) {
                     $companyData = $message['COMPANY']['REMOTECMPINFO.LIST'];
                     $companyGuid = $companyData['NAME'];
-    
+
                     if (!in_array($companyGuid, $companyGuids)) {
                         $company = TallyCompany::create([
                             'guid' => $companyGuid,
                             'name' => $companyData['REMOTECMPNAME'] ?? null,
                             'state' => $companyData['REMOTECMPSTATE'] ?? null,
                         ]);
-    
+
                         if (!$company) {
                             throw new \Exception('Failed to create tally company record.');
                         }
-    
+
                         $companyGuids[] = $companyGuid;
                     }
                 }
             }
-    
+
             return response()->json(['message' => 'Tally data saved successfully.', 'path' => $messagesPath]);
-    
+
         } catch (\Exception $e) {
             Log::error('Error importing data: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
     public function masterJsonImport(Request $request)
     {
         try {
@@ -232,7 +232,7 @@ class LedgerController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-   
+
     public function stockItemJsonImport(Request $request)
     {
         try {
@@ -242,30 +242,30 @@ class LedgerController extends Controller
             file_put_contents($jsonFilePath, $jsonData);
             $jsonData = file_get_contents($jsonFilePath);
             $data = json_decode($jsonData, true);
-    
+
             // Find TALLYMESSAGE key in the JSON data
             $result = $this->findTallyMessage($data);
-            
+
             if ($result === null) {
                 throw new \Exception('TALLYMESSAGE key not found in the JSON data.');
             }
-    
+
             $messagesPath = $result['path'];
             $messages = $result['value'];
-    
+
             // Process each TALLYMESSAGE
             foreach ($messages as $message) {
                 if (isset($message['UNIT'])) {
                     $unitData = $message['UNIT'];
                     Log::info('Unit Data:', ['unitData' => $unitData]);
-    
+
                     // Extract REPORTINGUQCDETAILS.LIST
                     $reportingUQCDetails = $unitData['REPORTINGUQCDETAILS.LIST'] ?? [];
                     $reportingUQCName = $reportingUQCDetails['REPORTINGUQCNAME'] ?? null;
                     $applicableFrom = $reportingUQCDetails['APPLICABLEFROM'] ?? null;
 
                     $name = is_array($unitData['NAME']) ? $unitData['NAME'][0] : $unitData['NAME'];
-    
+
                     $tallyUnit = TallyUnit::updateOrCreate(
                         ['guid' => $unitData['GUID'] ?? null],
                         [
@@ -281,23 +281,23 @@ class LedgerController extends Controller
                             'applicable_from' => $applicableFrom,
                         ]
                     );
-    
+
                     if (!$tallyUnit) {
                         throw new \Exception('Failed to create or update tally unit record.');
                     }
                 }
             }
-    
+
             foreach ($messages as $message) {
                 if (isset($message['GODOWN'])) {
                     $godownData = $message['GODOWN'];
                     Log::info('Godown Data:', ['godownData' => $godownData]);
-    
+
                     $nameField = $godownData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? null;
                     if (is_array($nameField)) {
                         $nameField = implode(', ', $nameField);
                     }
-    
+
                     $tallyGodown = TallyGodown::updateOrCreate(
                         ['guid' => $godownData['GUID'] ?? null],
                         [
@@ -324,18 +324,18 @@ class LedgerController extends Controller
                             'language_id' => $godownData['LANGUAGENAME.LIST']['LANGUAGEID'] ?? null,
                         ]
                     );
-    
+
                     if (!$tallyGodown) {
                         throw new \Exception('Failed to create or update tally Godown record.');
                     }
                 }
             }
-    
+
             foreach ($messages as $message) {
                 if (isset($message['STOCKITEM'])) {
                     $stockItemData = $message['STOCKITEM'];
                     Log::info('Stock Item Data:', ['stockItemData' => $stockItemData]);
-    
+
                     $nameField = $stockItemData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? [];
                     if (is_array($nameField)) {
                         $languageName = $nameField[0] ?? null;
@@ -357,7 +357,7 @@ class LedgerController extends Controller
 
                     $rateString = $stockItemData['OPENINGRATE'] ?? null;
                     $rate = $unit = null;
-            
+
                     if ($rateString) {
                         $parts = explode('/', $rateString);
                         if (count($parts) === 2) {
@@ -370,7 +370,7 @@ class LedgerController extends Controller
 
                     $guid = $stockItemData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
-    
+
                     $tallyStockItem = TallyItem::updateOrCreate(
                         ['guid' => $stockItemData['GUID'] ?? null],
                         [
@@ -446,13 +446,13 @@ class LedgerController extends Controller
                             'batch_allocations' => json_encode($stockItemData['BATCHALLOCATIONS.LIST'] ?? []),
                         ]
                     );
-    
+
                     if (!$tallyStockItem) {
                         throw new \Exception('Failed to create or update tally stock item record.');
                     }
                 }
             }
-    
+
             return response()->json(['message' => 'Tally data saved successfully.', 'path' => $messagesPath]);
         } catch (\Exception $e) {
             Log::error('Error importing stock items:', ['error' => $e->getMessage()]);
@@ -486,7 +486,7 @@ class LedgerController extends Controller
                 if (isset($message['VOUCHER'])) {
                     $voucherData = $message['VOUCHER'];
                     $partyLedgerName = $voucherData['PARTYLEDGERNAME'] ?? $voucherData['PARTYNAME'] ?? null;
-                    $companyGuid = substr($voucherData['GUID'], 0, 36); 
+                    $companyGuid = substr($voucherData['GUID'], 0, 36);
 
                     $ledgerEntries = $this->normalizeEntries($voucherData['LEDGERENTRIES.LIST'] ?? []);
                     $allLedgerEntries = $this->normalizeEntries($voucherData['ALLLEDGERENTRIES.LIST'] ?? []);
@@ -553,7 +553,7 @@ class LedgerController extends Controller
                     $ledgerGuid = TallyLedger::where('language_name', $partyLedgerName)
                                                 ->where('company_guid', $companyGuid)
                                                 ->value('guid');
-                    
+
                     // Find existing Tally Voucher
                     $existingVoucher = TallyVoucher::where('guid', $voucherData['GUID'])
                                     ->where('company_guid', $companyGuid)
@@ -583,7 +583,7 @@ class LedgerController extends Controller
                         'ledger_guid' => $ledgerGuid,
                         'voucher_number' => $voucherData['VOUCHERNUMBER'] ?? null,
                         'voucher_date' => $voucherData['DATE'] ?? null,
-                        'reference_date' => !empty($voucherData['REFERENCEDATE']) ? $voucherData['REFERENCEDATE'] : null, 
+                        'reference_date' => !empty($voucherData['REFERENCEDATE']) ? $voucherData['REFERENCEDATE'] : null,
                         'reference_no' => $voucherData['REFERENCE'] ?? null,
                         'place_of_supply' => $voucherData['PLACEOFSUPPLY'] ?? null,
                         'country_of_residense' => $voucherData['COUNTRYOFRESIDENCE'] ?? null,
@@ -596,7 +596,7 @@ class LedgerController extends Controller
                         'ship_by' => $voucherData['BASICSHIPPEDBY'] ?? null,
                         'final_destination' => $voucherData['BASICFINALDESTINATION'] ?? null,
                         'bill_lading_no' => $voucherData['BILLOFLADINGNO'] ?? null,
-                        'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null, 
+                        'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
                         'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
                         'terms' => $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null,
                         'consignee_name' => $voucherData['BASICBUYERNAME'] ?? null,
@@ -605,7 +605,7 @@ class LedgerController extends Controller
                         'consignee_addr' => $consigneeAddressList,
                         'buyer_name' => $voucherData['BASICBUYERNAME'] ?? null,
                         'buyer_addr' => $buyerAddressList,
-                        'delivery_notes' => $deliveryNotesStr, 
+                        'delivery_notes' => $deliveryNotesStr,
                         'delivery_dates' => json_encode($formattedShippingDates),
                         'due_date_payment' => $voucherData['BASICDUEDATEOFPYMT'] ?? null,
                         'buyer_gstin' => $voucherData['PARTYGSTIN'] ?? null,
@@ -651,7 +651,7 @@ class LedgerController extends Controller
         if (is_object($entries)) {
             $entries = (array) $entries;
         }
-    
+
         if (is_array($entries)) {
             foreach ($entries as &$entry) {
                 if (is_object($entry)) {
@@ -660,30 +660,30 @@ class LedgerController extends Controller
             }
             return empty($entries) || isset($entries[0]) ? $entries : [$entries];
         }
-    
+
         return [];
     }
 
     private function processLedgerEntries(array $entries, $companyGuid)
     {
         $ledgerEntries = [];
-    
+
         foreach ($entries as $entry) {
             if (isset($entry['LEDGERNAME'], $entry['AMOUNT'])) {
                 $ledgerName = htmlspecialchars_decode($entry['LEDGERNAME']);
                 $amount = $entry['AMOUNT'];
                 $entryType = $amount < 0 ? "debit" : "credit";
-                
+
                 // Retrieve the ledger GUID from the database
                 $ledgerGuid = TallyLedger::where('language_name', $ledgerName)
                     ->where('company_guid', $companyGuid) // Ensure you are filtering by company GUID
                     ->value('guid');
-    
+
                 if ($ledgerGuid) {
                     // Normalize GUIDs by extracting the base GUID part (before the first '-')
                     $normalizedLedgerGuid = explode('-', $ledgerGuid)[0];
                     $normalizedEntryGuid = explode('-', $companyGuid)[0];
-                    
+
                     // Compare the normalized GUID
                     if ($normalizedLedgerGuid === $normalizedEntryGuid) {
                         $ledgerEntries[] = [
@@ -705,17 +705,17 @@ class LedgerController extends Controller
                 Log::error('Missing or invalid LEDGERNAME or AMOUNT in LEDGERENTRIES.LIST entry: ' . json_encode($entry));
             }
         }
-    
+
         return $ledgerEntries;
     }
-    
+
     private function processInventoryEntries(array $entries)
     {
         $inventoryEntries = [];
         foreach ($entries as $entry) {
             $rateString = $entry['RATE'] ?? null;
             $rate = $unit = null;
-    
+
             if ($rateString) {
                 $parts = explode('/', $rateString);
                 if (count($parts) === 2) {
@@ -751,7 +751,7 @@ class LedgerController extends Controller
             $billed_qty = is_numeric($billed_qty) ? (float) $billed_qty : null;
 
 
-    
+
             $inventoryEntries[] = [
                 'stock_item_name' => $entry['STOCKITEMNAME'] ?? null,
                 'gst_taxability' => $entry['GSTOVRDNTAXABILITY'] ?? null,
@@ -776,7 +776,7 @@ class LedgerController extends Controller
         // Log::info('Processed inventory entries: ', $inventoryEntries);
         return $inventoryEntries;
     }
-    
+
     private function processLedgerEntriesForVoucher($voucherId, array $entries)
     {
         $voucherHeadIds = [];
@@ -800,11 +800,11 @@ class LedgerController extends Controller
         }
         return $voucherHeadIds;
     }
-    
+
     private function processInventoryEntriesForVoucher($voucherId, array $entries)
     {
         $inventoryEntriesWithId = [];
-    
+
         foreach ($entries as $item) {
             // Create a new entry without checking for uniqueness
             $newEntry = TallyVoucherItem::create([
@@ -826,18 +826,18 @@ class LedgerController extends Controller
                 'gst_hsn_name' => $item['gst_hsn_name'],
                 'discount' => $item['discount'],
             ]);
-    
+
             // Add the newly created entry to the result list
             $inventoryEntriesWithId[] = [
                 'id' => $newEntry->id,
                 'stock_item_name' => $item['stock_item_name'],
             ];
         }
-    
+
         Log::info('Processed inventory entries: ', $inventoryEntriesWithId);
         return $inventoryEntriesWithId;
     }
-    
+
     private function processBillAllocationsForVoucher($voucherHeadIds, array $billAllocations)
     {
         foreach ($voucherHeadIds as $voucherHead) {
@@ -872,27 +872,27 @@ class LedgerController extends Controller
             }
         }
     }
-   
+
     private function processBankAllocationsForVoucher($voucherHeadIds, array $bankAllocations)
     {
         foreach ($voucherHeadIds as $voucherHead) {
             $ledgerName = $voucherHead['ledger_name'];
-    
+
             // Log the voucher head ID and ledger name
             Log::info("Processing voucher head: " . json_encode($voucherHead));
-            
+
             // Always process bank allocations for the ledger, even if none are found
             if (isset($bankAllocations[$ledgerName]) && is_array($bankAllocations[$ledgerName])) {
                 Log::info("Bank allocations found for ledger: " . $ledgerName);
-    
+
                 foreach ($bankAllocations[$ledgerName] as $bank) {
                     // Log the bank allocation data
                     Log::info("Processing bank allocation: " . json_encode($bank));
-    
+
                     // Sanitize date values
                     $bankDate = $this->sanitizeDate($bank['DATE'] ?? null);
                     $instrumentDate = $this->sanitizeDate($bank['INSTRUMENTDATE'] ?? null);
-    
+
                     try {
                         // Insert or update the record
                         $allocation = TallyBankAllocation::updateOrCreate(
@@ -908,7 +908,7 @@ class LedgerController extends Controller
                                 'amount' => $bank['AMOUNT'] ?? null,
                             ]
                         );
-    
+
                         // Log successful storage
                         Log::info("Bank allocation stored: " . json_encode($allocation));
                     } catch (\Exception $e) {
@@ -919,7 +919,7 @@ class LedgerController extends Controller
             } else {
                 // Even if no bank allocations are found, log this fact
                 Log::info("No bank allocations found for ledger: " . $ledgerName);
-    
+
                 // Optionally, you might want to insert an entry with null or default values
                 try {
                     $allocation = TallyBankAllocation::updateOrCreate(
@@ -935,7 +935,7 @@ class LedgerController extends Controller
                             'amount' => null,
                         ]
                     );
-    
+
                     // Log successful storage of default record
                     Log::info("Default bank allocation stored for ledger: " . $ledgerName . " with ID: " . $allocation->id);
                 } catch (\Exception $e) {
@@ -945,14 +945,14 @@ class LedgerController extends Controller
             }
         }
     }
-    
+
     private function sanitizeDate($date)
     {
         // Check if date is valid, if not return null or a default value
         if (empty($date) || !strtotime($date)) {
             return null; // or you can return a default value like '0000-00-00'
         }
-    
+
         // Format date to 'Y-m-d' or other desired format
         return date('Y-m-d', strtotime($date));
     }
@@ -987,23 +987,23 @@ class LedgerController extends Controller
     private function processAccountingAllocations(array $entries, $companyGuid)
     {
         $ledgerEntries = [];
-    
+
         foreach ($entries as $entry) {
             if (isset($entry['LEDGERNAME'], $entry['AMOUNT'])) {
                 $ledgerName = htmlspecialchars_decode($entry['LEDGERNAME']);
                 $amount = $entry['AMOUNT'];
                 $entryType = $amount < 0 ? "debit" : "credit";
-                
+
                 // Retrieve the ledger GUID from the database
                 $ledgerGuid = TallyLedger::where('language_name', $ledgerName)
                     ->where('company_guid', $companyGuid) // Ensure you are filtering by company GUID
                     ->value('guid');
-    
+
                 if ($ledgerGuid) {
                     // Normalize GUIDs by extracting the base GUID part (before the first '-')
                     $normalizedLedgerGuid = explode('-', $ledgerGuid)[0];
                     $normalizedEntryGuid = explode('-', $companyGuid)[0];
-                    
+
                     // Compare the normalized GUID
                     if ($normalizedLedgerGuid === $normalizedEntryGuid) {
                         $ledgerEntries[] = [
@@ -1025,7 +1025,7 @@ class LedgerController extends Controller
                 Log::error('Missing or invalid LEDGERNAME or AMOUNT in LEDGERENTRIES.LIST entry: ' . json_encode($entry));
             }
         }
-    
+
         return $ledgerEntries;
     }
     // private function processAccountingAllocations(array $entries)
@@ -1037,7 +1037,7 @@ class LedgerController extends Controller
     //         $amount = $entry['AMOUNT'] ?? 0;
     //         $entryType = $amount < 0 ? "debit" : "credit";
     //         $ledgerGuid = TallyLedger::where('language_name', $ledgerName)->value('guid');
-    
+
     //         // Add entry to the array regardless of missing ledger GUID or amount
     //         $ledgerEntries[] = [
     //             'ledger_name' => $ledgerName,
@@ -1049,7 +1049,7 @@ class LedgerController extends Controller
     //     }
     //     return $ledgerEntries;
     // }
-    
+
     private function processAccountingAllocationForVoucher($voucherId, array $entries)
     {
         $voucherHeadIds = [];
@@ -1063,7 +1063,7 @@ class LedgerController extends Controller
                 'ledger_guid' => $entry['ledger_guid'],
                 'isdeemedpositive' => $entry['isdeemedpositive'],
             ]);
-    
+
             $voucherHeadIds[] = [
                 'id' => $voucherHead->id,
                 'ledger_name' => $entry['ledger_name'],
@@ -1071,7 +1071,7 @@ class LedgerController extends Controller
         }
         return $voucherHeadIds;
     }
-    
+
     private function convertToDesiredDateFormat($date)
     {
         // Check if the date is in the format 'YYYYMMDD'

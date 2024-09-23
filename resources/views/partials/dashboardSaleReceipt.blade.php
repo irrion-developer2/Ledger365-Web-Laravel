@@ -2,7 +2,7 @@
 <div class="row">
 
 
-    
+
     <div class="col-12 col-lg-8 d-flex">
        <div class="card radius-10 w-100">
          <div class="card-header">
@@ -86,8 +86,8 @@
             </ul>
         </div>
     </div>
-    
-    
+
+
 
     {{-- <div class="col-12 col-lg-4 d-flex">
         <div class="card radius-10 w-100">
@@ -120,13 +120,13 @@
                </div>
             </div>
             <ul class="list-group list-group-flush">
-             <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center border-top"><span class="badge bg-success rounded-pill">25</span> 0 - 45 Days 
+             <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center border-top"><span class="badge bg-success rounded-pill">25</span> 0 - 45 Days
              </li>
-             <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center"><span class="badge bg-danger rounded-pill">10</span> 45 - 90 Days 
+             <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center"><span class="badge bg-danger rounded-pill">10</span> 45 - 90 Days
              </li>
-             <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center"><span class="badge bg-primary rounded-pill">65</span> 90 - 135 Days 
+             <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center"><span class="badge bg-primary rounded-pill">65</span> 90 - 135 Days
              </li>
-             <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center"><span class="badge bg-warning text-dark rounded-pill">14</span> 135 - 180 Days 
+             <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center"><span class="badge bg-warning text-dark rounded-pill">14</span> 135 - 180 Days
              </li>
          </ul>
         </div>

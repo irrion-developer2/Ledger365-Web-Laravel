@@ -334,27 +334,22 @@ class CustomerController extends Controller
         $ledger = TallyLedger::where('guid', $customer)
                                 ->whereIn('company_guid', $companyGuids)
                                 ->firstOrFail();
-
-        // Fetch data from TallyVoucherHead
         $voucherHeads = TallyVoucherHead::where('ledger_guid', $ledger->guid)
             ->with('voucherHead')
             ->get();
 
-        // Fetch data from TallyVoucherAccAllocationHead
         $voucherEntries = TallyVoucherAccAllocationHead::where('ledger_guid', $ledger->guid)
             ->with('voucherHead')
             ->get();
 
-        // Combine both collections into one
         $combinedEntries = $voucherHeads->merge($voucherEntries);
 
-        // Return the combined data to DataTables
         return datatables()->of($combinedEntries)
             ->addColumn('credit', function ($entry) {
-                return $entry->entry_type == 'credit' ? number_format(abs($entry->amount), 2, '.', '') : '0.00';
+                return $entry->entry_type == 'credit' ? number_format(($entry->amount), 2, '.', '') : '0.00';
             })
             ->addColumn('debit', function ($entry) {
-                return $entry->entry_type == 'debit' ? number_format(abs($entry->amount), 2, '.', '') : '0.00';
+                return $entry->entry_type == 'debit' ? number_format(($entry->amount), 2, '.', '') : '0.00';
             })
             ->addColumn('voucher_number', function ($entry) {
                 return $entry->voucherHead ? $entry->voucherHead->voucher_number : '';

@@ -9,14 +9,14 @@ use App\Models\TallyVoucher;
 class TallyVoucherHead extends Model
 {
     use HasFactory;
-    
+
     protected $guarded = [];
 
     public function voucherHead()
     {
         return $this->belongsTo(TallyVoucher::class, 'tally_voucher_id');
     }
-    
+
     public function tallyVoucher()
     {
         return $this->belongsTo(TallyVoucher::class, 'tally_voucher_id', 'id'); // Adjust as needed
@@ -31,6 +31,4 @@ class TallyVoucherHead extends Model
     {
         return $this->belongsTo(TallyLedger::class, 'ledger_guid', 'guid');
     }
-
-
 }

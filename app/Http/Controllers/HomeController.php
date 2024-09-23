@@ -18,7 +18,7 @@ use App\Services\ReportService;
 use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
-{ 
+{
     protected $reportService;
 
     public function __construct(ReportService $reportService)
@@ -30,7 +30,7 @@ class HomeController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
         // dd($companyGuids);
-        
+
         $user = User::count();
         $role = auth()->user()->role;
 
@@ -41,12 +41,8 @@ class HomeController extends Controller
         } else {
             $cashBankName = 'Bank Accounts';
         }
-        // dd($cashBank);
         $cashBankledger = TallyLedger::where('parent', $cashBankName)->where('company_guid', $companyGuids)->get();
-        // dd($cashBankledger);
         $guids = $cashBankledger->pluck('guid');
-        // $cashBankAmountHead = TallyVoucherHead::whereIn('ledger_guid', $guids)->sum('amount');
-        // $cashBankAmountAcc = TallyVoucherAccAllocationHead::whereIn('ledger_guid', $guids)->sum('amount');
         $cashBankAmountHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                         ->whereIn('tally_voucher_heads.ledger_guid', $guids)
                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
@@ -57,7 +53,6 @@ class HomeController extends Controller
                             ->whereIn('tally_vouchers.company_guid', $companyGuids)
                             ->sum('tally_voucher_acc_allocation_heads.amount');
         $cashBankAmount = $cashBankAmountHead + $cashBankAmountAcc;
-
         /* cashBankAmount */
 
         /* Inventory Amount */
@@ -205,7 +200,7 @@ class HomeController extends Controller
         $ledgerIds = TallyVoucher::where('voucher_type', 'credit note')
                         ->whereIn('company_guid', $companyGuids)
                         ->pluck('ledger_guid');
-    
+
         $CreditAmount = TallyVoucherHead::whereIn('ledger_guid', $ledgerIds)
             ->sum('amount');
 
@@ -213,31 +208,31 @@ class HomeController extends Controller
         $DebitledgerIds = TallyVoucher::where('voucher_type', 'debit note')
                         ->whereIn('company_guid', $companyGuids)
                         ->pluck('ledger_guid');
-    
+
         $DebitAmount = TallyVoucherHead::whereIn('ledger_guid', $DebitledgerIds)
             ->sum('amount');
 
         $PurchaseledgerIds = TallyVoucher::where('voucher_type', 'Purcahse')
                         ->whereIn('company_guid', $companyGuids)
                         ->pluck('ledger_guid');
-    
+
         $PurcahseAmount = TallyVoucherHead::whereIn('ledger_guid', $PurchaseledgerIds)
             ->sum('amount');
 
-            
+
         $SaleledgerIds = TallyVoucher::where('voucher_type', 'Sales')
                         ->whereIn('company_guid', $companyGuids)
                         ->pluck('ledger_guid');
-    
+
         $SaleAmount = TallyVoucherHead::whereIn('ledger_guid', $SaleledgerIds)
             ->sum('amount');
 
-            $total = $CreditAmount + $DebitAmount;
+        $total = $CreditAmount + $DebitAmount;
 
-            
+
         return $total;
     }
-    
+
     private function extractNumericValue($value)
     {
         // Remove non-numeric characters except for decimal points
@@ -292,5 +287,5 @@ class HomeController extends Controller
             'purchase_qty' => $stockItemVoucherPurchaseItem
         ];
     }
-    
+
 }

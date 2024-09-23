@@ -21,13 +21,13 @@
             </div>
         </div>
         <!--end breadcrumb-->
-      
+
         <div class="card">
             <div class="card-body">
-                
+
                 <div class="card radius-10 border-start border-0 border-4 border-info">
                     <div class="card-body p-2">
-                        
+
                         <div class="col-lg-12">
                             <div class="row">
                                 <div class="col-lg-6">
@@ -86,7 +86,7 @@
             </div>
         </div>
 
-            
+
     </div>
 </div>
 @endsection
@@ -98,9 +98,8 @@
 @section("script")
 <script src="{{ url('assets/plugins/bs-stepper/js/bs-stepper.min.js') }}"></script>
 <script src="{{ url('assets/plugins/bs-stepper/js/main.js') }}"></script>
-
 <script src="{{ url('assets/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ url('assets/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
+<script src="{{ url('assets/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
 
     <script>
         $(document).ready(function() {
@@ -114,70 +113,70 @@
                     { data: 'voucher_number', name: 'voucher_number',
                         render: function(data, type, row) {
                             return '<a href="{{ url('reports/VoucherItem') }}/' + row.tally_voucher_id + '">' + data + '</a>';
-                        } 
+                        }
                     },
                     { data: 'voucher_type', name: 'voucher_type' },
                     { data: 'debit', name: 'debit', className: 'text-end' },
                     { data: 'credit', name: 'credit', className: 'text-end' },
-                    { data: null, defaultContent: '', className: 'text-end' } // Running Balance column
+                    { data: null, defaultContent: '', className: 'text-end' }
                 ],
                 initComplete: function(settings, json) {
-                    // Update the total count on initialization
                     $('#totalInvoices').text(json.recordsTotal);
                 },
                 drawCallback: function(settings) {
-                    // Update the total count on each draw (refresh)
                     $('#totalInvoices').text(settings.json.recordsTotal);
-    
+
                     var api = this.api();
-    
-                    // Variables to calculate totals
+
                     var totalDebit = 0;
                     var totalCredit = 0;
                     var runningBalance = 0;
-    
-                    // Iterate over each row and calculate running balance
+
                     api.rows().every(function(rowIdx, tableLoop, rowLoop) {
                         var data = this.data();
-    
-                        // Ensure that debit and credit are numbers
                         var debit = parseFloat(data.debit) || 0;
                         var credit = parseFloat(data.credit) || 0;
-    
-                        // Update totals
+
                         totalDebit += debit;
                         totalCredit += credit;
-    
-                        // Calculate running balance
-                        runningBalance += credit - debit;
-    
-                        // Update the running balance in the table cell
+
+                        runningBalance += credit + debit;
+
+                        // console.log('totalDebit', totalDebit);
+                        // console.log('totalCredit', totalCredit);
+                        // console.log('runningBalance', runningBalance);
+
+                        var balanceText = ((runningBalance)).toFixed(2);
+
+                        if (runningBalance > 0) {
+                            balanceText += ' CR';
+                        } else if (runningBalance < 0) {
+                            balanceText += ' DR';
+                        }
+
+
                         var balanceCell = api.cell({ row: rowIdx, column: 5 }).node();
-                        $(balanceCell).html(Math.abs(runningBalance).toFixed(2));
+                        $(balanceCell).html(balanceText);
                     });
-    
-                    // Update the footer totals
+
                     $('#totalDebit').text(totalDebit.toFixed(2));
                     $('#totalCredit').text(totalCredit.toFixed(2));
-                    $('#totalRunningBalance').text(Math.abs(runningBalance).toFixed(2));
+                    $('#totalRunningBalance').text((runningBalance).toFixed(2));
                 },
                 footerCallback: function(row, data, start, end, display) {
                     var api = this.api();
-    
-                    // Calculate footer total credit and debit
                     var totalDebit = api.column(3).data().reduce(function(a, b) {
                         a = parseFloat(a) || 0;
                         b = parseFloat(b) || 0;
                         return a + b;
                     }, 0);
-    
+
                     var totalCredit = api.column(4).data().reduce(function(a, b) {
                         a = parseFloat(a) || 0;
                         b = parseFloat(b) || 0;
                         return a + b;
                     }, 0);
-    
-                    // Calculate total running balance
+
                     var totalRunningBalance = 0;
                     var runningBalance = 0;
                     api.rows().every(function(rowIdx) {
@@ -186,30 +185,30 @@
                         var credit = parseFloat(data.credit) || 0;
                         runningBalance += credit - debit;
                     });
+
                     totalRunningBalance = runningBalance;
-    
-                    // Update footer with totals
+
+
+
+
                     $(api.column(3).footer()).html(totalDebit.toFixed(2));
                     $(api.column(4).footer()).html(totalCredit.toFixed(2));
                     $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
 
+                    $('#outstanding').text((totalRunningBalance).toFixed(2));
+                    $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
 
-                    
-                    $('#outstanding').text(Math.abs(totalRunningBalance).toFixed(2));
-                    $('#outstandingBalance').text(Math.abs(totalRunningBalance).toFixed(2));
-
-                    // Check if totalRunningBalance has a value and update "Overdue" visibility
-                    if (Math.abs(totalRunningBalance) > 0) {
-                        $('.btn-outline-danger').show(); // Show the overdue message if total running balance is greater than 0
+                    if ((totalRunningBalance) > 0) {
+                        $('.btn-outline-danger').show();
                     } else {
-                        $('.btn-outline-danger').hide(); // Hide the overdue message if total running balance is 0
+                        $('.btn-outline-danger').hide();
                     }
                 }
             });
         });
     </script>
-    
-    
+
+
 
 
 @endsection

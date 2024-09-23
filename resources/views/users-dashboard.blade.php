@@ -3,7 +3,12 @@
 @section("style")
     <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
 @endsection
-
+<style>
+    #pieChart {
+        width: 220px !important;
+        height: 220px !important;
+    }
+</style>
 @section("wrapper")
     <div class="page-wrapper">
             <div class="page-content">
@@ -32,11 +37,11 @@
                                    <h4 class="my-1 text-danger">&#8377 {{ abs($cashBankAmount) }}</h4>
                                    {{-- <p class="mb-0 font-13">+5.4% from last week</p> --}}
                                </div>
-                               
+
                                 <div class="widgets-icons-2 rounded-circle bg-gradient-burning text-white ms-auto">
                                     <a class="nav-link " href="{{ route('reports.CashBank') }}"> <i class='bx bxs-bank'></i></a>
                                 </div>
-                               
+
                            </div>
                        </div>
                     </div>
@@ -73,7 +78,7 @@
                            </div>
                        </div>
                     </div>
-                  </div> 
+                  </div>
                 </div><!--end row-->
 
                 @include('partials.dashboardSaleReceipt')
@@ -126,7 +131,7 @@
                                     <div class="progress-bar bg-gradient-quepal" role="progressbar" style="width: 100%"></div>
                                   </div></td>
                              </tr>
-          
+
                              <tr>
                               <td>Earphone GL</td>
                               <td><img src="assets/images/products/02.png" class="product-img-2" alt="product img"></td>
@@ -138,7 +143,7 @@
                                     <div class="progress-bar bg-gradient-blooker" role="progressbar" style="width: 60%"></div>
                                   </div></td>
                              </tr>
-          
+
                              <tr>
                               <td>HD Hand Camera</td>
                               <td><img src="assets/images/products/03.png" class="product-img-2" alt="product img"></td>
@@ -150,7 +155,7 @@
                                     <div class="progress-bar bg-gradient-bloody" role="progressbar" style="width: 70%"></div>
                                   </div></td>
                              </tr>
-          
+
                              <tr>
                               <td>Clasic Shoes</td>
                               <td><img src="assets/images/products/04.png" class="product-img-2" alt="product img"></td>
@@ -222,35 +227,35 @@
                                      <div id="geographic-map-2"></div>
                                   </div>
                                   <div class="col-lg-5 col-xl-4">
-                                   
+
                                     <div class="mb-4">
                                     <p class="mb-2"><i class="flag-icon flag-icon-us me-1"></i> USA <span class="float-end">70%</span></p>
                                     <div class="progress" style="height: 7px;">
                                          <div class="progress-bar bg-primary progress-bar-striped" role="progressbar" style="width: 70%"></div>
                                      </div>
                                     </div>
-               
+
                                     <div class="mb-4">
                                      <p class="mb-2"><i class="flag-icon flag-icon-ca me-1"></i> Canada <span class="float-end">65%</span></p>
                                      <div class="progress" style="height: 7px;">
                                          <div class="progress-bar bg-danger progress-bar-striped" role="progressbar" style="width: 65%"></div>
                                      </div>
                                     </div>
-               
+
                                     <div class="mb-4">
                                      <p class="mb-2"><i class="flag-icon flag-icon-gb me-1"></i> England <span class="float-end">60%</span></p>
                                      <div class="progress" style="height: 7px;">
                                          <div class="progress-bar bg-success progress-bar-striped" role="progressbar" style="width: 60%"></div>
                                        </div>
                                     </div>
-               
+
                                     <div class="mb-4">
                                      <p class="mb-2"><i class="flag-icon flag-icon-au me-1"></i> Australia <span class="float-end">55%</span></p>
                                      <div class="progress" style="height: 7px;">
                                          <div class="progress-bar bg-warning progress-bar-striped" role="progressbar" style="width: 55%"></div>
                                        </div>
                                     </div>
-               
+
                                     <div class="mb-4">
                                      <p class="mb-2"><i class="flag-icon flag-icon-in me-1"></i> India <span class="float-end">50%</span></p>
                                      <div class="progress" style="height: 7px;">
@@ -270,7 +275,7 @@
                              </div>
                            </div>
                         </div>
-               
+
                         <div class="col-12 col-lg-5 col-xl-4 d-flex">
                             <div class="card w-100 radius-10">
                              <div class="card-body">
@@ -316,7 +321,7 @@
                              </div>
 
                             </div>
-               
+
                         </div>
                     </div><!--end row-->
 
@@ -441,26 +446,26 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Sample data (Replace this with @json($pieChartDataOverall) in a real scenario)
             var pieChartData = @json($pieChartDataOverall);
-    
+
             // Prepare data for Chart.js
             var labels = Object.keys(pieChartData);
             var data = Object.values(pieChartData).map(function(value) {
                 return Math.ceil(Math.abs(value)); // Remove negative signs and round up values
             });
-    
+
             // Combine labels and data into an array of objects
             var combinedData = labels.map(function(label, index) {
                 return { label: label, value: data[index] };
             });
-    
+
             // Sort the array by value in descending order
             combinedData.sort(function(a, b) {
                 return b.value - a.value;
             });
-    
+
             // Limit to the top 5 highest amounts
             var topData = combinedData.slice(0, 5);
-    
+
             // Extract labels and data after sorting
             labels = topData.map(function(item) {
                 return item.label;
@@ -468,13 +473,13 @@
             data = topData.map(function(item) {
                 return item.value;
             });
-    
+
             // Define a set of colors
             var colors = ['#14abef', '#ffc107', '#b02a37', '#4bc0c0', '#ff9f40', '#36a2eb', '#ff6384', '#cc65fe', '#ffce56', '#fd6b19'];
-    
+
             // Generate background colors dynamically
             var backgroundColors = colors.slice(0, labels.length);
-    
+
             // Create the doughnut chart
             var ctx = document.getElementById('pieChart').getContext('2d');
             new Chart(ctx, {
@@ -495,55 +500,55 @@
                     }
                 }
             });
-    
+
             // Generate badges dynamically for the top 5 highest amounts
             var badgeList = document.getElementById('badge-list');
             badgeList.innerHTML = '';  // Clear existing badges
-    
+
             labels.forEach((label, index) => {
                 var listItem = document.createElement('li');
                 listItem.className = 'list-group-item d-flex bg-transparent justify-content-between align-items-center';
-    
+
                 var badge = document.createElement('span');
                 badge.className = 'badge rounded-pill';
                 badge.style.backgroundColor = backgroundColors[index];
                 badge.style.color = '#fff'; // Ensure text is readable on colored backgrounds
                 badge.textContent = `₹ ${data[index]}`; // Display the amount with Rupees sign
-    
+
                 listItem.appendChild(document.createTextNode(label)); // Add label text
                 listItem.appendChild(badge); // Add badge
-    
+
                 badgeList.appendChild(listItem);
             });
         });
     </script>
 
 
-{{-- 
+{{--
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Sample data (Replace this with @json($pieChartDataOverall) in a real scenario)
             var pieChartData = @json($pieChartDataOverall);
-    
+
             // Prepare data for Chart.js
             var labels = Object.keys(pieChartData);
             var data = Object.values(pieChartData).map(function(value) {
                 return (Math.abs(value)); // Remove negative signs
             });
-    
+
             // Combine labels and data into an array of objects
             var combinedData = labels.map(function(label, index) {
                 return { label: label, value: data[index] };
             });
-    
+
             // Sort the array by value in descending order
             combinedData.sort(function(a, b) {
                 return b.value - a.value;
             });
-    
+
             // Limit to the top 5 highest amounts
             var topData = combinedData.slice(0, 5);
-    
+
             // Extract labels and data after sorting
             labels = topData.map(function(item) {
                 return item.label;
@@ -551,13 +556,13 @@
             data = topData.map(function(item) {
                 return item.value;
             });
-    
+
             // Define a set of colors
             var colors = ['#14abef', '#ffc107', '#b02a37', '#4bc0c0', '#ff9f40', '#36a2eb', '#ff6384', '#cc65fe', '#ffce56', '#fd6b19'];
-    
+
             // Generate background colors dynamically
             var backgroundColors = colors.slice(0, labels.length);
-    
+
             // Create the doughnut chart
             var ctx = document.getElementById('pieChart').getContext('2d');
             new Chart(ctx, {
@@ -578,47 +583,47 @@
                     }
                 }
             });
-    
+
             // Generate badges dynamically for the top 5 highest amounts
             var badgeList = document.getElementById('badge-list');
             badgeList.innerHTML = '';  // Clear existing badges
-    
+
             labels.forEach((label, index) => {
                 var listItem = document.createElement('li');
                 listItem.className = 'list-group-item d-flex bg-transparent justify-content-between align-items-center';
-    
+
                 var badge = document.createElement('span');
                 badge.className = 'badge rounded-pill';
                 badge.style.backgroundColor = backgroundColors[index];
                 badge.style.color = '#fff'; // Ensure text is readable on colored backgrounds
                 badge.textContent = data[index]; // Display the amount
-    
+
                 listItem.appendChild(document.createTextNode(label)); // Add label text
                 listItem.appendChild(badge); // Add badge
-    
+
                 badgeList.appendChild(listItem);
             });
         });
     </script> --}}
-    
-    
+
+
     {{-- <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Sample data (Replace this with @json($pieChartDataOverall) in a real scenario)
             var pieChartData = @json($pieChartDataOverall);
-    
+
             // Prepare data for Chart.js
             var labels = Object.keys(pieChartData);
             var data = Object.values(pieChartData).map(function(value) {
                 return Math.abs(value); // Remove negative signs
             });
-    
+
             // Define a set of colors
             var colors = ['#14abef', '#ffc107', '#b02a37', '#4bc0c0', '#ff9f40', '#36a2eb', '#ff6384', '#cc65fe', '#ffce56', '#fd6b19'];
-    
+
             // Generate background colors dynamically
             var backgroundColors = colors.slice(0, labels.length);
-    
+
             // Create the doughnut chart
             var ctx = document.getElementById('pieChart').getContext('2d');
             new Chart(ctx, {
@@ -639,49 +644,49 @@
                     }
                 }
             });
-    
+
             // Generate badges dynamically
             var badgeList = document.getElementById('badge-list');
             badgeList.innerHTML = '';  // Clear existing badges
-    
+
             labels.forEach((label, index) => {
                 var listItem = document.createElement('li');
                 listItem.className = 'list-group-item d-flex bg-transparent justify-content-between align-items-center';
-    
+
                 var badge = document.createElement('span');
                 badge.className = 'badge rounded-pill';
                 badge.style.backgroundColor = backgroundColors[index];
                 badge.style.color = '#fff'; // Ensure text is readable on colored backgrounds
                 badge.textContent = data[index]; // Display the amount without negative sign
-    
+
                 listItem.appendChild(document.createTextNode(label)); // Add label text
                 listItem.appendChild(badge); // Add badge
-    
+
                 badgeList.appendChild(listItem);
             });
         });
     </script> --}}
-    
-    
-    
-    
-{{--     
+
+
+
+
+{{--
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Sample data (Replace this with @json($pieChartDataOverall) in a real scenario)
             var pieChartData = @json($pieChartDataOverall);
-    
+
             // Prepare data for Chart.js
             var labels = Object.keys(pieChartData);
             var data = Object.values(pieChartData);
                 console.log(data);
-    
+
             // Define a set of colors
             var colors = ['#14abef', '#ffc107', '#b02a37', '#4bc0c0', '#ff9f40'];
-    
+
             // Generate background colors dynamically
             var backgroundColors = colors.slice(0, labels.length);
-    
+
             // Create the pie chart
             var ctx = document.getElementById('pieChart').getContext('2d');
             new Chart(ctx, {
@@ -702,44 +707,44 @@
                     }
                 }
             });
-    
+
             // Generate badges dynamically, limiting to the first 5 items
             var badgeList = document.getElementById('badge-list');
 
             labels.slice(0, 5).forEach((label, index) => {
                 var listItem = document.createElement('li');
                 listItem.className = 'list-group-item d-flex bg-transparent justify-content-between align-items-center';
-    
+
                 listItem.appendChild(document.createTextNode(label)); // Add label text
-    
+
                 var badge = document.createElement('span');
                 badge.className = 'badge rounded-pill';
                 badge.style.backgroundColor = backgroundColors[index];
                 badge.textContent = data[index]; // Display the amount
-    
+
                 listItem.appendChild(badge);
                 badgeList.appendChild(listItem);
             });
-            
+
         });
     </script> --}}
 
-{{--     
+{{--
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Sample data (Replace this with @json($pieChartDataOverall) in a real scenario)
             var pieChartData = @json($pieChartDataOverall);
-    
+
             // Prepare data for Chart.js
             var labels = Object.keys(pieChartData);
             var data = Object.values(pieChartData);
-    
+
             // Define a set of colors
             var colors = ['#14abef', '#ffc107', '#b02a37', '#4bc0c0', '#ff9f40'];
-    
+
             // Generate background colors dynamically
             var backgroundColors = colors.slice(0, labels.length);
-    
+
             // Create the pie chart
             var ctx = document.getElementById('pieChart').getContext('2d');
             new Chart(ctx, {
@@ -760,31 +765,31 @@
                     }
                 }
             });
-    
+
             // Generate badges dynamically
             var badgeList = document.getElementById('badge-list');
             labels.forEach((label, index) => {
                 var listItem = document.createElement('li');
                 listItem.className = 'list-group-item d-flex bg-transparent justify-content-between align-items-center';
-    
+
                 var badge = document.createElement('span');
                 badge.className = `badge rounded-pill`;
                 badge.style.backgroundColor = backgroundColors[index];
                 badge.textContent = data[index];
-    
+
                 listItem.appendChild(badge);
                 listItem.appendChild(document.createTextNode(' ' + label)); // Add label text
-    
+
                 badgeList.appendChild(listItem);
             });
         });
     </script> --}}
-    
+
 
 
     {{-- <script>
         var pieChartData = @json($pieChartDataOverall);
-        
+
         var ctx = document.getElementById('pieChart').getContext('2d');
         var pieChart = new Chart(ctx, {
             type: 'pie',
@@ -797,11 +802,11 @@
             }
         });
     </script> --}}
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var ctx = document.getElementById('salereceiptchart').getContext('2d');
-    
+
             var chartData = @json($chartData);
 
             function preprocessData(data) {
@@ -809,10 +814,10 @@
                     return parseFloat(Math.abs(value)).toFixed(2);
                 });
             }
-    
+
             var salesData = preprocessData(chartData.sales);
             var receiptsData = preprocessData(chartData.receipts);
-    
+
             var chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -887,5 +892,5 @@
             });
         });
     </script>
-    
+
 @endsection

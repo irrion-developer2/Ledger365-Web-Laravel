@@ -17,7 +17,7 @@ use App\Services\ReportService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 class AnalyticController extends Controller
@@ -34,7 +34,7 @@ class AnalyticController extends Controller
         $companyGuids = $this->reportService->companyData();
 
         /* Sales Receipt chart */
-        $chartData = $this->chartSaleReceipt();
+        $chartData = $this->chartSaleReceipt($companyGuids);
         $salesData = $chartData['sales'];
         $chartSaleAmt = abs(array_sum($chartData['sales']));
         $chartReceiptAmt = abs(array_sum($chartData['receipts']));
@@ -54,7 +54,7 @@ class AnalyticController extends Controller
 
 
         /* pie chart */
-        $pieChartData = $this->getPieChartData();
+        $pieChartData = $this->getPieChartData($companyGuids);
         $pieChartDataTotal = $pieChartData['total'];
         $pieChartDataOverall = $pieChartData['data'];
         /* pie chart */
@@ -64,7 +64,7 @@ class AnalyticController extends Controller
         /* No. Of Customers */
 
         /* Stock Value */
-        $stock_value = $this->reportService->calculateStockValue();
+        // $stock_value = $this->reportService->calculateStockValue();
         /* Stock Value */
 
         /* Top 5 Customers */
@@ -93,39 +93,39 @@ class AnalyticController extends Controller
 
 
         /* Top 5 Stock */
-        $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)->get(); 
+        // $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)->get();
 
-        $stockItems = $tallyItems->map(function ($entry) {
-            $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
-            $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-    
-            $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
-            $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-            $stockItemVoucherHandBalance = $stockItemData['balance'];
-    
-            $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
-            $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
-    
-            $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
-            $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
-    
-            $stockOnHandValue = 0; // Default to 0
-    
-            if ($finalOpeningBalance != 0) {
-                $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', ''); 
-                $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-            }
-    
-            return [
-                'name' => $entry->name,
-                'stock_value' => $stockOnHandValue
-            ];
-        });
-    
-        $top5StockItems = $stockItems->sortByDesc('stock_value')->take(5);
-        $maxStockValue = $top5StockItems->max('stock_value');
+        // $stockItems = $tallyItems->map(function ($entry) {
+        //     $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
+        //     $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
+
+        //     $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
+        //     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
+        //     $stockItemVoucherHandBalance = $stockItemData['balance'];
+
+        //     $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
+        //     $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
+
+        //     $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
+        //     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
+
+        //     $stockOnHandValue = 0; // Default to 0
+
+        //     if ($finalOpeningBalance != 0) {
+        //         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
+        //         $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
+        //         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
+        //         $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
+        //     }
+
+        //     return [
+        //         'name' => $entry->name,
+        //         'stock_value' => $stockOnHandValue
+        //     ];
+        // });
+
+        // $top5StockItems = $stockItems->sortByDesc('stock_value')->take(5);
+        // $maxStockValue = $top5StockItems->max('stock_value');
         /* Top 5 Stock */
 
         /* Customer Category */
@@ -153,9 +153,9 @@ class AnalyticController extends Controller
         /* Customer Category */
 
         /* Closing Stock */
-        $ClosingStock = $this->reportService->calculateStockValue();
+        // $ClosingStock = $this->reportService->calculateStockValue();
 
-        $closingStockData = $this->getMonthlyClosingStockData();   
+        $closingStockData = $this->getMonthlyClosingStockData($companyGuids);
         /* Closing Stock */
 
 
@@ -168,103 +168,19 @@ class AnalyticController extends Controller
             'pieChartDataOverall' => $pieChartDataOverall,
             'number_of_customers' => $number_of_customers,
             'avg_sales' => $avg_sales,
-            'stock_value' => $stock_value,
+            // 'stock_value' => $stock_value,
             'topCustomers' => $topCustomers,
             'maxSales' => $maxSales ,
-            'top5StockItems' => $top5StockItems,
-            'maxStockValue' => $maxStockValue,
+            // 'top5StockItems' => $top5StockItems,
+            // 'maxStockValue' => $maxStockValue,
             'customerCategory' => $customerCategory,
-            'ClosingStock' => $ClosingStock,
+            // 'ClosingStock' => $ClosingStock,
             'closingStockData' => $closingStockData,
         ]);
     }
 
-    
-    // private function getMonthlyClosingStockData()
-    // {
-    //     $companyGuids = $this->reportService->companyData();
-
-    //     // Get monthly purchase amounts
-    //     $purchaseData = TallyVoucherItem::whereHas('tallyVoucher', function ($query) use ($companyGuids) {
-    //         $query->where('voucher_type', 'Purchase')->whereIn('company_guid', $companyGuids);
-    //     })
-    //     ->selectRaw('SUM(amount) as total_amount, DATE_FORMAT(tally_vouchers.voucher_date, "%b %Y") as month') // Format month as "Jan 2023"
-    //     ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
-    //     ->groupBy('month')
-    //     ->pluck('total_amount', 'month');
-
-    //     // Get monthly debit note amounts
-    //     $debitNoteData = TallyVoucherItem::whereHas('tallyVoucher', function ($query) use ($companyGuids) {
-    //         $query->where('voucher_type', 'Debit Note')->whereIn('company_guid', $companyGuids);
-    //     })
-    //     ->selectRaw('SUM(amount) as total_amount, DATE_FORMAT(tally_vouchers.voucher_date, "%b %Y") as month') // Format month as "Jan 2023"
-    //     ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
-    //     ->groupBy('month')
-    //     ->pluck('total_amount', 'month');
-
-    //     // Combine the purchase and debit note data month-wise
-    //     $combinedData = [];
-    //     foreach ($purchaseData as $month => $amount) {
-    //         $combinedData[$month] = $amount + ($debitNoteData[$month] ?? 0);
-    //     }
-
-    //     foreach ($debitNoteData as $month => $amount) {
-    //         if (!isset($combinedData[$month])) {
-    //             $combinedData[$month] = $amount;
-    //         }
-    //     }
-
-    //     // Sort the combined data by month
-    //     ksort($combinedData);
-
-    //     return $combinedData;
-    // }
-
-    // private function getMonthlyClosingStockData()
-    // {
-    //     $companyGuids = $this->reportService->companyData();
-
-    //     // Get monthly purchase amounts as absolute values
-    //     $purchaseData = TallyVoucherItem::whereHas('tallyVoucher', function ($query) use ($companyGuids) {
-    //             $query->where('voucher_type', 'Purchase')->whereIn('company_guid', $companyGuids);
-    //         })
-    //         ->selectRaw('SUM(ABS(amount)) as total_amount, DATE_FORMAT(tally_vouchers.voucher_date, "%b %Y") as month') // Format month as "Jan 2023"
-    //         ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
-    //         ->groupBy('month')
-    //         ->pluck('total_amount', 'month');
-
-    //     // Get monthly debit note amounts as absolute values
-    //     $debitNoteData = TallyVoucherItem::whereHas('tallyVoucher', function ($query) use ($companyGuids) {
-    //             $query->where('voucher_type', 'Debit Note')->whereIn('company_guid', $companyGuids);
-    //         })
-    //         ->selectRaw('SUM(ABS(amount)) as total_amount, DATE_FORMAT(tally_vouchers.voucher_date, "%b %Y") as month') // Format month as "Jan 2023"
-    //         ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
-    //         ->groupBy('month')
-    //         ->pluck('total_amount', 'month');
-
-    //     // Combine the purchase and debit note data month-wise
-    //     $combinedData = [];
-    //     foreach ($purchaseData as $month => $amount) {
-    //         $combinedData[$month] = $amount + ($debitNoteData[$month] ?? 0);
-    //     }
-
-    //     foreach ($debitNoteData as $month => $amount) {
-    //         if (!isset($combinedData[$month])) {
-    //             $combinedData[$month] = $amount;
-    //         }
-    //     }
-
-    //     // Sort the combined data by month
-    //     ksort($combinedData);
-
-    //     return $combinedData;
-    // }
-
-
-    private function getMonthlyClosingStockData()
+    private function getMonthlyClosingStockData($companyGuids)
     {
-        $companyGuids = $this->reportService->companyData();
-
         $purchaseData = TallyVoucherItem::whereHas('tallyVoucher', function ($query) use ($companyGuids) {
                 $query->where('voucher_type', 'Purchase')->whereIn('company_guid', $companyGuids);
             })
@@ -303,40 +219,32 @@ class AnalyticController extends Controller
         return $formattedData;
     }
 
-
-
-
-    private function chartSaleReceipt()
+    private function chartSaleReceipt($companyGuids)
     {
-        $companyGuids = $this->reportService->companyData();
-        
         $salesData = [];
         $receiptData = [];
 
         for ($month = 4; $month <= 12; $month++) {
             $monthName = DateTime::createFromFormat('!m', $month)->format('F');
 
-            // Fetch sales data for the month
-            $ledgerSalesData = TallyVoucher::where('voucher_type', 'Sales')
-                ->whereIn('company_guid', $companyGuids)
-                ->whereMonth('voucher_date', $month)
-                ->get(['id', 'ledger_guid']); // Get the collection of sales vouchers
+            $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
+                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+                     ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
+            })
+            ->where('tally_vouchers.voucher_type', 'Sales')
+            ->whereIn('tally_vouchers.company_guid', $companyGuids)
+            ->whereMonth('tally_vouchers.voucher_date', $month)
+            ->sum('tally_voucher_heads.amount');
 
-            $totalSales = TallyVoucherHead::whereIn('ledger_guid', $ledgerSalesData->pluck('ledger_guid'))
-                ->whereIn('tally_voucher_id', $ledgerSalesData->pluck('id'))
-                ->sum('amount');
+            $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
+                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+                     ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
+            })
+            ->where('tally_vouchers.voucher_type', 'Receipt')
+            ->whereIn('tally_vouchers.company_guid', $companyGuids)
+            ->whereMonth('tally_vouchers.voucher_date', $month)
+            ->sum('tally_voucher_heads.amount');
 
-            // Fetch receipt data for the month
-            $ledgerReceiptData = TallyVoucher::where('voucher_type', 'Receipt')
-                ->whereIn('company_guid', $companyGuids)
-                ->whereMonth('voucher_date', $month)
-                ->get(['id', 'ledger_guid']); // Get the collection of receipt vouchers
-
-            $totalReceipts = TallyVoucherHead::whereIn('ledger_guid', $ledgerReceiptData->pluck('ledger_guid'))
-                ->whereIn('tally_voucher_id', $ledgerReceiptData->pluck('id'))
-                ->sum('amount');
-
-            // Store the totals in the arrays for each month
             $salesData[$monthName] = $totalSales;
             $receiptData[$monthName] = $totalReceipts;
         }
@@ -373,11 +281,8 @@ class AnalyticController extends Controller
         ];
     }
 
-    public function getPieChartData()
+    public function getPieChartData($companyGuids)
     {
-        $companyGuids = $this->reportService->companyData();
-
-        // Execute the query and get the data
         $pieChartData = DB::table('tally_ledgers as tl')
             ->leftJoin('tally_voucher_heads as tvh', 'tl.guid', '=', 'tvh.ledger_guid')
             ->select('tl.language_name', DB::raw('COALESCE(SUM(tvh.amount), 0) AS total_amount'))
@@ -386,13 +291,9 @@ class AnalyticController extends Controller
             ->groupBy('tl.language_name')
             ->pluck('total_amount', 'language_name');
 
-        // Convert to array
         $pieChartDataArray = $pieChartData->toArray();
 
-        // Calculate the total sum of amounts
         $totalAmount = array_sum(array_map('abs', $pieChartDataArray));
-
-        // Return both the array and total amount
         return [
             'data' => $pieChartDataArray,
             'total' => $totalAmount
@@ -413,32 +314,32 @@ class AnalyticController extends Controller
                     $stockOnHandBalance = 0;
                     $openingBalance = 0;
                     $stockOnHandValue = 0;
-                
+
                     $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
                     $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-                
+
                     $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
                     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
                     $stockItemVoucherHandBalance = $stockItemData['balance'];
-    
+
                     $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
                     $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
 
                     $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
                     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
-                
+
                     if ($openingBalance == 0) {
                         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
                         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
                     } else {
                         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                        $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', ''); 
+                        $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
                         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
                     }
                     $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
                     return number_format($stockOnHandValue, 3);
                 })
-                
+
                 ->make(true);
         }
     }

@@ -32,7 +32,7 @@
         <link href="{{ url('assets/css/custom.css') }}" rel="stylesheet">
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/searchbuilder/1.3.0/css/searchBuilder.dataTables.min.css">
 
-        
+
 
         <!-- Theme Style CSS -->
         <link rel="stylesheet" href="{{ url('assets/css/dark-theme.css') }}" />
@@ -71,7 +71,7 @@
 	</div>
 	<!--end wrapper-->
     <!--start switcher-->
-   <!--  <div class="switcher-wrapper">
+    <!--  <div class="switcher-wrapper">
         <div class="switcher-btn"> <i class='bx bx-cog bx-spin'></i>
         </div>
         <div class="switcher-body">
@@ -150,7 +150,7 @@
     <script src="{{ url('assets/js/custom.js') }}"></script>
     <script src="{{ url('vendor/notifier/bootstrap-notify.min.js') }}"></script>
 
-    
+
     <script src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.flash.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>

@@ -25,14 +25,26 @@
                 <div class="card-body">
 
 
-                    <div class="d-lg-flex align-items-center">
+                    <div class="d-lg-flex align-items-center gap-2">
                         <div class="col-lg-3">
                             <form id="dateRangeForm">
                                 {{-- <label for="date_range" class="form-label">Date Range</label> --}}
                                 <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
                             </form>
                         </div>
-                        <div class="col-lg-9 text-end">
+                        <div class="col-lg-2">
+                            <form id="customDateForm">
+                                <select id="custom_date_range" name="custom_date_range" class="form-select">
+                                    <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
+                                    <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
+                                    <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
+                                    <option value="prev_quarter" {{ request('custom_date_range') === 'prev_quarter' ? 'selected' : '' }}>Prev Quarter</option>
+                                    <option value="this_year" {{ request('custom_date_range') === 'this_year' ? 'selected' : '' }}>This Year</option>
+                                    <option value="prev_year" {{ request('custom_date_range') === 'prev_year' ? 'selected' : '' }}>Prev Year</option>
+                                </select>
+                            </form>
+                        </div>
+                        <div class="col-lg-7 text-end">
                             <a href="{{ route('columnar.index') }}" class="btn btn-outline-primary border-1">
                                 <span>Sales Columnar Report</span>
                             </a>
@@ -77,6 +89,16 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     $(document).ready(function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var startDate = urlParams.get('start_date');
+        var endDate = urlParams.get('end_date');
+
+        var customDateRange = urlParams.get('custom_date_range');
+
+        if (customDateRange) {
+            $('#custom_date_range').val(customDateRange);
+        }
+
         var table = $('#sales-datatable').DataTable({
             fixedColumns: {
                 start: 1,
@@ -91,6 +113,7 @@
                 data: function (d) {
                     d.start_date = $('#date_range').data('start');
                     d.end_date = $('#date_range').data('end');
+                    d.custom_date_range = customDateRange;
                 }
             },
             columns: [
@@ -160,6 +183,18 @@
                 }
             }
         });
+
+        if (startDate && endDate) {
+            dateRangeInput._flatpickr.setDate([startDate, endDate], false);
+        }
+
+        $('#custom_date_range').on('change', function() {
+            var selectedRange = $(this).val();
+            var url = new URL(window.location.href);
+            url.searchParams.set('custom_date_range', selectedRange);
+            window.location.href = url.toString();
+        });
+
     });
 </script>
 @endsection

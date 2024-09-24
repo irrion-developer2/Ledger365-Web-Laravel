@@ -3,7 +3,7 @@
     $userSubIds = json_decode($user->sub_id, true);
 
     if (!is_array($userSubIds)) {
-        $userSubIds = [$user->sub_id]; 
+        $userSubIds = [$user->sub_id];
     }
     $companies = App\Models\TallyCompany::whereIn('sub_id', $userSubIds)->get();
 ?>
@@ -30,7 +30,6 @@
        </div>
        <div class="offcanvas-body">
          <ul class="navbar-nav align-items-center flex-grow-1">
-
 
           @if(auth()->check() && auth()->user()->role == 'SuperAdmin')
           <li class="nav-item dropdown">
@@ -147,7 +146,7 @@
               </a>
             </li>
             @endif
-            
+
             <li class="nav-item dropdown d-none">
                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
                    <div class="parent-icon"><i class='bx bx-briefcase-alt'></i>
@@ -208,15 +207,15 @@
                     @foreach($companies as $company)
                         <li>
                             {{-- <a class="dropdown-item" href="javascript:;" onclick="changeCompany('{{ $company->id }}')"> --}}
-                              <a class="dropdown-item {{ session('selected_company_id') == $company->id ? 'selected' : '' }}" 
-                                href="javascript:;" onclick="changeCompany('{{ $company->id }}')">  
+                            <a class="dropdown-item {{ session('selected_company_id') == $company->id ? 'selected' : '' }}"
+                                href="javascript:;" onclick="changeCompany('{{ $company->id }}')">
                               {{ $company->name }}
                             </a>
                         </li>
                     @endforeach
                 </ul>
-            </li>                
-            
+            </li>
+
             {{-- @if(auth()->check() && auth()->user()->status == 1 && auth()->user()->role == 'Users')
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('BankReconciliation.*') ? 'active' : '' }}" href="{{ route('BankReconciliation.index') }}">

@@ -17,7 +17,8 @@ return new class extends Migration
             $table->id();
             $table->string('guid')->unique();
             $table->string('company_guid')->nullable();
-            // $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
+            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
+            $table->string('language_name')->nullable();
             $table->string('parent')->nullable();
             $table->string('tax_classification_name')->nullable();
             $table->string('tax_type')->nullable();
@@ -37,7 +38,6 @@ return new class extends Migration
             $table->string('is_cost_centres_on')->nullable();
             $table->string('alter_id')->nullable();
             $table->string('opening_balance')->nullable();
-            $table->string('language_name')->nullable();
             $table->string('alias')->nullable();
             $table->string('language_id')->nullable();
             $table->date('applicable_from')->nullable();
@@ -51,6 +51,10 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->string('state')->nullable();
             $table->string('country')->nullable();
+            $table->string('this_year_balance')->nullable();
+            $table->string('prev_year_balance')->nullable();
+            $table->string('this_quarter_balance')->nullable();
+            $table->string('prev_quarter_balance')->nullable();
             $table->timestamps();
         });
     }

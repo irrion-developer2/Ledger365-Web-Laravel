@@ -3,120 +3,23 @@
 @section("style")
     <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
 @endsection
-
+<style>
+    #pieChart {
+        width: 220px !important;
+        height: 220px !important;
+    }
+</style>
 @section("wrapper")
     <div class="page-wrapper">
             <div class="page-content">
 
                 @include('superadmin.analytics.partials._analyticstop')
-              
 
                 @include('superadmin.analytics.partials._analyticsTopCustomerStockPiechart')
 
                 @include('partials.dashboardSaleReceipt')
 
-                {{-- <div class="row">
-                   <div class="col-12 col-lg-8 d-flex">
-                      <div class="card radius-10 w-100">
-                        <div class="card-header">
-                            <div class="d-flex align-items-center">
-                                <div>
-                                    <h6 class="mb-0">Sales Overview</h6>
-                                </div>
-                                <div class="dropdown ms-auto">
-                                    <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="javascript:;">Action</a>
-                                        </li>
-                                        <li><a class="dropdown-item" href="javascript:;">Another action</a>
-                                        </li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item" href="javascript:;">Something else here</a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                          <div class="card-body">
-                            <div class="d-flex align-items-center ms-auto font-13 gap-2 mb-3">
-                                <span class="border px-1 rounded cursor-pointer"><i class="bx bxs-circle me-1" style="color: #14abef"></i>Sales</span>
-                                <span class="border px-1 rounded cursor-pointer"><i class="bx bxs-circle me-1" style="color: #ffc107"></i>Visits</span>
-                            </div>
-                            <div class="chart-container-1">
-                                <canvas id="chart1"></canvas>
-                              </div>
-                          </div>
-                          <div class="row row-cols-1 row-cols-md-3 row-cols-xl-3 g-0 row-group text-center border-top">
-                            <div class="col">
-                              <div class="p-3">
-                                <h5 class="mb-0">24.15M</h5>
-                                <small class="mb-0">Overall Visitor <span> <i class="bx bx-up-arrow-alt align-middle"></i> 2.43%</span></small>
-                              </div>
-                            </div>
-                            <div class="col">
-                              <div class="p-3">
-                                <h5 class="mb-0">12:38</h5>
-                                <small class="mb-0">Visitor Duration <span> <i class="bx bx-up-arrow-alt align-middle"></i> 12.65%</span></small>
-                              </div>
-                            </div>
-                            <div class="col">
-                              <div class="p-3">
-                                <h5 class="mb-0">639.82</h5>
-                                <small class="mb-0">Pages/Visit <span> <i class="bx bx-up-arrow-alt align-middle"></i> 5.62%</span></small>
-                              </div>
-                            </div>
-                          </div>
-                      </div>
-                   </div>
-                   <div class="col-12 col-lg-4 d-flex">
-                       <div class="card radius-10 w-100">
-                        <div class="card-header">
-                            <div class="d-flex align-items-center">
-                                <div>
-                                    <h6 class="mb-0">Trending Products</h6>
-                                </div>
-                                <div class="dropdown ms-auto">
-                                    <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="javascript:;">Action</a>
-                                        </li>
-                                        <li><a class="dropdown-item" href="javascript:;">Another action</a>
-                                        </li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item" href="javascript:;">Something else here</a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                           <div class="card-body">
-                            <div class="chart-container-2">
-                                <canvas id="chart2"></canvas>
-                              </div>
-                           </div>
-                           <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center border-top">Jeans <span class="badge bg-success rounded-pill">25</span>
-                            </li>
-                            <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center">T-Shirts <span class="badge bg-danger rounded-pill">10</span>
-                            </li>
-                            <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center">Shoes <span class="badge bg-primary rounded-pill">65</span>
-                            </li>
-                            <li class="list-group-item d-flex bg-transparent justify-content-between align-items-center">Lingerie <span class="badge bg-warning text-dark rounded-pill">14</span>
-                            </li>
-                        </ul>
-                       </div>
-                   </div>
-                </div><!--end row--> --}}
-
-                
                 @include('superadmin.analytics.partials._closingStock')
-
 
             </div>
     </div>
@@ -131,11 +34,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var ctx = document.getElementById('closingStockChart').getContext('2d');
-            
+
             var closingStockData = @json($closingStockData); // Pass PHP data to JavaScript
             var labels = Object.keys(closingStockData); // Extract month labels
             var data = Object.values(closingStockData); // Extract data values
-    
+
             new Chart(ctx, {
                 type: 'line', // Use line type for wave chart
                 data: {
@@ -174,11 +77,11 @@
     <script>
         // Prepare data for the chart
         const salesData = @json($customerCategory);
-        
+
         // Extract labels and data for the pie chart
         const labels = salesData.map(data => data.gst_registration_type);
         const data = salesData.map(data => data.total_sales);
-        
+
         // Render the pie chart using Chart.js
         const ctx = document.getElementById('chartCustomerCategory').getContext('2d');
         const chartCustomerCategory = new Chart(ctx, {
@@ -227,55 +130,10 @@
         });
     </script>
 
-
-    {{-- <script>
-        // Prepare data for the chart
-        const salesData = @json($customerCategory);
-        
-        // Extract labels and data for the pie chart
-        const labels = salesData.map(data => data.gst_registration_type);
-        const data = salesData.map(data => data.total_sales);
-        
-        // Render the pie chart using Chart.js
-        const ctx = document.getElementById('chartCustomerCategory').getContext('2d');
-        const chartCustomerCategory = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: ['#007bff', '#dc3545', '#ffc107', '#28a745', '#17a2b8'], // Define colors for each segment
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                label += new Intl.NumberFormat().format(context.raw);
-                                return label;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    </script> --}}
-
-
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var ctx = document.getElementById('salereceiptchart').getContext('2d');
-    
+
             var chartData = @json($chartData);
 
             function preprocessData(data) {
@@ -283,10 +141,10 @@
                     return parseFloat(Math.abs(value)).toFixed(2);
                 });
             }
-    
+
             var salesData = preprocessData(chartData.sales);
             var receiptsData = preprocessData(chartData.receipts);
-    
+
             var chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -362,7 +220,6 @@
         });
     </script>
 
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Sample data (Replace this with @json($pieChartDataOverall) in a real scenario)

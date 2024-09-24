@@ -48,11 +48,47 @@ class SupplierController extends Controller
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
 
+            $customDateRange = $request->get('custom_date_range');
+
+            // Handle custom date ranges
+            if ($customDateRange) {
+                switch ($customDateRange) {
+                    case 'this_month':
+                        $startDate = now()->startOfMonth()->toDateString();
+                        $endDate = now()->endOfMonth()->toDateString();
+                        break;
+                    case 'last_month':
+                        $startDate = now()->subMonth()->startOfMonth()->toDateString();
+                        $endDate = now()->subMonth()->endOfMonth()->toDateString();
+                        break;
+                    case 'this_quarter':
+                        $startDate = now()->firstOfQuarter()->toDateString();
+                        $endDate = now()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'prev_quarter':
+                        $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
+                        $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'this_year':
+                        $startDate = now()->startOfYear()->toDateString();
+                        $endDate = now()->endOfYear()->toDateString();
+                        break;
+                    case 'prev_year':
+                        $startDate = now()->subYear()->startOfYear()->toDateString();
+                        $endDate = now()->subYear()->endOfYear()->toDateString();
+                        break;
+                }
+            }
+
             if ($startDate && $endDate) {
                 $suppliers->whereHas('vouchers', function ($query) use ($startDate, $endDate) {
                     $query->whereBetween('voucher_date', [$startDate, $endDate]);
                 });
             }
+
+            Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
+            Log::info('Start date:', ['startDate' => $startDate]);
+            Log::info('End date:', ['endDate' => $endDate]);
 
             if ($request->has('filter_outstanding') && $request->filter_outstanding == 'true') {
                 $suppliers->where(function($suppliers) {

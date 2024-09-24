@@ -12,7 +12,7 @@ class TallyLedger extends Model
     use HasFactory;
 
     protected $guarded = [];
-    
+
     public function tallyVoucherHead()
     {
         return $this->belongsTo(TallyVoucherHead::class, 'ledger_guid', 'guid'); // 'guid' in TallyLedger and 'ledger_guid' in TallyVoucherHead

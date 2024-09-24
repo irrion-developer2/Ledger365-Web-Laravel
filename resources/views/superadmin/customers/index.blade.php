@@ -30,6 +30,18 @@
                                 <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
                             </form>
                         </div>
+                        <div class="col-lg-2">
+                            <form id="customDateForm">
+                                <select id="custom_date_range" name="custom_date_range" class="form-select">
+                                    <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
+                                    <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
+                                    <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
+                                    <option value="prev_quarter" {{ request('custom_date_range') === 'prev_quarter' ? 'selected' : '' }}>Prev Quarter</option>
+                                    <option value="this_year" {{ request('custom_date_range') === 'this_year' ? 'selected' : '' }}>This Year</option>
+                                    <option value="prev_year" {{ request('custom_date_range') === 'prev_year' ? 'selected' : '' }}>Prev Year</option>
+                                </select>
+                            </form>
+                        </div>
                         <button id="filter-outstanding" class="btn btn-outline-secondary p-1">Outstanding</button>
 
                         <button id="filter-ageing" class="btn btn-outline-secondary p-1">Overdue</button>
@@ -104,10 +116,14 @@
         var startDate = urlParams.get('start_date');
         var endDate = urlParams.get('end_date');
 
+        var customDateRange = urlParams.get('custom_date_range');
+
+        if (customDateRange) {
+            $('#custom_date_range').val(customDateRange);
+        }
+
         var table = new DataTable('#customer-datatable', {
-            fixedColumns: {
-                start: 1,
-            },
+            fixedColumns: { start: 1, },
             paging: false,
             scrollCollapse: true,
             scrollX: true,
@@ -122,6 +138,7 @@
                     d.filter_sale = filterSale;
                     d.start_date = startDate;
                     d.end_date = endDate;
+                    d.custom_date_range = customDateRange;
                 }
             },
             columns: [
@@ -209,6 +226,14 @@
         if (startDate && endDate) {
             dateRangeInput._flatpickr.setDate([startDate, endDate], false);
         }
+
+        $('#custom_date_range').on('change', function() {
+            var selectedRange = $(this).val();
+            var url = new URL(window.location.href);
+            url.searchParams.set('custom_date_range', selectedRange);
+            window.location.href = url.toString();
+        });
+
 
         $('#filter-outstanding').on('click', function () {
             filterOutstanding = !filterOutstanding;

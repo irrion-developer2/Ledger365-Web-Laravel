@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('guid')->unique();
             $table->string('company_guid')->nullable();
             $table->string('name')->nullable();
+            $table->string('language_name')->nullable();
             $table->string('parent')->nullable();
             $table->string('category')->nullable();
             $table->string('gst_applicable')->nullable();
@@ -82,10 +83,13 @@ return new class extends Migration
             $table->string('hsn_code')->nullable();
             $table->json('gst_details')->nullable();
             $table->json('hsn_details')->nullable();
-            $table->string('language_name')->nullable();
             $table->string('alias')->nullable();
             $table->string('language_id')->nullable();
             $table->json('batch_allocations')->nullable();
+            $table->string('this_year_balance')->nullable();
+            $table->string('prev_year_balance')->nullable();
+            $table->string('this_quarter_balance')->nullable();
+            $table->string('prev_quarter_balance')->nullable();
             $table->timestamps();
         });
     }

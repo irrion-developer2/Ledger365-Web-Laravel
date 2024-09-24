@@ -20,7 +20,7 @@ class ReportService
                 $companyId = null;
             }
         }
-        
+
         return TallyCompany::where('id', $companyId)->pluck('guid')->toArray();
     }
 
@@ -35,7 +35,7 @@ class ReportService
     // {
     //     $user = auth()->user();
     //     $userSubId = $user->sub_id;
-        
+
     //     return TallyCompany::where('sub_id', $userSubId)->pluck('guid');
     // }
 
@@ -158,7 +158,7 @@ class ReportService
         foreach ($tallyItems as $entry) {
             $openingBalance = $this->extractNumericValue($entry->opening_balance);
             $openingValue = $this->extractNumericValue($entry->opening_value);
-            
+
             $stockItemData = $this->calculateStockItemVoucherBalance($entry->name);
             $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
             $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
@@ -173,10 +173,10 @@ class ReportService
             $finalOpeningValue = $openingValue - $openingAmount;
             // $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
             $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
-                
+
             if ($finalOpeningBalance != 0) {
                 $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', ''); 
+                $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
                 $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
                 $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
                 $stock_value += $stockOnHandValue;

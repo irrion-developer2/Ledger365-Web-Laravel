@@ -28,8 +28,19 @@
                                 <div class="d-lg-flex align-items-center mb-4 gap-3">
                                     <div class="col-lg-3">
                                         <form id="dateRangeForm">
-                                            <label for="date_range" class="form-label">Date Range</label>
                                             <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
+                                        </form>
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <form id="customDateForm">
+                                            <select id="custom_date_range" name="custom_date_range" class="form-select">
+                                                <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
+                                                <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
+                                                <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
+                                                <option value="prev_quarter" {{ request('custom_date_range') === 'prev_quarter' ? 'selected' : '' }}>Prev Quarter</option>
+                                                <option value="this_year" {{ request('custom_date_range') === 'this_year' ? 'selected' : '' }}>This Year</option>
+                                                <option value="prev_year" {{ request('custom_date_range') === 'prev_year' ? 'selected' : '' }}>Prev Year</option>
+                                            </select>
                                         </form>
                                     </div>
                                 </div>
@@ -53,8 +64,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script>
-        // Initialize date range picker
         const dateRangeInput = document.querySelector(".date-range");
+
         flatpickr(dateRangeInput, {
             mode: "range",
             altInput: true,
@@ -71,7 +82,6 @@
             }
         });
 
-        // Reset filters on page load if needed
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const startDate = urlParams.get('start_date');
@@ -79,6 +89,14 @@
             if (startDate && endDate) {
                 dateRangeInput._flatpickr.setDate([startDate, endDate], false);
             }
+        });
+
+
+        $('#custom_date_range').on('change', function() {
+            var selectedRange = $(this).val();
+            var url = new URL(window.location.href);
+            url.searchParams.set('custom_date_range', selectedRange);
+            window.location.href = url.toString();
         });
     </script>
 @endpush

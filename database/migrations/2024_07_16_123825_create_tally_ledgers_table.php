@@ -55,6 +55,10 @@ return new class extends Migration
             $table->string('prev_year_balance')->nullable();
             $table->string('this_quarter_balance')->nullable();
             $table->string('prev_quarter_balance')->nullable();
+            $table->string('on_account_value')->nullable();
+            $table->string('cash_in_flow')->nullable();
+            $table->string('cash_out_flow')->nullable();
+            $table->string('performance')->nullable();
             $table->timestamps();
         });
     }

@@ -18,7 +18,7 @@ class ReceiptRegisterDataTable extends DataTable
     {
         $this->reportService = $reportService;
     }
-    
+
     public function dataTable($query)
     {
         return datatables()
@@ -28,14 +28,12 @@ class ReceiptRegisterDataTable extends DataTable
                 return Carbon::parse($request->created_at)->format('Y-m-d H:i:s');
             })
             ->addColumn('entry_type', function ($entry) {
-                return $entry->entry_type; // Directly from the joined table
+                return $entry->entry_type;
             })
             ->addColumn('credit', function ($entry) {
-                // Return the credit amount if the entry type is credit
                 return $entry->entry_type === 'credit' ? number_format(abs($entry->amount), 2, '.', '') : '-';
             })
             ->addColumn('debit', function ($entry) {
-                // Return the debit amount if the entry type is debit
                 return $entry->entry_type === 'debit' ? number_format(abs($entry->amount), 2, '.', '') : '-';
             })
             ->addColumn('voucher_number', function ($entry) {
@@ -54,27 +52,55 @@ class ReceiptRegisterDataTable extends DataTable
                 $join->on('tally_vouchers.party_ledger_name', '=', 'tally_voucher_heads.ledger_name')
                     ->on('tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id'); // Adjust as needed
             })
-            
+
             ->where('tally_vouchers.voucher_type', 'Receipt')
             ->whereIn('company_guid', $companyGuids);
 
-        // Check if date range is provided
-        if (request()->has('start_date') && request()->has('end_date')) {
-            $startDate = request('start_date');
-            $endDate = request('end_date');
+            $startDate = request()->get('start_date');
+            $endDate = request()->get('end_date');
 
-            // Check if dates are valid before parsing
+            $customDateRange = request()->get('custom_date_range');
+
+            // Handle custom date ranges
+            if ($customDateRange) {
+                switch ($customDateRange) {
+                    case 'this_month':
+                        $startDate = now()->startOfMonth()->toDateString();
+                        $endDate = now()->endOfMonth()->toDateString();
+                        break;
+                    case 'last_month':
+                        $startDate = now()->subMonth()->startOfMonth()->toDateString();
+                        $endDate = now()->subMonth()->endOfMonth()->toDateString();
+                        break;
+                    case 'this_quarter':
+                        $startDate = now()->firstOfQuarter()->toDateString();
+                        $endDate = now()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'prev_quarter':
+                        $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
+                        $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'this_year':
+                        $startDate = now()->startOfYear()->toDateString();
+                        $endDate = now()->endOfYear()->toDateString();
+                        break;
+                    case 'prev_year':
+                        $startDate = now()->subYear()->startOfYear()->toDateString();
+                        $endDate = now()->subYear()->endOfYear()->toDateString();
+                        break;
+                }
+            }
+
+
             if ($startDate && $endDate) {
                 try {
                     $startDate = Carbon::parse($startDate)->startOfDay();
                     $endDate = Carbon::parse($endDate)->endOfDay();
                     $query->whereBetween('voucher_date', [$startDate, $endDate]);
                 } catch (\Exception $e) {
-                    // Handle exception or log it
                     \Log::error('Date parsing error: ' . $e->getMessage());
                 }
             }
-        }
 
         return $query;
     }
@@ -100,7 +126,7 @@ class ReceiptRegisterDataTable extends DataTable
                 searchInput.removeClass(\'form-control form-control-sm\').addClass(\'form-control ps-5 radius-30\').attr(\'placeholder\', \'Search Order\');
                 searchInput.wrap(\'<div class="position-relative pt-1"></div>\');
                 searchInput.parent().append(\'<span class="position-absolute top-50 product-show translate-middle-y"><i class="bx bx-search"></i></span>\');
-                
+
                 var select = $(table.api().table().container()).find(".dataTables_length select").removeClass(\'custom-select custom-select-sm form-control form-control-sm\').addClass(\'form-select form-select-sm\');
             }')
             ->parameters([

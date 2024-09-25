@@ -86,10 +86,10 @@ return new class extends Migration
             $table->string('alias')->nullable();
             $table->string('language_id')->nullable();
             $table->json('batch_allocations')->nullable();
-            $table->string('this_year_balance')->nullable();
-            $table->string('prev_year_balance')->nullable();
-            $table->string('this_quarter_balance')->nullable();
-            $table->string('prev_quarter_balance')->nullable();
+            // $table->string('this_year_balance')->nullable();
+            // $table->string('prev_year_balance')->nullable();
+            // $table->string('this_quarter_balance')->nullable();
+            // $table->string('prev_quarter_balance')->nullable();
             $table->timestamps();
         });
     }

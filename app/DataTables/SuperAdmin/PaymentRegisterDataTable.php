@@ -57,23 +57,52 @@ class PaymentRegisterDataTable extends DataTable
             ->where('tally_vouchers.voucher_type', 'Payment')
             ->whereIn('company_guid', $companyGuids);
 
-        // Check if date range is provided
-        if (request()->has('start_date') && request()->has('end_date')) {
-            $startDate = request('start_date');
-            $endDate = request('end_date');
 
-            // Check if dates are valid before parsing
+            $startDate = request()->get('start_date');
+            $endDate = request()->get('end_date');
+
+            $customDateRange = request()->get('custom_date_range');
+
+            // Handle custom date ranges
+            if ($customDateRange) {
+                switch ($customDateRange) {
+                    case 'this_month':
+                        $startDate = now()->startOfMonth()->toDateString();
+                        $endDate = now()->endOfMonth()->toDateString();
+                        break;
+                    case 'last_month':
+                        $startDate = now()->subMonth()->startOfMonth()->toDateString();
+                        $endDate = now()->subMonth()->endOfMonth()->toDateString();
+                        break;
+                    case 'this_quarter':
+                        $startDate = now()->firstOfQuarter()->toDateString();
+                        $endDate = now()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'prev_quarter':
+                        $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
+                        $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'this_year':
+                        $startDate = now()->startOfYear()->toDateString();
+                        $endDate = now()->endOfYear()->toDateString();
+                        break;
+                    case 'prev_year':
+                        $startDate = now()->subYear()->startOfYear()->toDateString();
+                        $endDate = now()->subYear()->endOfYear()->toDateString();
+                        break;
+                }
+            }
+
+
             if ($startDate && $endDate) {
                 try {
                     $startDate = Carbon::parse($startDate)->startOfDay();
                     $endDate = Carbon::parse($endDate)->endOfDay();
                     $query->whereBetween('voucher_date', [$startDate, $endDate]);
                 } catch (\Exception $e) {
-                    // Handle exception or log it
                     \Log::error('Date parsing error: ' . $e->getMessage());
                 }
             }
-        }
 
         return $query;
     }
@@ -99,7 +128,7 @@ class PaymentRegisterDataTable extends DataTable
                 searchInput.removeClass(\'form-control form-control-sm\').addClass(\'form-control ps-5 radius-30\').attr(\'placeholder\', \'Search Order\');
                 searchInput.wrap(\'<div class="position-relative pt-1"></div>\');
                 searchInput.parent().append(\'<span class="position-absolute top-50 product-show translate-middle-y"><i class="bx bx-search"></i></span>\');
-                
+
                 var select = $(table.api().table().container()).find(".dataTables_length select").removeClass(\'custom-select custom-select-sm form-control form-control-sm\').addClass(\'form-select form-select-sm\');
             }')
             ->parameters([

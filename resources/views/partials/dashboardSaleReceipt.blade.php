@@ -10,7 +10,7 @@
                  <div>
                      <h6 class="mb-0">Sales & Receipt</h6>
                  </div>
-                 <div class="dropdown ms-auto">
+                 {{-- <div class="dropdown ms-auto">
                      <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
                      </a>
                      <ul class="dropdown-menu">
@@ -23,7 +23,7 @@
                          <li><a class="dropdown-item" href="javascript:;">This Month</a>
                          </li>
                      </ul>
-                 </div>
+                 </div> --}}
              </div>
          </div>
            <div class="card-body">
@@ -61,7 +61,7 @@
                     <div>
                         <h6 class="mb-0">Receivables</h6>
                     </div>
-                    <div class="dropdown ms-auto">
+                    {{-- <div class="dropdown ms-auto">
                         <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">
                             <i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
                         </a>
@@ -71,7 +71,7 @@
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="javascript:;">Something else here</a></li>
                         </ul>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
             <div class="card-body">

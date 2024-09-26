@@ -6,7 +6,7 @@
                 <div>
                     <h6 class="mb-0">Top N Customers</h6>
                 </div>
-                <div class="dropdown ms-auto">
+                {{-- <div class="dropdown ms-auto">
                     <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
                     </a>
                     <ul class="dropdown-menu">
@@ -20,7 +20,7 @@
                         <li><a class="dropdown-item" href="javascript:;">Something else here</a>
                         </li>
                     </ul>
-                </div>
+                </div> --}}
             </div>
            </div>
          <div class="card-body">
@@ -60,7 +60,7 @@
                   <div>
                       <h6 class="mb-0">Top N Stock</h6>
                   </div>
-                  <div class="dropdown ms-auto">
+                  {{-- <div class="dropdown ms-auto">
                       <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
                       </a>
                       <ul class="dropdown-menu">
@@ -74,7 +74,7 @@
                           <li><a class="dropdown-item" href="javascript:;">Something else here</a>
                           </li>
                       </ul>
-                  </div>
+                  </div> --}}
               </div>
              </div>
            <div class="card-body">
@@ -113,7 +113,7 @@
                   <div>
                       <h6 class="mb-0">Customer Category</h6>
                   </div>
-                  <div class="dropdown ms-auto">
+                  {{-- <div class="dropdown ms-auto">
                       <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
                       </a>
                       <ul class="dropdown-menu">
@@ -127,7 +127,7 @@
                           <li><a class="dropdown-item" href="javascript:;">Something else here</a>
                           </li>
                       </ul>
-                  </div>
+                  </div> --}}
 
                   <div class="highcharts-a11y-proxy-container" aria-hidden="false"><div aria-label="Chart menu" role="region" aria-hidden="false"><button aria-label="View chart menu" aria-expanded="false" class="highcharts-a11y-proxy-button" aria-hidden="false" style="border-width: 0px; background-color: transparent; cursor: pointer; outline: none; opacity: 0.001; z-index: 999; overflow: hidden; padding: 0px; margin: 0px; display: block; position: absolute; width: 24px; height: 22px; left: 846.5px; top: 10.5px;"></button></div></div>
 

@@ -48,7 +48,7 @@
                                     </div>
                                     <div class="col-lg-3">
                                         <p class="mb-0 font-13">Opening Balance</p>
-                                        <h6>{{ $ledger->opening_balance !== '' ? $ledger->opening_balance : '0.00' }}</h6>
+                                        <h6 id="openingBalance"></h6>
                                     </div>
                                     <div class="col-lg-3">
                                         <p class="mb-0 font-13">Total Debit</p>
@@ -103,6 +103,7 @@
 
     <script>
         $(document).ready(function() {
+
             var table = $('#voucherEntriesTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -194,7 +195,7 @@
                     $(api.column(3).footer()).html(totalDebit.toFixed(2));
                     $(api.column(4).footer()).html(totalCredit.toFixed(2));
                     $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-
+                    $('#openingBalance').text((totalDebit + totalCredit).toFixed(2));
                     $('#outstanding').text((totalRunningBalance).toFixed(2));
                     $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
 

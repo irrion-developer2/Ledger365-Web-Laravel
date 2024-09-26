@@ -287,6 +287,17 @@
             $('#date_range').data('end', initialDates[1]);
         }
 
+        if (startDate && endDate) {
+            dateRangeInput._flatpickr.setDate([startDate, endDate], false);
+        }
+
+        $('#custom_date_range').on('change', function() {
+            var selectedRange = $(this).val();
+            var url = new URL(window.location.href);
+            url.searchParams.set('custom_date_range', selectedRange);
+            window.location.href = url.toString();
+        });
+
         const voucherTypeSelect = document.getElementById('voucher_type');
         voucherTypeSelect.addEventListener('change', function() {
             let voucherType = this.value;

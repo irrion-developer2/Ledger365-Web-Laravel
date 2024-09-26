@@ -30,6 +30,18 @@
                                 <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
                             </form>
                         </div>
+                        <div class="col-lg-2">
+                            <form id="customDateForm">
+                                <select id="custom_date_range" name="custom_date_range" class="form-select">
+                                    <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
+                                    <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
+                                    <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
+                                    <option value="prev_quarter" {{ request('custom_date_range') === 'prev_quarter' ? 'selected' : '' }}>Prev Quarter</option>
+                                    <option value="this_year" {{ request('custom_date_range') === 'this_year' ? 'selected' : '' }}>This Year</option>
+                                    <option value="prev_year" {{ request('custom_date_range') === 'prev_year' ? 'selected' : '' }}>Prev Year</option>
+                                </select>
+                            </form>
+                        </div>
                         {{-- <div class="col-lg-2">
                             <form id="voucherTypeForm">
                                 <label for="voucher_type" class="form-label">Transaction Type</label>
@@ -110,6 +122,12 @@
 <script>
     $(document).ready(function() {
         // Initialize DataTable
+        var urlParams = new URLSearchParams(window.location.search);
+        var startDate = urlParams.get('start_date');
+        var endDate = urlParams.get('end_date');
+
+        var customDateRange = urlParams.get('custom_date_range');
+
         var table = $('#SalesColumnar-datatable').DataTable({
             fixedColumns: {
                 start: 2,
@@ -127,6 +145,7 @@
                     d.start_date = urlParams.get('start_date') || $('#date_range').data('start');
                     d.end_date = urlParams.get('end_date') || $('#date_range').data('end');
                     d.voucher_type = $('#voucher_type').val();
+                    d.custom_date_range = customDateRange;
                 }
             },
             columns: [

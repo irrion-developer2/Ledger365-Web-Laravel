@@ -1156,8 +1156,8 @@ class LedgerController extends Controller
         Log::info('Decoded JSON data successfully.', ['data' => $data]);
 
         // Ensure JSON structure is valid
-        if (!isset($data['BODY']['EXPORTDATARESPONSE']['RESULTDESC']['ROWDESC']['COL']) ||
-            !isset($data['BODY']['EXPORTDATARESPONSE']['RESULTDATA']['ROW'])) {
+        if (!isset($data['DATA']['BODY']['EXPORTDATARESPONSE']['RESULTDESC']['ROWDESC']['COL']) ||
+            !isset($data['DATA']['BODY']['EXPORTDATARESPONSE']['RESULTDATA']['ROW'])) {
             throw new \Exception('Invalid JSON structure.');
         }
 

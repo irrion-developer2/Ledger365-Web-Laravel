@@ -1126,6 +1126,7 @@ class LedgerController extends Controller
 
             // Check if the request contains 'uploadFile' key for uploaded file
             if ($request->hasFile('uploadFile')) {
+                Log::info('File Found: ' . $request);
                 $uploadedFile = $request->file('uploadFile');
                 $fileName = 'report_data_' . date('YmdHis') . '.json';
                 $jsonFilePath = storage_path('app/' . $fileName);

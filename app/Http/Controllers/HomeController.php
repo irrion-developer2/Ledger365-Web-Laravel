@@ -28,6 +28,7 @@ class HomeController extends Controller
 
     public function index()
     {
+
         $companyGuids = $this->reportService->companyData();
         $user = User::count();
         $role = auth()->user()->role;
@@ -65,10 +66,14 @@ class HomeController extends Controller
          /* Payables */
 
         /* Sales Receipt chart */
-        $chartData = $this->chartSaleReceipt($companyGuids);
+        $startDate = now()->startOfMonth();
+        $endDate = now();
+        $chartData = $this->chartSaleReceipt($companyGuids, $startDate, $endDate);
         $chartSaleAmt = abs(array_sum($chartData['sales']));
         $chartReceiptAmt = abs(array_sum($chartData['receipts']));
         $lastMonthsTotal = $this->getLastMonthsTotal($chartData);
+
+        // dd($chartData, $chartSaleAmt, $chartReceiptAmt);
         /* Sales Receipt chart */
 
         /* pie chart */
@@ -143,41 +148,43 @@ class HomeController extends Controller
         ];
     }
 
-    private function chartSaleReceipt($companyGuids)
-    {
-        $salesData = [];
-        $receiptData = [];
+    // private function chartSaleReceipt($companyGuids)
+    // {
+    //     $salesData = [];
+    //     $receiptData = [];
 
-        for ($month = 4; $month <= 12; $month++) {
-            $monthName = DateTime::createFromFormat('!m', $month)->format('F');
+    //     for ($month = 4; $month <= 12; $month++) {
+    //         $monthName = DateTime::createFromFormat('!m', $month)->format('F');
 
-            $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
-                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
-                     ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
-            })
-            ->where('tally_vouchers.voucher_type', 'Sales')
-            ->whereIn('tally_vouchers.company_guid', $companyGuids)
-            ->whereMonth('tally_vouchers.voucher_date', $month)
-            ->sum('tally_voucher_heads.amount');
+    //         $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
+    //             $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+    //                  ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
+    //         })
+    //         ->where('tally_vouchers.voucher_type', 'Sales')
+    //         ->whereIn('tally_vouchers.company_guid', $companyGuids)
+    //         ->whereMonth('tally_vouchers.voucher_date', $month)
+    //         ->sum('tally_voucher_heads.amount');
 
-            $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
-                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
-                     ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
-            })
-            ->where('tally_vouchers.voucher_type', 'Receipt')
-            ->whereIn('tally_vouchers.company_guid', $companyGuids)
-            ->whereMonth('tally_vouchers.voucher_date', $month)
-            ->sum('tally_voucher_heads.amount');
+    //         $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
+    //             $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+    //                  ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
+    //         })
+    //         ->where('tally_vouchers.voucher_type', 'Receipt')
+    //         ->whereIn('tally_vouchers.company_guid', $companyGuids)
+    //         ->whereMonth('tally_vouchers.voucher_date', $month)
+    //         ->sum('tally_voucher_heads.amount');
 
-            $salesData[$monthName] = $totalSales;
-            $receiptData[$monthName] = $totalReceipts;
-        }
+    //         $salesData[$monthName] = $totalSales;
+    //         $receiptData[$monthName] = $totalReceipts;
+    //     }
 
-        return [
-            'sales' => $salesData,
-            'receipts' => $receiptData,
-        ];
-    }
+    //     return [
+    //         'sales' => $salesData,
+    //         'receipts' => $receiptData,
+    //     ];
+    // }
+
+
 
     private function calculatePayableCreditNote($companyGuids)
     {
@@ -210,4 +217,100 @@ class HomeController extends Controller
         return $total;
     }
 
+    public function getFilteredData(Request $request)
+    {
+        $filter = $request->get('filter', 'this_year'); // Default to 'this_year' if no filter is set
+        $companyGuids = $this->reportService->companyData();
+
+        // Determine the date range based on the filter
+        switch ($filter) {
+            case 'this_month':
+                $startDate = now()->startOfMonth();
+                $endDate = now();
+                break;
+            case 'last_month':
+                $startDate = now()->subMonth()->startOfMonth();
+                $endDate = now()->subMonth()->endOfMonth();
+                break;
+            case 'this_quarter':
+                $startDate = now()->firstOfQuarter();
+                $endDate = now();
+                break;
+            case 'prev_quarter':
+                $startDate = now()->subQuarter()->firstOfQuarter();
+                $endDate = now()->subQuarter()->endOfQuarter();
+                break;
+            case 'prev_year':
+                $startDate = now()->subYear()->startOfYear();
+                $endDate = now()->subYear()->endOfYear();
+                break;
+            case 'this_year':
+            default:
+                $startDate = now()->startOfYear();
+                $endDate = now();
+                break;
+        }
+
+        // Query to get the chart data based on the date range
+        $chartData = $this->chartSaleReceipt($companyGuids, $startDate, $endDate);
+
+        // Return the filtered data in JSON format
+        return response()->json([
+            'chartData' => $chartData,
+            'salesTotal' => array_sum($chartData['sales']),
+            'receiptsTotal' => array_sum($chartData['receipts'])
+        ]);
+    }
+
+    private function chartSaleReceipt($companyGuids, $startDate, $endDate)
+    {
+        $salesData = [];
+        $receiptData = [];
+
+        $period = \Carbon\CarbonPeriod::create($startDate, '1 month', $endDate);
+
+        foreach ($period as $date) {
+            $monthName = $date->format('F');
+            $month = $date->month;
+
+            // Debugging: Log the current month and the company GUIDs being used
+            \Log::info("Querying data for month: $monthName, Company GUIDs: " . json_encode($companyGuids));
+
+            // Get total sales for the current month
+            $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
+                    $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+                         ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
+                })
+                ->where('tally_vouchers.voucher_type', 'Sales')
+                ->whereIn('tally_vouchers.company_guid', $companyGuids)
+                ->whereMonth('tally_vouchers.voucher_date', $month)
+                ->whereYear('tally_vouchers.voucher_date', $date->year) // Ensure the year matches
+                ->sum('tally_voucher_heads.amount');
+
+            // Log total sales for the current month
+            \Log::info("Total Sales for $monthName: $totalSales");
+
+            // Get total receipts for the current month
+            $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
+                    $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+                         ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
+                })
+                ->where('tally_vouchers.voucher_type', 'Receipt')
+                ->whereIn('tally_vouchers.company_guid', $companyGuids)
+                ->whereMonth('tally_vouchers.voucher_date', $month)
+                ->whereYear('tally_vouchers.voucher_date', $date->year) // Ensure the year matches
+                ->sum('tally_voucher_heads.amount');
+
+            // Log total receipts for the current month
+            \Log::info("Total Receipts for $monthName: $totalReceipts");
+
+            $salesData[$monthName] = $totalSales;
+            $receiptData[$monthName] = $totalReceipts;
+        }
+
+        return [
+            'sales' => $salesData,
+            'receipts' => $receiptData,
+        ];
+    }
 }

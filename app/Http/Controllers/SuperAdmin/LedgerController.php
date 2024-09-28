@@ -1156,14 +1156,25 @@ class LedgerController extends Controller
 
             Log::info('Decoded JSON data successfully.', ['data' => $data]);
 
+            // Check if the 'data' key is present or missing and adjust accordingly
+            if (isset($data['data'])) {
+                // If 'data' key is present, process the nested structure
+                $exportDataResponse = $data['data']['BODY']['EXPORTDATARESPONSE'];
+            } elseif (isset($data['BODY'])) {
+                // If 'data' key is missing, start from 'BODY'
+                $exportDataResponse = $data['BODY']['EXPORTDATARESPONSE'];
+            } else {
+                throw new \Exception('Invalid JSON structure: Missing BODY or data key.');
+            }
+
             // Ensure JSON structure is valid
-            if (!isset($data['data']['BODY']['EXPORTDATARESPONSE']['RESULTDESC']['ROWDESC']['COL']) ||
-                !isset($data['data']['BODY']['EXPORTDATARESPONSE']['RESULTDATA']['ROW'])) {
+            if (!isset($exportDataResponse['RESULTDESC']['ROWDESC']['COL']) ||
+                !isset($exportDataResponse['RESULTDATA']['ROW'])) {
                 throw new \Exception('Invalid JSON structure.');
             }
 
             // Extract the column definitions (i.e., the mapping of columns)
-            $columnDefinitions = $data['data']['BODY']['EXPORTDATARESPONSE']['RESULTDESC']['ROWDESC']['COL'];
+            $columnDefinitions = $exportDataResponse['RESULTDESC']['ROWDESC']['COL'];
 
             // Create an associative array to map column names to the respective field in TallyLedger
             $columnMap = [];
@@ -1196,7 +1207,7 @@ class LedgerController extends Controller
             Log::info('Completed column mapping.', ['columnMap' => $columnMap]);
 
             // Now process the rows in the RESULTDATA
-            $rows = $data['data']['BODY']['EXPORTDATARESPONSE']['RESULTDATA']['ROW'];
+            $rows = $exportDataResponse['RESULTDATA']['ROW'];
             Log::info('Processing rows.', ['row_count' => count($rows)]);
 
             foreach ($rows as $row) {
@@ -1224,9 +1235,6 @@ class LedgerController extends Controller
                         Log::info('Ledger found.', ['ledger' => $tallyLedger]);
 
                         // Update the ledger with other mapped fields
-                        // if (isset($ledgerData['name'])) {
-                        //     $tallyLedger->name = $ledgerData['name'];
-                        // }
                         if (isset($ledgerData['performance'])) {
                             $tallyLedger->performance = $ledgerData['performance'];
                         }
@@ -1268,6 +1276,7 @@ class LedgerController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
 
 
 

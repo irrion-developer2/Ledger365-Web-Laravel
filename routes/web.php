@@ -76,11 +76,13 @@ Route::middleware([
     // });
     // ->name('dashboard');
 
+    Route::get('/get-filtered-data', [HomeController::class, 'getFilteredData']);
+
     Route::get('/dashboard', [HomeController::class, 'index']);
 
     Route::group(['middleware' => 'checkUserRoleAndStatus'], function () {
 
-        
+
         Route::get('/analytics', [AnalyticController::class, 'index'])->name('analytics.index');
 
 
@@ -129,7 +131,7 @@ Route::middleware([
         Route::get('reports/CashBank/data/{cashBankId}', [ReportCashBankController::class, 'getCashBankData'])->name('reports.CashBank.data');
 
         Route::get('reports/PaymentRegister', [ReportPaymentRegisterController::class, 'index'])->name('reports.PaymentRegister');
-        
+
         Route::get('reports/ReceiptRegister', [ReportReceiptRegisterController::class, 'index'])->name('reports.ReceiptRegister');
 
         Route::get('reports/VoucherHead/{VoucherHead}', [ReportController::class, 'AllVoucherHeadReports'])->name('reports.VoucherHead');
@@ -170,13 +172,13 @@ Route::middleware([
 
         Route::get('reports/BalanceSheetLiability/{Liability}', [ReportBalanceSheetLiabilityController::class, 'AllLiabilityReports'])->name('reports.BalanceSheet.Liability');
         Route::get('reports/BalanceSheetLiabilityDebitCredit/data/{LiabilityId}', [ReportBalanceSheetLiabilityController::class, 'getLiabilityData'])->name('reports.BalanceSheetLiability.get-data');
-      
 
-        
+
+
         Route::get('reports/BalanceSheetAssetStock', [ReportBalanceSheetAssetStockController::class, 'index'])->name('reports.BalanceSheetAssetStock');
         Route::get('/reports/BalanceSheetAssetStock/get-data', [ReportBalanceSheetAssetStockController::class, 'getData'])->name('reports.BalanceSheetAssetStock.get-data');
 
-        
+
         Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');
         Route::get('/sales/get-data', [SalesController::class, 'getData'])->name('sales.get-data');
         Route::get('sales/Item/{SaleItem}', [SalesController::class, 'AllSaleItemReports'])->name('sales.items');
@@ -185,7 +187,7 @@ Route::middleware([
 
         Route::get('/columnar', [ColumnarController::class, 'index'])->name('columnar.index');
         Route::get('/columnar/get-data', [ColumnarController::class, 'getData'])->name('columnar.get-data');
-        
+
         Route::get('/BankReconciliation', [BankReconciliationController::class, 'index'])->name('BankReconciliation.index');
         Route::post('/BankReconciliation/import', [BankReconciliationController::class, 'import'])->name('BankReconciliation.import');
         Route::get('/BankReconciliation/get-data', [BankReconciliationController::class, 'getData'])->name('BankReconciliation.get-data');
@@ -193,7 +195,7 @@ Route::middleware([
 
         Route::post('/upload-pdf', [BankReconciliationController::class, 'uploadPdf']);
 
-    
+
     });
 
     Route::group(['middleware' => 'checkAdminRoleAndStatus'], function () {
@@ -202,7 +204,7 @@ Route::middleware([
         Route::post('/update-user-status', [UserController::class, 'updateStatus'])->name('update.user.status');
 
     });
-    
+
     //  JET STREAM
     require __DIR__ . '/auth.php';
 });

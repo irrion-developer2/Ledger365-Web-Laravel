@@ -14,21 +14,33 @@
                      <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
                      </a>
                      <ul class="dropdown-menu">
-                         <li><a class="dropdown-item" href="javascript:;">This Month</a>
-                         </li>
-                         <li><a class="dropdown-item" href="javascript:;">This Month</a>
-                         </li>
-                         <li><a class="dropdown-item" href="javascript:;">This Year</a>
-                         </li>
-                         <li><a class="dropdown-item" href="javascript:;">This Month</a>
-                         </li>
+                         <li><a class="dropdown-item" href="javascript:;">This Month</a></li>
+                         <li><a class="dropdown-item" href="javascript:;">Last Month</a></li>
+                         <li><a class="dropdown-item" href="javascript:;">This Quarter</a></li>
+                         <li><a class="dropdown-item" href="javascript:;">Prev Quarter</a></li>
+                         <li><a class="dropdown-item" href="javascript:;">This Year</a></li>
+                         <li><a class="dropdown-item" href="javascript:;">Prev Year</a></li>
                      </ul>
                  </div> --}}
+                 <div class="dropdown ms-auto">
+                    <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">
+                      <i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item filter-option" href="javascript:;" data-filter="this_month">This Month</a></li>
+                      <li><a class="dropdown-item filter-option" href="javascript:;" data-filter="last_month">Last Month</a></li>
+                      <li><a class="dropdown-item filter-option" href="javascript:;" data-filter="this_quarter">This Quarter</a></li>
+                      <li><a class="dropdown-item filter-option" href="javascript:;" data-filter="prev_quarter">Prev Quarter</a></li>
+                      <li><a class="dropdown-item filter-option" href="javascript:;" data-filter="this_year">This Year</a></li>
+                      <li><a class="dropdown-item filter-option" href="javascript:;" data-filter="prev_year">Prev Year</a></li>
+                    </ul>
+                </div>
+
              </div>
          </div>
            <div class="card-body">
              <div class="d-flex align-items-center ms-auto font-13 gap-2 mb-3">
-                 <span class="border px-1 rounded cursor-pointer"><i class="bx bxs-circle me-1" style="color: #14abef"></i>Sales &#8377 {{ number_format(abs($chartSaleAmt), 2) }}</span>
+                 <span class="border px-1 rounded cursor-pointer"><i class="bx bxs-circle me-1" style="color: #14abef" ></i>Sales &#8377 {{ number_format(abs($chartSaleAmt), 2) }}</span>
                  <span class="border px-1 rounded cursor-pointer"><i class="bx bxs-circle me-1" style="color: #ffc107"></i>Receipt &#8377 {{ number_format(abs($chartReceiptAmt), 2) }}</span>
              </div>
              <div class="chart-container-1">

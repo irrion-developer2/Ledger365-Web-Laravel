@@ -333,8 +333,9 @@ class GeneralLedgerDataTable extends DataTable
     public function query(TallyGroup $model)
     {
         $companyGuids = $this->reportService->companyData();
-
-        return $model->newQuery()->where('parent', '')->whereIn('company_guid', $companyGuids);
+        $query = $model->newQuery()->where('parent', '')->whereIn('company_guid', $companyGuids);
+        Log::info('Generated Query:', ['query' => $query->toSql(), 'bindings' => $query->getBindings()]);
+        return $query;            
     }
 
     public function html()

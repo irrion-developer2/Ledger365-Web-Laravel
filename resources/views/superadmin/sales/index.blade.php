@@ -111,8 +111,8 @@
                 url: "{{ route('sales.get-data') }}",
                 type: 'GET',
                 data: function (d) {
-                    d.start_date = $('#date_range').data('start');
-                    d.end_date = $('#date_range').data('end');
+                    d.start_date = startDate;
+                    d.end_date = endDate;
                     d.custom_date_range = customDateRange;
                 }
             },
@@ -177,9 +177,11 @@
             onChange: function(selectedDates, dateStr, instance) {
                 if (selectedDates.length === 2) {
                     let [startDate, endDate] = selectedDates.map(date => date.toISOString().split('T')[0]);
-                    $('#date_range').data('start', startDate);
-                    $('#date_range').data('end', endDate);
-                    table.ajax.reload(); // Refresh the table data
+                    let url = new URL(window.location.href);
+                    url.searchParams.set('start_date', startDate);
+                    url.searchParams.set('end_date', endDate);
+                    window.location.href = url.toString();
+                    // table.ajax.reload(); // Refresh the table data
                 }
             }
         });

@@ -3,7 +3,13 @@
 @section("style")
     <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
 @endsection
+@php
+    $currentMonth = date('m');
+    $currentYear = date('Y');
 
+    $startDate = date('Y-m-01');
+    $endDate = date('Y-m-t');
+@endphp
 @section("wrapper")
     <div class="page-wrapper">
             <div class="page-content p-2">
@@ -72,7 +78,7 @@
                                            <hr class="border-1">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_sale' => 'true']) }}">Inactive Customers</a></h5>
                                            <hr class="border-1">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('sales.index') }}">Monthly Sales</a></h5>
+                                           <h5 class="my-1"><a class="nav-link " href="{{ route('sales.index', ['start_date' => $startDate, 'end_date' => $endDate]) }}">Monthly Sales</a></h5>
                                            <hr class="border-1">
                                            {{-- <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers *</a></h5>
                                            <hr class="border-1"> --}}
@@ -106,7 +112,7 @@
                                        </div>
                                    </div>
                                 </div>
-                            </div> 
+                            </div>
 
                             <div class="col">
                                 <div class="card radius-10 border-start border-0 border-4 border-success">

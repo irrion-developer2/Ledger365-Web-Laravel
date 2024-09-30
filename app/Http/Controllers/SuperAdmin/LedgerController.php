@@ -1120,162 +1120,165 @@ class LedgerController extends Controller
 
 
     public function reportJsonImport(Request $request)
-    {
-        try {
-            // Initialize JSON data variable
-            $jsonData = null;
+{
+    try {
+        // Initialize JSON data variable
+        $jsonData = null;
 
-            Log::info('Starting reportJsonImport method.');
+        Log::info('Starting reportJsonImport method.');
 
-            // Check if the request contains 'uploadFile' key for uploaded file
-            if ($request->hasFile('uploadFile')) {
-                Log::info('File Found in request.', ['request' => $request->all()]);
+        // Check if the request contains 'uploadFile' key for uploaded file
+        if ($request->hasFile('uploadFile')) {
+            Log::info('File Found in request.', ['request' => $request->all()]);
 
-                $uploadedFile = $request->file('uploadFile');
-                $fileName = 'report_data_' . date('YmdHis') . '.json';
-                $jsonFilePath = storage_path('app/' . $fileName);
+            $uploadedFile = $request->file('uploadFile');
+            $fileName = 'report_data_' . date('YmdHis') . '.json';
+            $jsonFilePath = storage_path('app/' . $fileName);
 
-                // Move uploaded file to storage and read its contents
-                $uploadedFile->move(storage_path('app'), $fileName);
-                $jsonData = file_get_contents($jsonFilePath);
+            // Move uploaded file to storage and read its contents
+            $uploadedFile->move(storage_path('app'), $fileName);
+            $jsonData = file_get_contents($jsonFilePath);
 
-                Log::info('Uploaded file moved to storage and read.', ['file_path' => $jsonFilePath]);
+            Log::info('Uploaded file moved to storage and read.', ['file_path' => $jsonFilePath]);
 
-            } else {
-                // Get JSON data from request body if no file is uploaded
-                $jsonData = $request->getContent();
-                Log::info('Using JSON data from request body.', ['jsonData' => $jsonData]);
-            }
-
-            // Decode the JSON data
-            $data = json_decode($jsonData, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new \Exception('JSON decode error: ' . json_last_error_msg());
-            }
-
-            Log::info('Decoded JSON data successfully.', ['data' => $data]);
-
-            // Check if the 'data' key is present or missing and adjust accordingly
-            if (isset($data['data'])) {
-                // If 'data' key is present, process the nested structure
-                $exportDataResponse = $data['data']['BODY']['EXPORTDATARESPONSE'];
-            } elseif (isset($data['BODY'])) {
-                // If 'data' key is missing, start from 'BODY'
-                $exportDataResponse = $data['BODY']['EXPORTDATARESPONSE'];
-            } else {
-                throw new \Exception('Invalid JSON structure: Missing BODY or data key.');
-            }
-
-            // Ensure JSON structure is valid
-            if (!isset($exportDataResponse['RESULTDESC']['ROWDESC']['COL']) ||
-                !isset($exportDataResponse['RESULTDATA']['ROW'])) {
-                throw new \Exception('Invalid JSON structure.');
-            }
-
-            // Extract the column definitions (i.e., the mapping of columns)
-            $columnDefinitions = $exportDataResponse['RESULTDESC']['ROWDESC']['COL'];
-
-            // Create an associative array to map column names to the respective field in TallyLedger
-            $columnMap = [];
-            foreach ($columnDefinitions as $index => $column) {
-                Log::info('Mapping column.', ['column' => $column]);
-
-                if ($column['NAME'] === '$guid') {
-                    $columnMap[$index] = 'guid';  // GUID is used to find the ledger
-                } elseif ($column['NAME'] === '$Name') {
-                    $columnMap[$index] = 'name';
-                } elseif ($column['NAME'] === '$_Performance') {
-                    $columnMap[$index] = 'performance';
-                } elseif ($column['NAME'] === '$_ThisYearBalance') {
-                    $columnMap[$index] = 'this_year_balance';
-                } elseif ($column['NAME'] === '$_PrevYearBalance') {
-                    $columnMap[$index] = 'prev_year_balance';
-                } elseif ($column['NAME'] === '$_OnAccountValue') {
-                    $columnMap[$index] = 'on_account_value';
-                } elseif ($column['NAME'] === '$_CashInFlow') {
-                    $columnMap[$index] = 'cash_in_flow';
-                } elseif ($column['NAME'] === '$_CashOutFlow') {
-                    $columnMap[$index] = 'cash_out_flow';
-                } elseif ($column['NAME'] === '$_ThisQuarterBalance') {
-                    $columnMap[$index] = 'this_quarter_balance';
-                } elseif ($column['NAME'] === '$_PrevQuarterBalance') {
-                    $columnMap[$index] = 'prev_quarter_balance';
-                }
-            }
-
-            Log::info('Completed column mapping.', ['columnMap' => $columnMap]);
-
-            // Now process the rows in the RESULTDATA
-            $rows = $exportDataResponse['RESULTDATA']['ROW'];
-            Log::info('Processing rows.', ['row_count' => count($rows)]);
-
-            foreach ($rows as $row) {
-                $cols = $row['COL'];
-                $ledgerData = [];
-
-                foreach ($cols as $index => $value) {
-                    if (isset($columnMap[$index])) {
-                        // Assign the value to the corresponding ledger field
-                        $ledgerData[$columnMap[$index]] = $value;
-                    }
-                }
-
-                Log::info('Processed row data.', ['ledgerData' => $ledgerData]);
-
-                // Check if GUID exists to find the ledger
-                if (isset($ledgerData['guid'])) {
-                    $ledgerGuid = $ledgerData['guid'];
-                    Log::info('Looking for ledger by GUID.', ['guid' => $ledgerGuid]);
-
-                    // Find the ledger by GUID
-                    $tallyLedger = TallyLedger::where('guid', $ledgerGuid)->first();
-
-                    if ($tallyLedger) {
-                        Log::info('Ledger found.', ['ledger' => $tallyLedger]);
-
-                        // Update the ledger with other mapped fields
-                        if (isset($ledgerData['performance'])) {
-                            $tallyLedger->performance = $ledgerData['performance'];
-                        }
-                        if (isset($ledgerData['this_year_balance'])) {
-                            $tallyLedger->this_year_balance = $ledgerData['this_year_balance'];
-                        }
-                        if (isset($ledgerData['prev_year_balance'])) {
-                            $tallyLedger->prev_year_balance = $ledgerData['prev_year_balance'];
-                        }
-                        if (isset($ledgerData['on_account_value'])) {
-                            $tallyLedger->on_account_value = $ledgerData['on_account_value'];
-                        }
-                        if (isset($ledgerData['cash_in_flow'])) {
-                            $tallyLedger->cash_in_flow = $ledgerData['cash_in_flow'];
-                        }
-                        if (isset($ledgerData['cash_out_flow'])) {
-                            $tallyLedger->cash_out_flow = $ledgerData['cash_out_flow'];
-                        }
-                        if (isset($ledgerData['this_quarter_balance'])) {
-                            $tallyLedger->this_quarter_balance = $ledgerData['this_quarter_balance'];
-                        }
-                        if (isset($ledgerData['prev_quarter_balance'])) {
-                            $tallyLedger->prev_quarter_balance = $ledgerData['prev_quarter_balance'];
-                        }
-
-                        // Save the updated ledger record
-                        $tallyLedger->save();
-                        Log::info('Updated and saved ledger.', ['ledgerData' => $ledgerData]);
-                    } else {
-                        Log::warning('Ledger not found for GUID.', ['guid' => $ledgerGuid]);
-                    }
-                }
-            }
-
-            return response()->json(['message' => 'Ledger balances updated successfully.']);
-
-        } catch (\Exception $e) {
-            Log::error('Error updating ledger balances.', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
+        } else {
+            // Get JSON data from request body if no file is uploaded
+            $jsonData = $request->getContent();
+            Log::info('Using JSON data from request body.', ['jsonData' => $jsonData]);
         }
+
+        // Decode the JSON data
+        $data = json_decode($jsonData, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('JSON decode error: ' . json_last_error_msg());
+        }
+
+        Log::info('Decoded JSON data successfully.', ['data' => $data]);
+
+        // Check if the 'data' key is present or missing and adjust accordingly
+        if (isset($data['data'])) {
+            // If 'data' key is present, process the nested structure
+            $exportDataResponse = $data['data']['BODY']['EXPORTDATARESPONSE'];
+        } elseif (isset($data['BODY'])) {
+            // If 'data' key is missing, start from 'BODY'
+            $exportDataResponse = $data['BODY']['EXPORTDATARESPONSE'];
+        } else {
+            throw new \Exception('Invalid JSON structure: Missing BODY or data key.');
+        }
+
+        // Ensure JSON structure is valid
+        if (!isset($exportDataResponse['RESULTDESC']['ROWDESC']['COL']) ||
+            !isset($exportDataResponse['RESULTDATA']['ROW'])) {
+            throw new \Exception('Invalid JSON structure.');
+        }
+
+        // Extract the column definitions (i.e., the mapping of columns)
+        $columnDefinitions = $exportDataResponse['RESULTDESC']['ROWDESC']['COL'];
+
+        // Create an associative array to map column names to the respective field in TallyLedger
+        $columnMap = [];
+        foreach ($columnDefinitions as $index => $column) {
+            Log::info('Mapping column.', ['column' => $column]);
+
+            if ($column['NAME'] === '$Guid') {
+                $columnMap[$index] = 'guid';  // Corrected to match the JSON field name
+            } elseif ($column['NAME'] === '$Name') {
+                $columnMap[$index] = 'name';
+            } elseif ($column['NAME'] === '$_Performance') {
+                $columnMap[$index] = 'performance';
+            } elseif ($column['NAME'] === '$_ThisYearBalance') {
+                $columnMap[$index] = 'this_year_balance';
+            } elseif ($column['NAME'] === '$_PrevYearBalance') {
+                $columnMap[$index] = 'prev_year_balance';
+            } elseif ($column['NAME'] === '$_OnAccountValue') {
+                $columnMap[$index] = 'on_account_value';
+            } elseif ($column['NAME'] === '$_CashInFlow') {
+                $columnMap[$index] = 'cash_in_flow';
+            } elseif ($column['NAME'] === '$_CashOutFlow') {
+                $columnMap[$index] = 'cash_out_flow';
+            } elseif ($column['NAME'] === '$_ThisQuarterBalance') {
+                $columnMap[$index] = 'this_quarter_balance';
+            } elseif ($column['NAME'] === '$_PrevQuarterBalance') {
+                $columnMap[$index] = 'prev_quarter_balance';
+            }
+        }
+
+        Log::info('Completed column mapping.', ['columnMap' => $columnMap]);
+
+        // Now process the rows in the RESULTDATA
+        $rows = $exportDataResponse['RESULTDATA']['ROW'];
+        Log::info('Processing rows.', ['row_count' => count($rows)]);
+
+        foreach ($rows as $row) {
+            $cols = $row['COL'];
+            $ledgerData = [];
+
+            foreach ($cols as $index => $value) {
+                if (isset($columnMap[$index])) {
+                    $ledgerData[$columnMap[$index]] = $value;
+                }
+            }
+
+            Log::info('Processed row data.', ['ledgerData' => $ledgerData]);
+
+            // Check if GUID exists to find the ledger
+            if (isset($ledgerData['guid'])) {
+                $ledgerGuid = $ledgerData['guid'];
+                Log::info('Looking for ledger by GUID.', ['guid' => $ledgerGuid]);
+
+                // Find the ledger by GUID
+                $tallyLedger = TallyLedger::where('guid', $ledgerGuid)->first();
+
+                if ($tallyLedger) {
+                    // Update only the fields that are provided in the request
+                    if (isset($ledgerData['this_year_balance'])) {
+                        $tallyLedger->this_year_balance = $ledgerData['this_year_balance'];
+                    }
+                    if (isset($ledgerData['prev_year_balance'])) {
+                        $tallyLedger->prev_year_balance = $ledgerData['prev_year_balance'];
+                    }
+                    if (isset($ledgerData['on_account_value'])) {
+                        $tallyLedger->on_account_value = $ledgerData['on_account_value'];
+                    }
+                    if (isset($ledgerData['cash_in_flow'])) {
+                        $tallyLedger->cash_in_flow = $ledgerData['cash_in_flow'];
+                    }
+                    if (isset($ledgerData['cash_out_flow'])) {
+                        $tallyLedger->cash_out_flow = $ledgerData['cash_out_flow'];
+                    }
+                    if (isset($ledgerData['performance'])) {
+                        $tallyLedger->performance = $ledgerData['performance'];
+                    }
+                    if (isset($ledgerData['this_quarter_balance'])) {
+                        $tallyLedger->this_quarter_balance = $ledgerData['this_quarter_balance'];
+                    }
+                    if (isset($ledgerData['prev_quarter_balance'])) {
+                        $tallyLedger->prev_quarter_balance = $ledgerData['prev_quarter_balance'];
+                    }
+
+                    // Save the updated ledger record
+                    $tallyLedger->save();
+
+                    Log::info('Updated ledger balances', [
+                        'guid' => $ledgerGuid,
+                        'ledgerData' => $ledgerData
+                    ]);
+                } else {
+                    Log::warning('Ledger not found for GUID: ' . $ledgerGuid);
+                }
+            } else {
+                Log::warning('GUID not found in ledgerData: ' . json_encode($ledgerData));
+            }
+        }
+
+        return response()->json(['message' => 'Ledger balances updated successfully.']);
+
+    } catch (\Exception $e) {
+        Log::error('Error updating ledger balances.', ['error' => $e->getMessage()]);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
 
 
 

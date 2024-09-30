@@ -41,6 +41,9 @@ class PaymentRegisterDataTable extends DataTable
             ->addColumn('voucher_number', function ($entry) {
                 return '<a href="' . route('reports.VoucherItemPayment', ['VoucherItem' => $entry->id]) . '">' . $entry->voucher_number . '</a>';
             })
+            ->addColumn('voucher_date', function ($entry) {
+                return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
+            })
             ->rawColumns(['voucher_number']);
     }
 

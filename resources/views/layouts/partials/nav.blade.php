@@ -196,26 +196,6 @@
                </ul>
              </li> --}}
 
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
-                  <div class="parent-icon"><i class="bx bx-buildings"></i>
-                  </div>
-                  <div class="menu-title d-flex align-items-center company-changes">Companies</div>
-                  <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
-                </a>
-                <ul class="dropdown-menu">
-                    @foreach($companies as $company)
-                        <li>
-                            {{-- <a class="dropdown-item" href="javascript:;" onclick="changeCompany('{{ $company->id }}')"> --}}
-                            <a class="dropdown-item {{ session('selected_company_id') == $company->id ? 'selected' : '' }}"
-                                href="javascript:;" onclick="changeCompany('{{ $company->id }}')">
-                              {{ $company->name }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </li>
-
             {{-- @if(auth()->check() && auth()->user()->status == 1 && auth()->user()->role == 'Users')
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('BankReconciliation.*') ? 'active' : '' }}" href="{{ route('BankReconciliation.index') }}">
@@ -236,6 +216,27 @@
             </li>
             @endif
 
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
+                  <div class="parent-icon"><i class="bx bx-buildings"></i>
+                  </div>
+                  <div class="menu-title d-flex align-items-center company-changes">Companies</div>
+                  <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
+                </a>
+                <ul class="dropdown-menu">
+                    @foreach($companies as $company)
+                        <li>
+                            {{-- <a class="dropdown-item" href="javascript:;" onclick="changeCompany('{{ $company->id }}')"> --}}
+                            <a class="dropdown-item {{ session('selected_company_id') == $company->id ? 'selected' : '' }}"
+                                href="javascript:;" onclick="changeCompany('{{ $company->id }}')">
+                              {{ $company->name }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </li>
+            
          </ul>
        </div>
      </div>

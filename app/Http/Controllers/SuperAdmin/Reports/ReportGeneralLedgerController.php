@@ -42,8 +42,8 @@ class ReportGeneralLedgerController extends Controller
                                     ->findOrFail($generalLedgerId);
 
 
-                                    
-        $menuItems = TallyGroup::where('parent', '')->whereIn('company_guid', $companyGuids)->get();
+
+        $menuItems = TallyGroup::where('parent', '')->orWhereNull('parent')->whereIn('company_guid', $companyGuids)->get();
 
         return view('superadmin.reports.generalLedger._general_ledger_details', [
             'generalLedger' => $generalLedger,
@@ -311,16 +311,19 @@ class ReportGeneralLedgerController extends Controller
         ]);
     }
 
-
-
-
-
     public function getGeneralGroupLedgerData($generalLedgerId)
     {
         $companyGuids = $this->reportService->companyData();
 
         $generalLedger = TallyGroup::whereIn('company_guid', $companyGuids)
-                                ->findOrFail($generalLedgerId);
+                                    ->find($generalLedgerId);
+
+        // Handle the case where the general ledger does not exist
+        if (!$generalLedger) {
+            // Return a response or throw a custom exception
+            return response()->json(['message' => 'General ledger not found.'], 404);
+        }
+
         $generalLedgerName = $generalLedger->name;
 
         // Define your normalized names array
@@ -349,7 +352,6 @@ class ReportGeneralLedgerController extends Controller
                         SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) +
                         SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END)) as closing_balance')
             )
-            // ->whereIn('tally_ledgers.company_guid', $companyGuids)
             ->whereIn('tally_vouchers.company_guid', $companyGuids) // Corrected here
             ->groupBy('tally_ledgers.language_name', 'tally_ledgers.guid', 'tally_ledgers.opening_balance');
 
@@ -367,11 +369,69 @@ class ReportGeneralLedgerController extends Controller
             ->editColumn('closing_balance', function ($row) {
                 return $this->formatNumber($row->closing_balance);
             })
-            // ->editColumn('name', function ($row) {
-            //     return $row->guid;
-            // })
             ->make(true);
     }
+
+
+
+
+    // public function getGeneralGroupLedgerData($generalLedgerId)
+    // {
+    //     $companyGuids = $this->reportService->companyData();
+
+    //     $generalLedger = TallyGroup::whereIn('company_guid', $companyGuids)
+    //                             ->findOrFail($generalLedgerId);
+    //     $generalLedgerName = $generalLedger->name;
+
+    //     // Define your normalized names array
+    //     $normalizedNames = [
+    //         'Direct Expenses, Expenses (Direct)' => 'Direct Expenses',
+    //         'Direct Incomes, Income (Direct)' => 'Direct Incomes',
+    //         'Indirect Expenses, Expenses (Indirect)' => 'Indirect Expenses',
+    //         'Indirect Incomes, Income (Indirect)' => 'Indirect Incomes',
+    //     ];
+
+    //     // Check if the generalLedgerName is in the normalized names array
+    //     if (array_key_exists($generalLedgerName, $normalizedNames)) {
+    //         $generalLedgerName = $normalizedNames[$generalLedgerName];
+    //     }
+
+    //     $query = TallyLedger::where('parent', $generalLedgerName)
+    //         ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
+    //         ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
+    //         ->select(
+    //             'tally_ledgers.language_name',
+    //             'tally_ledgers.guid',
+    //             'tally_ledgers.opening_balance',
+    //             DB::raw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as debit'),
+    //             DB::raw('SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END) as credit'),
+    //             DB::raw('(tally_ledgers.opening_balance +
+    //                     SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) +
+    //                     SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END)) as closing_balance')
+    //         )
+    //         // ->whereIn('tally_ledgers.company_guid', $companyGuids)
+    //         ->whereIn('tally_vouchers.company_guid', $companyGuids) // Corrected here
+    //         ->groupBy('tally_ledgers.language_name', 'tally_ledgers.guid', 'tally_ledgers.opening_balance');
+
+    //     return DataTables::of($query)
+    //         ->addIndexColumn()
+    //         ->editColumn('opening_balance', function ($row) {
+    //             return $this->formatNumber($row->opening_balance);
+    //         })
+    //         ->editColumn('debit', function ($row) {
+    //             return $this->formatNumber($row->debit);
+    //         })
+    //         ->editColumn('credit', function ($row) {
+    //             return $this->formatNumber($row->credit);
+    //         })
+    //         ->editColumn('closing_balance', function ($row) {
+    //             return $this->formatNumber($row->closing_balance);
+    //         })
+    //         // ->editColumn('name', function ($row) {
+    //         //     return $row->guid;
+    //         // })
+    //         ->make(true);
+    // }
 
     // public function getGeneralGroupLedgerData($generalLedgerId)
     // {

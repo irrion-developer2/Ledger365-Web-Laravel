@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use App\Services\ReportService;
 
 class GeneralLedgerDataTable extends DataTable
-{  
+{
     protected $reportService;
 
     public function __construct(ReportService $reportService)
@@ -55,11 +55,11 @@ class GeneralLedgerDataTable extends DataTable
                 }
                 return $data->account_type;
             })
-            
+
             ->editColumn('ledger_count', function ($data) {
                 $name = $data->name;
                 $normalizedNames = $this->normalizedNames;
-                
+
                 if (isset($normalizedNames[$name])) {
                     $name = $normalizedNames[$name];
                 }
@@ -84,10 +84,10 @@ class GeneralLedgerDataTable extends DataTable
                         break;
                     }
                 }
-                
+
                 $groupLedgerIdsQuery = TallyGroup::whereIn('company_guid', $companyGuids)->where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-            
+
                 if ($groupLedgerIds->isNotEmpty()) {
                     $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
                         ->whereIn('company_guid', $companyGuids)
@@ -97,13 +97,13 @@ class GeneralLedgerDataTable extends DataTable
                         ->whereIn('company_guid', $companyGuids)
                         ->pluck('guid');
                 }
-            
+
                 $allLedgerIds = $ledgerIds->unique();
-            
+
                 if ($allLedgerIds->isEmpty()) {
-                    return '-';  
+                    return '-';
                 }
-            
+
                 // $totalCreditHead = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
                 //     ->where('entry_type', 'credit')
                 //     ->sum('amount');
@@ -116,24 +116,24 @@ class GeneralLedgerDataTable extends DataTable
                 $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_heads.entry_type', 'credit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_heads.amount');
 
 
                 $totalCreditBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'credit')
-                    ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
 
                 $totalCredit = $totalCreditHead + $totalCreditBankHead;
-                
+
 
                 if ($totalCredit == 0) {
-                    return '-';  
+                    return '-';
                 }
-            
+
                 return number_format($totalCredit, 2);
             })
 
@@ -144,32 +144,32 @@ class GeneralLedgerDataTable extends DataTable
                 if (empty($data) || !is_object($data)) {
                     return '-';
                 }
-            
+
                 $name = $data->name;
-            
+
                 foreach ($this->normalizedNames as $pattern => $normalized) {
                     if (strpos($name, $pattern) !== false) {
                         $name = $normalized;
                         break;
                     }
                 }
-            
+
                 $groupLedgerIdsQuery = TallyGroup::whereIn('company_guid', $companyGuids)
                                         ->where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-            
+
                 if ($groupLedgerIds->isNotEmpty()) {
                     $ledgerIds = TallyLedger::whereIn('company_guid', $companyGuids)->whereIn('parent', $groupLedgerIds)->pluck('guid');
                 } else {
                     $ledgerIds = TallyLedger::whereIn('company_guid', $companyGuids)->where('parent', $name)->pluck('guid');
                 }
-            
+
                 $allLedgerIds = $ledgerIds->unique();
-            
+
                 if ($allLedgerIds->isEmpty()) {
                     return '-';
                 }
-            
+
                 // $totalDebitHead = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
                 //     ->where('entry_type', 'debit')
                 //     ->sum('amount');
@@ -177,78 +177,78 @@ class GeneralLedgerDataTable extends DataTable
                 $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                         ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                         ->where('tally_voucher_heads.entry_type', 'debit')
-                        ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                        ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->sum('tally_voucher_heads.amount');
 
 
                 $totalDebitBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                         ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                         ->where('tally_voucher_acc_allocation_heads.entry_type', 'debit')
-                        ->whereIn('tally_vouchers.company_guid', $companyGuids) 
+                        ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->sum('tally_voucher_acc_allocation_heads.amount');
 
                 $totalDebit = $totalDebitHead + $totalDebitBankHead;
-            
+
                 if ($totalDebit == 0) {
                     return '-';
                 }
-            
+
                 return number_format(abs($totalDebit), 2);
             })
-            
-            
+
+
             ->editColumn('opening_balance', function ($data) {
                 $name = $data->name;
-                
+
                 foreach ($this->normalizedNames as $pattern => $normalized) {
                     if (strpos($name, $pattern) !== false) {
                         $name = $normalized;
                         break;
                     }
                 }
-                
+
                 $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-                
+
                 if ($groupLedgerIds->isNotEmpty()) {
                     $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
                         ->pluck('guid');
                 } else {
                     $ledgerIds = TallyLedger::where('parent', $name)->pluck('guid');
                 }
-                
+
                 $allLedgerIds = $ledgerIds->unique();
-                
+
                 if ($allLedgerIds->isEmpty()) {
                     return '-';  // Return empty string instead of '-'
                 }
-                
+
                 $openingBalance = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
                     ->where('entry_type', 'opening')
                     ->sum('amount');
-                
+
                 if ($openingBalance == 0) {
                     return '-';  // Return empty string instead of '-'
                 }
-                
+
                 return number_format(abs($openingBalance), 2);  // Remove negative sign using abs()
             })
-            
+
             ->editColumn('closing_balance', function ($data) {
                 $companyGuids = $this->reportService->companyData();
 
                 $name = $data->name;
-                
+
                 foreach ($this->normalizedNames as $pattern => $normalized) {
                     if (strpos($name, $pattern) !== false) {
                         $name = $normalized;
                         break;
                     }
                 }
-                
+
                 $groupLedgerIdsQuery = TallyGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-                
+
                 if ($groupLedgerIds->isNotEmpty()) {
                     $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
                             ->whereIn('company_guid', $companyGuids)
@@ -258,13 +258,13 @@ class GeneralLedgerDataTable extends DataTable
                             ->whereIn('company_guid', $companyGuids)
                             ->pluck('guid');
                 }
-                
+
                 $allLedgerIds = $ledgerIds->unique();
-                
+
                 if ($allLedgerIds->isEmpty()) {
-                    return '-';  
+                    return '-';
                 }
-                
+
                 // $totalDebitHead = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
                 //     ->where('entry_type', 'debit')
                 //     ->sum('amount');
@@ -284,7 +284,7 @@ class GeneralLedgerDataTable extends DataTable
                                                                         ->sum('tally_voucher_acc_allocation_heads.amount');
 
                 $totalDebit = $totalDebitHead + $totalDebitBankHead;
-                
+
                 // $totalCreditHead = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
                 //     ->where('entry_type', 'credit')
                 //     ->sum('amount');
@@ -310,21 +310,21 @@ class GeneralLedgerDataTable extends DataTable
 
                 $totalCredit = $totalCreditHead + $totalCreditBankHead;
 
-                
+
                 $openingBalance = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
                     ->where('entry_type', 'opening')
                     ->sum('amount');
 
                 $total = $totalDebit + $totalCredit;
-                
+
                 // $closingBalance = $openingBalance + $totalDebit + $totalCredit;
                 $closingBalance = $openingBalance + $total;
-                
+
                 if ($closingBalance == 0) {
-                    return '-'; 
+                    return '-';
                 }
-                
-                return number_format(abs($closingBalance), 2); 
+
+                return number_format(abs($closingBalance), 2);
             })
 
             ->rawColumns(['name']);
@@ -333,9 +333,13 @@ class GeneralLedgerDataTable extends DataTable
     public function query(TallyGroup $model)
     {
         $companyGuids = $this->reportService->companyData();
-        $query = $model->newQuery()->where('parent', '')->whereIn('company_guid', $companyGuids);
+        $query = $model->newQuery()->where(function($query) {
+            $query->where('parent', '')
+                  ->orWhereNull('parent');
+        })->whereIn('company_guid', $companyGuids);
+
         Log::info('Generated Query:', ['query' => $query->toSql(), 'bindings' => $query->getBindings()]);
-        return $query;            
+        return $query;
     }
 
     public function html()
@@ -346,7 +350,7 @@ class GeneralLedgerDataTable extends DataTable
             ->minifiedAjax()
             ->language([
                 'lengthMenu' => __('Show _MENU_ entries'),
-                "searchPlaceholder" => __('Search...'), 
+                "searchPlaceholder" => __('Search...'),
                 "search" => ""
             ])
             ->initComplete('function() {
@@ -355,7 +359,7 @@ class GeneralLedgerDataTable extends DataTable
                 searchInput.removeClass(\'form-control form-control-sm\').addClass(\'form-control ps-5 radius-30\').attr(\'placeholder\', \'Search Order\');
                 searchInput.wrap(\'<div class="position-relative pt-1"></div>\');
                 searchInput.parent().append(\'<span class="position-absolute top-50 product-show translate-middle-y"><i class="bx bx-search"></i></span>\');
-                
+
                 var select = $(table.api().table().container()).find(".dataTables_length select").removeClass(\'custom-select custom-select-sm form-control form-control-sm\').addClass(\'form-select form-select-sm\');
             }')
             ->parameters([
@@ -368,6 +372,7 @@ class GeneralLedgerDataTable extends DataTable
                 ],
                 "scrollX" => true,
                 "paging" => false,
+                "ordering" =>false,
                 "drawCallback" => 'function( settings ) {
                     var tooltipTriggerList = [].slice.call(
                         document.querySelectorAll("[data-bs-toggle=tooltip]")

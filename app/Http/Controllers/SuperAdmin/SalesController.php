@@ -142,6 +142,9 @@ class SalesController extends Controller
                 ->addColumn('debit', function ($entry) {
                     return $entry->entry_type === 'debit' ? number_format(abs($entry->amount), 2, '.', '') : '-';
                 })
+                ->addColumn('voucher_date', function ($entry) {
+                    return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
+                })
                 ->make(true);
         }
     }

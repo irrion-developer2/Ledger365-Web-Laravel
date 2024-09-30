@@ -48,8 +48,8 @@ class AnalyticController extends Controller
         $totalSalesAmt = abs(array_sum($nonZeroSales));
         $monthsWithValueCount = count($nonZeroSales);
 
-        $averageSalesAmt = $monthsWithValueCount > 0 ? $totalSalesAmt / $monthsWithValueCount : 0;
-        $avg_sales = $this->reportService->formatAmt($averageSalesAmt);
+        $avg_sales = $monthsWithValueCount > 0 ? $totalSalesAmt / $monthsWithValueCount : 0;
+        // $avg_sales = $th($averageSalesAmt);
         /* Avg Sales */
 
 

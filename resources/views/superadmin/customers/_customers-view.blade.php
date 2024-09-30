@@ -149,11 +149,11 @@
 
                         var balanceText = ((runningBalance)).toFixed(2);
 
-                        if (runningBalance > 0) {
-                            balanceText += ' CR';
-                        } else if (runningBalance < 0) {
-                            balanceText += ' DR';
-                        }
+                        // if (runningBalance > 0) {
+                        //     balanceText += ' CR';
+                        // } else if (runningBalance < 0) {
+                        //     balanceText += ' DR';
+                        // }
 
 
                         var balanceCell = api.cell({ row: rowIdx, column: 5 }).node();

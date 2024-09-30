@@ -19,7 +19,7 @@
                             <div class="d-flex align-items-center">
                                 <div>
                                     <p class="mb-0 text-secondary">Cash</p>
-                                    <h4 class="my-1 text-info">&#8377 {{ abs($cashAmount) }}</h4>
+                                    <h4 class="my-1 text-info">&#8377 {{ indian_format(abs($cashAmount)) }}</h4>
                                 </div>
                                 <div class="widgets-icons-2 rounded-circle bg-gradient-blues text-white ms-auto"><i class='bx bxs-wallet'></i>
                                 </div>
@@ -33,7 +33,7 @@
                             <div class="d-flex align-items-center">
                                 <div>
                                     <p class="mb-0 text-secondary">Bank</p>
-                                    <h4 class="my-1 text-danger">&#8377 {{ abs($cashBankAmount) }}</h4>
+                                    <h4 class="my-1 text-danger">&#8377 {{ indian_format(abs($cashBankAmount)) }}</h4>
                                 </div>
 
                                     <div class="widgets-icons-2 rounded-circle bg-gradient-burning text-white ms-auto">
@@ -65,7 +65,7 @@
                            <div class="d-flex align-items-center">
                                <div>
                                    <p class="mb-0 text-secondary">Payables</p>
-                                   <h4 class="my-1 text-warning">&#8377 {{ number_format(abs($payableCreditNote), 2) }}
+                                   <h4 class="my-1 text-warning">&#8377 {{ indian_format(abs($payableCreditNote)) }}
                                    </h4>
                                </div>
                                <div class="widgets-icons-2 rounded-circle bg-gradient-orange text-white ms-auto">

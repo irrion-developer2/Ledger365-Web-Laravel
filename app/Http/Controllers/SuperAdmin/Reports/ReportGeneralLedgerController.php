@@ -41,6 +41,8 @@ class ReportGeneralLedgerController extends Controller
         $generalLedger = TallyGroup::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($generalLedgerId);
 
+
+                                    
         $menuItems = TallyGroup::where('parent', '')->whereIn('company_guid', $companyGuids)->get();
 
         return view('superadmin.reports.generalLedger._general_ledger_details', [

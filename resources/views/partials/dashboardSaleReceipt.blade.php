@@ -87,7 +87,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <p>Total Overdue : {{ number_format(abs($pieChartDataTotal), 2) }}</p>
+                <p>Total Overdue : {{ indian_format(abs($pieChartDataTotal)) }}</p>
                 <div class="chart-container-2 d-flex justify-content-center">
                     <canvas id="pieChart"></canvas>
                     <canvas id="chart2" class="d-none"></canvas>

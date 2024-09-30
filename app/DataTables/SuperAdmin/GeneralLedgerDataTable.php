@@ -104,13 +104,6 @@ class GeneralLedgerDataTable extends DataTable
                     return '-';
                 }
 
-                // $totalCreditHead = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
-                //     ->where('entry_type', 'credit')
-                //     ->sum('amount');
-
-                // $totalCreditBankHead = TallyVoucherAccAllocationHead::whereIn('ledger_guid', $allLedgerIds)
-                //     ->where('entry_type', 'credit')
-                //     ->sum('amount');
 
 
                 $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')

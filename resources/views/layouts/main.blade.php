@@ -31,7 +31,7 @@
         <link href="{{ url('assets/css/icons.css') }}" rel="stylesheet">
         <link href="{{ url('assets/css/custom.css') }}" rel="stylesheet">
 
-        
+
 
         <!-- Theme Style CSS -->
         <link rel="stylesheet" href="{{ url('assets/css/dark-theme.css') }}" />
@@ -77,10 +77,10 @@
 		<!--Start Back To Top Button--> <a href="javaScript:;" class="back-to-top"><i class='bx bxs-up-arrow-alt'></i></a>
 		<!--End Back To Top Button-->
         @include("layouts.footer")
-		
+
 	</div>
 	<!--end wrapper-->
-    
+
 	<!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 

@@ -16,10 +16,10 @@ use App\Models\TallyVoucherItem;
 use App\Models\TallyBankAllocation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Services\ReportService; 
+use App\Services\ReportService;
 
 class ReportController extends Controller
-{    
+{
     protected $reportService;
 
     public function __construct(ReportService $reportService)
@@ -29,23 +29,65 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
+        // 1. Try to get companyId from the session (previous URL)
         $previousUrl = $request->session()->get('_previous.url');
-        
         $companyId = null;
- 
+
         if ($previousUrl) {
+            // Attempt to extract the companyId from the URL if available
             $urlParts = explode('/', $previousUrl);
             $companyId = end($urlParts);
-            
+
+            // Log the extracted value from the previous URL
+            \Log::info('Company ID from Previous URL:', ['companyId' => $companyId]);
+
+            // Check if the extracted value is a valid numeric ID
             if (!is_numeric($companyId)) {
                 $companyId = null;
+                \Log::info('Invalid Company ID from Previous URL (Non-numeric)', ['previousUrl' => $previousUrl]);
             }
+        } else {
+            \Log::info('No Previous URL found in session');
         }
 
-        $company = TallyCompany::where('id', $companyId)->get();
+        // 2. Fallback: Try to get companyId from the current request (route parameter or query string)
+        if (!$companyId) {
+            $companyId = $request->route('companyId'); // Assuming companyId is part of the route
+            \Log::info('Company ID from Route:', ['companyId' => $companyId]);
+        }
 
-        return view ('superadmin.reports.index');
+        // 3. Fallback: Try to get companyId from query string (e.g., ?companyId=123)
+        if (!$companyId && $request->has('companyId')) {
+            $companyId = $request->query('companyId');
+            \Log::info('Company ID from Query String:', ['companyId' => $companyId]);
+        }
+
+        // 4. Fallback: Try to get companyId from session storage (other session keys)
+        if (!$companyId) {
+            $companyId = $request->session()->get('companyId');
+            \Log::info('Company ID from Session (other session keys):', ['companyId' => $companyId]);
+        }
+
+        // 5. Final check: If no companyId is found or it's not valid, set a default value or return an error
+        if (!is_numeric($companyId)) {
+            \Log::error('Company ID is missing or invalid.');
+            return redirect()->back()->withErrors(['message' => 'Company ID is missing or invalid']);
+        }
+
+        // Retrieve company data from the database
+        $company = TallyCompany::find($companyId);
+
+        if (!$company) {
+            \Log::error('Company not found for Company ID:', ['companyId' => $companyId]);
+            return redirect()->back()->withErrors(['message' => 'Company not found']);
+        }
+
+        \Log::info('Company successfully retrieved:', ['companyId' => $companyId, 'companyName' => $company->name]);
+
+        // Pass the company data to the view
+        return view('superadmin.reports.index', compact('company'));
     }
+
 
     public function AllVoucherHeadReports($voucherHeadId)
     {
@@ -71,12 +113,12 @@ class ReportController extends Controller
         $cashBankLedgerName = $cashBankLedger->name;
         $cashBankLadgerGuid = $cashBankLedger->guid;
 
-        $query = TallyLedger::select('tally_ledgers.*', 
-                                    'tally_voucher_heads.entry_type', 
+        $query = TallyLedger::select('tally_ledgers.*',
+                                    'tally_voucher_heads.entry_type',
                                     'tally_voucher_heads.amount',
-                                    'tally_voucher_heads.ledger_name',  
-                                    'tally_vouchers.voucher_type' , 
-                                    'tally_vouchers.voucher_date', 
+                                    'tally_voucher_heads.ledger_name',
+                                    'tally_vouchers.voucher_type' ,
+                                    'tally_vouchers.voucher_date',
                                     'tally_vouchers.voucher_number',
                                     'tally_vouchers.id')
             ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
@@ -112,20 +154,20 @@ class ReportController extends Controller
 
         $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                 ->findOrFail($voucherItemId);
-       
+
         $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
         // $saleReceiptItem = $voucherItemName->firstWhere('voucher_type', 'Receipt');
 
         $saleReceiptItem = $voucherItemName->filter(function ($item) use ($voucherItem) {
             return $item->voucher_type !== $voucherItem->voucher_type;
         })->first();
-    
+
         if ($saleReceiptItem) {
             $voucherHeadsSaleReceipt = TallyVoucherHead::where('tally_voucher_id', $saleReceiptItem->id)
                 ->where('ledger_name', $saleReceiptItem->party_ledger_name)
                 ->get();
         } else {
-            $voucherHeadsSaleReceipt = collect(); 
+            $voucherHeadsSaleReceipt = collect();
         }
         // dd($saleReceiptItem);
 
@@ -152,7 +194,7 @@ class ReportController extends Controller
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
             $ledgerItem = $ledgerData->first();
         } else {
-            $ledgerItem = $ledgerData; 
+            $ledgerItem = $ledgerData;
         }
         // dd($ledgerItem);
 
@@ -175,7 +217,7 @@ class ReportController extends Controller
                 }
             }
         $pendingVoucherHeads = TallyVoucherHead::where('ledger_name', $voucherItem->party_ledger_name)->get();
-        
+
         $voucherHeads = TallyVoucherHead::where('tally_voucher_id', $voucherItemId)->get();
 
         $gstVoucherHeads = $voucherHeads->filter(function ($voucherHead) use ($voucherItem) {
@@ -262,8 +304,8 @@ class ReportController extends Controller
             })
             ->make(true);
     }
-    
-    
+
+
     public function getVoucherItemReceiptData($voucherItemId)
     {
         $companyGuids = $this->reportService->companyData();
@@ -339,26 +381,26 @@ class ReportController extends Controller
 
         $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($voucherItemId);
-    
+
         $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
 
         $saleReceiptItem = $voucherItemName->filter(function ($item) use ($voucherItem) {
             return $item->voucher_type !== $voucherItem->voucher_type;
         })->first();
-        
+
         if ($saleReceiptItem) {
             $voucherHeadsSaleReceipt = TallyVoucherHead::where('tally_voucher_id', $saleReceiptItem->id)
                 ->where('ledger_name', $saleReceiptItem->party_ledger_name)
                 ->get();
         } else {
-            $voucherHeadsSaleReceipt = collect(); 
+            $voucherHeadsSaleReceipt = collect();
         }
 
         $ledgerData = TallyLedger::where('language_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
             $ledgerItem = $ledgerData->first();
         } else {
-            $ledgerItem = $ledgerData; 
+            $ledgerItem = $ledgerData;
         }
 
         $creditPeriod = intval($ledgerItem->bill_credit_period ?? 0);
@@ -366,7 +408,7 @@ class ReportController extends Controller
         $dueDate = $voucherDate->copy()->addDays($creditPeriod);
 
         $voucherHeads = TallyVoucherHead::where('tally_voucher_id', $voucherItemId)->get();
-        
+
         $gstVoucherHeads = $voucherHeads->filter(function ($voucherHead) use ($voucherItem) {
             return $voucherHead->ledger_name !== $voucherItem->party_ledger_name;
         });
@@ -387,7 +429,7 @@ class ReportController extends Controller
             }
             // dd($successfulAllocations);
 
-        
+
         $pendingVoucherHeads = TallyVoucherHead::where('ledger_name', $voucherItem->party_ledger_name)->get();
         // dd($voucherHeadsSaleReceipt);
 
@@ -398,7 +440,7 @@ class ReportController extends Controller
         $totalIGST18 = $voucherHeads->filter(function ($head) {
             return $head->ledger_name === 'IGST @18%';
         })->sum('amount');
-        
+
         $voucherItems = TallyVoucherItem::where('tally_voucher_id', $voucherItemId)->get();
         $uniqueGstLedgerSources = $voucherItems->pluck('gst_ledger_source')->unique();
         $totalCountItems = TallyVoucherItem::where('tally_voucher_id', $voucherItemId)->count();
@@ -434,30 +476,30 @@ class ReportController extends Controller
     public function AllVoucherItemReceiptReports($voucherItemId)
     {
         $companyGuids = $this->reportService->companyData();
-        
+
         $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($voucherItemId);
-    
+
         $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
 
         $saleReceiptItem = $voucherItemName->filter(function ($item) use ($voucherItem) {
             return $item->voucher_type !== $voucherItem->voucher_type;
         })->first();
-        
+
         // Check if $saleReceiptItem is not null
         if ($saleReceiptItem) {
             $voucherHeadsSaleReceipt = TallyVoucherHead::where('tally_voucher_id', $saleReceiptItem->id)
             ->where('ledger_name', $saleReceiptItem->party_ledger_name)
                 ->get();
         } else {
-            $voucherHeadsSaleReceipt = collect(); 
+            $voucherHeadsSaleReceipt = collect();
         }
 
         $ledgerData = TallyLedger::where('language_name', $voucherItem->party_ledger_name)->get();
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
             $ledgerItem = $ledgerData->first();
         } else {
-            $ledgerItem = $ledgerData; 
+            $ledgerItem = $ledgerData;
         }
 
         $creditPeriod = intval($ledgerItem->bill_credit_period ?? 0);
@@ -483,7 +525,7 @@ class ReportController extends Controller
         // dd($pendingVoucherHeads);
 
 
-        
+
         $voucherHeads = TallyVoucherHead::where('tally_voucher_id', $voucherItemId)->get();
         $totalRoundOff = $voucherHeads->filter(function ($head) {
             return $head->ledger_name === 'Round Off';

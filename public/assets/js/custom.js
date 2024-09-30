@@ -136,6 +136,12 @@ $(document).ready(function () {
     });
 });
 
+// $(document).ready(function () {
+//     $(document).on('click', 'button[type="submit"]', function (event) {
+//         changeCompany(companyId)
+//     });
+// });
+
 function changeCompany(companyId) {
     console.log('Selected Company ID:', companyId);
 

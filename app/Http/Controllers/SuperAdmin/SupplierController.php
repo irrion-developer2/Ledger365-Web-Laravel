@@ -221,7 +221,7 @@ class SupplierController extends Controller
                         ->first();
 
                     if ($latestReceipt) {
-                        return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('j F Y');
+                        return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('d-M-Y');
                     } else {
                         return '-';
                     }
@@ -255,7 +255,7 @@ class SupplierController extends Controller
                         ->first();
 
                     if ($latestReceipt) {
-                        return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('j F Y');
+                        return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('d-M-Y');
                     } else {
                         return '-';
                     }

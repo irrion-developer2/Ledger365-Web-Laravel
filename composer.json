@@ -36,8 +36,11 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Neel\\GstApi\\": "libpackages/neel/gstapi/src" 
-        }
+            "Neel\\GstApi\\": "libpackages/neel/gstapi/src"
+        },
+        "files": [
+            "app/Helpers/NumberFormatter.php"  
+        ]
     },
     "autoload-dev": {
         "psr-4": {

@@ -45,6 +45,9 @@ class DayBookDataTable extends DataTable
             ->filterColumn('debit', function($query, $keyword) {
                 $query->where('amount', 'like', "%{$keyword}%");
             })
+            ->addColumn('voucher_date', function ($entry) {
+                return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
+            })
             ->rawColumns(['voucher_number']);
     }
 

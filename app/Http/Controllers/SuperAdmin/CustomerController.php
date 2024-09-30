@@ -244,7 +244,7 @@ class CustomerController extends Controller
                         ->first();
 
                     if ($latestReceipt) {
-                        return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('j F Y');
+                        return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('d-M-Y');
                     } else {
                         return '-';
                     }
@@ -342,7 +342,7 @@ class CustomerController extends Controller
                         ->first();
 
                     if ($latestReceipt) {
-                        return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('j F Y');
+                        return \Carbon\Carbon::parse($latestReceipt->voucher_date)->format('d-M-Y');
                     } else {
                         return '-';
                     }
@@ -394,7 +394,10 @@ class CustomerController extends Controller
                 return $entry->voucherHead ? $entry->voucherHead->voucher_type : '';
             })
             ->addColumn('voucher_date', function ($entry) {
-                return $entry->voucherHead ? $entry->voucherHead->voucher_date : '';
+                if ($entry->voucherHead && $entry->voucherHead->voucher_date) {
+                    return \Carbon\Carbon::parse($entry->voucherHead->voucher_date)->format('d-M-Y'); // Format: 02-Aug-2024
+                }
+                return '';
             })
             ->make(true);
     }

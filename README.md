@@ -14,6 +14,8 @@
 * php artisan tenancy:install
 * also setup route
 
+git token : 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
+
 
 in cpanal tenant workable steps 
 config->app.php

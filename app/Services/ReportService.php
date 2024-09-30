@@ -7,6 +7,8 @@ use App\Models\TallyCompany;
 
 class ReportService
 {
+
+
     public function companyData()
     {
         $previousUrl = session()->get('_previous.url');

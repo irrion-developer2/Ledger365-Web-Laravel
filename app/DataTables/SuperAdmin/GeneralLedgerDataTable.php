@@ -170,10 +170,6 @@ class GeneralLedgerDataTable extends DataTable
                     return '-';
                 }
 
-                // $totalDebitHead = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
-                //     ->where('entry_type', 'debit')
-                //     ->sum('amount');
-
                 $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                         ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                         ->where('tally_voucher_heads.entry_type', 'debit')

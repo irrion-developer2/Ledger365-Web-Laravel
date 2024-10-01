@@ -34,21 +34,6 @@ class ReportService
     //     return TallyCompany::where('id', $companyId)->pluck('guid')->toArray();
     // }
 
-    // public function companyData()
-    // {
-    //     $user = auth()->user();
-    //     $userSubId = $user->sub_id;
-    //     return TallyCompany::where('sub_id', $userSubId)->pluck('guid')->toArray();
-    // }
-
-    // public function companyData()
-    // {
-    //     $user = auth()->user();
-    //     $userSubId = $user->sub_id;
-
-    //     return TallyCompany::where('sub_id', $userSubId)->pluck('guid');
-    // }
-
     public $normalizedNames = [
         'Direct Expenses, Expenses (Direct)' => 'Direct Expenses',
         'Direct Incomes, Income (Direct)' => 'Direct Incomes',

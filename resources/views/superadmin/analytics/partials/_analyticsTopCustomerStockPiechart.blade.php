@@ -81,7 +81,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-lg-12 col-xl-12">
-                        {{-- @foreach ($top5StockItems as $stockItem)
+                        @foreach ($top5StockItems as $stockItem)
                             <div class="mb-4">
                                 <p class="mb-2">{{ $stockItem['name'] }}
                                     <span class="float-end">{{ number_format($stockItem['stock_value'], 2) }}</span>
@@ -100,7 +100,7 @@
                                     </div>
                                 </div>
                             </div>
-                        @endforeach --}}
+                        @endforeach
                     </div>
                 </div>
             </div>

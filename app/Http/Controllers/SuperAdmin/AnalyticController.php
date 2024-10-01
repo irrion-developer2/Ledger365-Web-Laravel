@@ -93,39 +93,39 @@ class AnalyticController extends Controller
 
 
         /* Top 5 Stock */
-        // $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)->get();
+        $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)->get();
 
-        // $stockItems = $tallyItems->map(function ($entry) {
-        //     $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
-        //     $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
+        $stockItems = $tallyItems->map(function ($entry) {
+            $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
+            $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
 
-        //     $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
-        //     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-        //     $stockItemVoucherHandBalance = $stockItemData['balance'];
+            $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
+            $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
+            $stockItemVoucherHandBalance = $stockItemData['balance'];
 
-        //     $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
-        //     $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
+            $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
+            $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
 
-        //     $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
-        //     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
+            $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
+            $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
 
-        //     $stockOnHandValue = 0; // Default to 0
+            $stockOnHandValue = 0; // Default to 0
 
-        //     if ($finalOpeningBalance != 0) {
-        //         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-        //         $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
-        //         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-        //         $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-        //     }
+            if ($finalOpeningBalance != 0) {
+                $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
+                $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
+                $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
+                $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
+            }
 
-        //     return [
-        //         'name' => $entry->name,
-        //         'stock_value' => $stockOnHandValue
-        //     ];
-        // });
+            return [
+                'name' => $entry->name,
+                'stock_value' => $stockOnHandValue
+            ];
+        });
 
-        // $top5StockItems = $stockItems->sortByDesc('stock_value')->take(5);
-        // $maxStockValue = $top5StockItems->max('stock_value');
+        $top5StockItems = $stockItems->sortByDesc('stock_value')->take(5);
+        $maxStockValue = $top5StockItems->max('stock_value');
         /* Top 5 Stock */
 
         /* Customer Category */
@@ -171,8 +171,8 @@ class AnalyticController extends Controller
             // 'stock_value' => $stock_value,
             'topCustomers' => $topCustomers,
             'maxSales' => $maxSales ,
-            // 'top5StockItems' => $top5StockItems,
-            // 'maxStockValue' => $maxStockValue,
+            'top5StockItems' => $top5StockItems,
+            'maxStockValue' => $maxStockValue,
             'customerCategory' => $customerCategory,
             // 'ClosingStock' => $ClosingStock,
             'closingStockData' => $closingStockData,

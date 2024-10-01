@@ -30,6 +30,8 @@ class ReportController extends Controller
     public function index(Request $request)
     {
         // 1. Try to get companyId from the session (previous URL)
+        $companyIds = $request->session()->get('companyIds', []);
+        \Log::info('companyIds:', ['companyIds' => $companyIds]);
         $previousUrl = $request->session()->get('_previous.url');
         $companyId = null;
 

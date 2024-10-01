@@ -29,65 +29,8 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-        // 1. Try to get companyId from the session (previous URL)
-        $companyIds = $request->session()->get('companyIds', []);
-        \Log::info('companyIds:', ['companyIds' => $companyIds]);
-        $previousUrl = $request->session()->get('_previous.url');
-        $companyId = null;
 
-        if ($previousUrl) {
-            // Attempt to extract the companyId from the URL if available
-            $urlParts = explode('/', $previousUrl);
-            $companyId = end($urlParts);
-
-            // Log the extracted value from the previous URL
-            \Log::info('Company ID from Previous URL:', ['companyId' => $companyId]);
-
-            // Check if the extracted value is a valid numeric ID
-            if (!is_numeric($companyId)) {
-                $companyId = null;
-                \Log::info('Invalid Company ID from Previous URL (Non-numeric)', ['previousUrl' => $previousUrl]);
-            }
-        } else {
-            \Log::info('No Previous URL found in session');
-        }
-
-        // 2. Fallback: Try to get companyId from the current request (route parameter or query string)
-        if (!$companyId) {
-            $companyId = $request->route('companyId'); // Assuming companyId is part of the route
-            \Log::info('Company ID from Route:', ['companyId' => $companyId]);
-        }
-
-        // 3. Fallback: Try to get companyId from query string (e.g., ?companyId=123)
-        if (!$companyId && $request->has('companyId')) {
-            $companyId = $request->query('companyId');
-            \Log::info('Company ID from Query String:', ['companyId' => $companyId]);
-        }
-
-        // 4. Fallback: Try to get companyId from session storage (other session keys)
-        if (!$companyId) {
-            $companyId = $request->session()->get('companyId');
-            \Log::info('Company ID from Session (other session keys):', ['companyId' => $companyId]);
-        }
-
-        // 5. Final check: If no companyId is found or it's not valid, set a default value or return an error
-        if (!is_numeric($companyId)) {
-            \Log::error('Company ID is missing or invalid.');
-            return redirect()->back()->withErrors(['message' => 'Company ID is missing or invalid']);
-        }
-
-        // Retrieve company data from the database
-        $company = TallyCompany::find($companyId);
-
-        if (!$company) {
-            \Log::error('Company not found for Company ID:', ['companyId' => $companyId]);
-            return redirect()->back()->withErrors(['message' => 'Company not found']);
-        }
-
-        \Log::info('Company successfully retrieved:', ['companyId' => $companyId, 'companyName' => $company->name]);
-
-        // Pass the company data to the view
-        return view('superadmin.reports.index', compact('company'));
+        return view('superadmin.reports.index');
     }
 
 

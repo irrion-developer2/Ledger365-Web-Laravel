@@ -98,7 +98,7 @@
 	@yield("script")
     @stack('javascript')
     @include('layouts.includes.alerts')
-    <script>
+    {{-- <script>
         document.addEventListener('DOMContentLoaded', function() {
                 const savedCompanyId = localStorage.getItem('selectedCompanyId');
 
@@ -107,6 +107,6 @@
                 }
             });
 
-    </script>
+    </script> --}}
     </body>
 </html>

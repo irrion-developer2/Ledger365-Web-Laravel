@@ -225,15 +225,14 @@
                   <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
                 </a>
                 <ul class="dropdown-menu">
-                    @foreach($companies as $company)
-                        <li>
-                            {{-- <a class="dropdown-item" href="javascript:;" onclick="changeCompany('{{ $company->id }}')"> --}}
-                            <a class="dropdown-item {{ session('selected_company_id') == $company->id ? 'selected' : '' }}"
-                                href="javascript:;" onclick="changeCompany('{{ $company->id }}')">
+                  @foreach($companies as $company)
+                      <li>
+                          <a class="dropdown-item {{ session('selected_company_id') == $company->id ? 'selected' : '' }}"
+                            href="javascript:;" onclick="changeCompany('{{ $company->id }}', '{{ $company->name }}')">
                               {{ $company->name }}
-                            </a>
-                        </li>
-                    @endforeach
+                          </a>
+                      </li>
+                  @endforeach
                 </ul>
             </li>
             
@@ -242,3 +241,63 @@
      </div>
  </nav>
 </div>
+<script>
+  function changeCompany(companyId, companyName) {
+      console.log('Selected Company ID:', companyId);
+      if (!companyId) {
+          return;
+      }
+      const url = `/fetch-company-data/${companyId}`; 
+      console.log('Request URL:', url);
+  
+      fetch(url)
+          .then(response => {
+              if (!response.ok) {
+                  return Promise.reject(new Error('Network response was not ok: ' + response.statusText));
+              }
+              return response.json();
+          })
+          .then(data => {
+              if (data && data.company) { 
+                  document.querySelector('.company-changes').textContent = data.company.name;
+                  localStorage.setItem('selectedCompanyId', companyId);
+  
+                  return fetch('/set-company-session', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                      },
+                      body: JSON.stringify({
+                          company_id: companyId,
+                          company_name: companyName
+                      }),
+                  });
+              } else {
+                  console.warn('Company data not found'); 
+                  return Promise.reject(new Error('Company data not found'));
+              }
+          })
+          .then(response => {
+              if (!response.ok) {
+                  return Promise.reject(new Error('Failed to update session: ' + response.statusText));
+              }
+              return response.json();
+          })
+          .then(sessionData => {
+              if (sessionData.success) {
+                  console.log('Session updated with company:', sessionData.company);
+              } else {
+                  console.warn('Failed to update session.');
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error.message);
+          });
+  
+      // Update the URL with the selected company ID
+      // if (window.location.href.indexOf(`companyData=${companyId}`) === -1) {
+      //     window.location.search = `?companyData=${companyId}`;
+      // }
+  }
+</script>

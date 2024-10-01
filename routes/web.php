@@ -32,6 +32,7 @@ use Laravel\Jetstream\Http\Controllers\Inertia\TeamController;
 use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
 use Laravel\Jetstream\Http\Controllers\Inertia\ApiTokenController;
 use Laravel\Jetstream\Http\Controllers\Inertia\UserProfileController;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +63,9 @@ Route::get('/',function(){
 });
 
 
+
+
+
 Route::post('/send-otp', [AuthController::class, 'sendOTP'])->name('send-otp');
 Route::post('/verify-otp', [AuthController::class, 'verifyOTP'])->name('verify-otp');
 
@@ -75,6 +79,22 @@ Route::middleware([
     //     return view('dashboard');
     // });
     // ->name('dashboard');
+
+    
+    Route::post('/set-company-session', function (Request $request) {
+        $request->validate([
+            'company_id' => 'required|integer',
+            'company_name' => 'required|string',
+        ]);
+    
+        session(['selected_company_id' => $request->company_id]);
+        session(['selected_company_name' => $request->company_name]);
+    
+        session()->save();  // Explicitly save the session
+    
+        return response()->json(['success' => true, 'company' => $request->company_name]);
+    });
+    
 
     Route::get('/get-filtered-data', [HomeController::class, 'getFilteredData']);
 

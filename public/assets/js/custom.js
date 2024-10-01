@@ -136,104 +136,66 @@ $(document).ready(function () {
     });
 });
 
-// $(document).ready(function () {
-//     $(document).on('click', 'button[type="submit"]', function (event) {
-//         changeCompany(companyId)
-//     });
-// });
 
-function changeCompany(companyId) {
-    console.log('Selected Company ID:', companyId);
-
-    if (!companyId) {
-        console.error('Company ID is missing.');
-        return;
-    }
-
-    const url = `/fetch-company-data/${companyId}`;
-    console.log('Request URL:', url);
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            if (data.company) {
-                document.querySelector('.company-changes').textContent = data.company.name;
-
-                localStorage.setItem('selectedCompanyId', companyId);
-
-                if (window.location.href.indexOf(`companyData=${companyId}`) === -1) {
-                    window.location.search = `?companyData=${companyId}`;
-                }
-            } else {
-                console.error('Company data not found');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-// function changeCompany(companyId) {
+// function changeCompany(companyId, companyName) {
 //     console.log('Selected Company ID:', companyId);
-
 //     if (!companyId) {
-//         console.error('Company ID is missing.');
 //         return;
 //     }
-
-//     const url = `/fetch-company-data/${companyId}`;
+//     const url = `/fetch-company-data/${companyId}`; 
 //     console.log('Request URL:', url);
 
 //     fetch(url)
-//         .then(response => response.json())
+//         .then(response => {
+//             if (!response.ok) {
+//                 return Promise.reject(new Error('Network response was not ok: ' + response.statusText));
+//             }
+//             return response.json();
+//         })
 //         .then(data => {
-//             if (data.company) {
+//             if (data && data.company) { 
 //                 document.querySelector('.company-changes').textContent = data.company.name;
-
 //                 localStorage.setItem('selectedCompanyId', companyId);
 
-//                 if (window.location.href.indexOf(`companyData=${companyId}`) === -1) {
-//                     window.location.search = `?companyData=${companyId}`;
-//                 }
+//                 return fetch('/set-company-session', {
+//                     method: 'POST',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+//                     },
+//                     body: JSON.stringify({
+//                         company_id: companyId,
+//                         company_name: companyName
+//                     }),
+//                 });
 //             } else {
-//                 console.error('Company data not found');
+//                 console.warn('Company data not found'); // Changed to console.warn
+//                 return Promise.reject(new Error('Company data not found'));
 //             }
 //         })
-//         .catch(error => console.error('Error:', error));
-// }
-
-
-// function changeCompany(companyId) {
-//     console.log('Selected Company ID:', companyId); // Debugging line
-
-//     if (!companyId) {
-//         console.error('Company ID is missing.');
-//         return;
+//         .then(response => {
+//             if (!response.ok) {
+//                 return Promise.reject(new Error('Failed to update session: ' + response.statusText));
+//             }
+//             const contentType = response.headers.get("content-type");
+//             if (!contentType || !contentType.includes("application/json")) {
+//                 return Promise.reject(new Error("Response is not JSON: " + response.statusText));
+//             }
+//             return response.json();
+//         })
+//         .then(sessionData => {
+//             if (sessionData.success) {
+//                 console.log('Session updated with company:', sessionData.company);
+//             } else {
+//                 console.warn('Failed to update session.');
+//             }
+//         })
+//         .catch(error => {
+//             console.error('Error:', error.message);
+//         });
+//     if (window.location.href.indexOf(`companyData=${companyId}`) === -1) {
+//         window.location.search = `?companyData=${companyId}`;
 //     }
-
-//     const url = `/fetch-company-data/${companyId}`;
-//     console.log('Request URL:', url); // Debugging line
-
-//     fetch(url)
-//         .then(response => response.json())
-//         .then(data => {
-//             if (data.company) {
-//                 // Update the displayed company data
-//                 // document.getElementById('company-name').textContent = data.company.name;
-//                 // document.getElementById('company-state').textContent = data.company.state;
-//                 // document.getElementById('company-guid').textContent = data.company.guid;
-
-//                 // Optionally update dropdown title
-//                 document.querySelector('.company-changes').textContent = data.company.name;
-
-//                 // Store the selected company ID in local storage
-//                 localStorage.setItem('selectedCompanyId', companyId);
-//                 // window.location.reload();
-//             } else {
-//                 console.error('Company data not found');
-//             }
-//         })
-//         .catch(error => console.error('Error:', error));
 // }
-
-
 
 

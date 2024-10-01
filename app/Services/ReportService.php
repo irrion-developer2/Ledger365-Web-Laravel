@@ -4,27 +4,35 @@ namespace App\Services;
 use App\Models\TallyVoucherItem;
 use App\Models\TallyItem;
 use App\Models\TallyCompany;
+use Illuminate\Http\Request;
 
 class ReportService
 {
-
-
     public function companyData()
     {
-        $previousUrl = session()->get('_previous.url');
-        $companyId = null;
-
-        if ($previousUrl) {
-            $urlParts = explode('/', $previousUrl);
-            $companyId = end($urlParts);
-
-            if (!is_numeric($companyId)) {
-                $companyId = null;
-            }
-        }
+        $companyId = session('selected_company_id');
+        \Log::info('Company ReportService ID Latest:', ['selected_company_id' => $companyId]);            
 
         return TallyCompany::where('id', $companyId)->pluck('guid')->toArray();
     }
+    
+
+    // public function companyData()
+    // {
+    //     $previousUrl = session()->get('_previous.url');
+    //     $companyId = null;
+
+    //     if ($previousUrl) {
+    //         $urlParts = explode('/', $previousUrl);
+    //         $companyId = end($urlParts);
+
+    //         if (!is_numeric($companyId)) {
+    //             $companyId = null;
+    //         }
+    //     }
+
+    //     return TallyCompany::where('id', $companyId)->pluck('guid')->toArray();
+    // }
 
     // public function companyData()
     // {

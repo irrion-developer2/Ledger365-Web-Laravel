@@ -1,8 +1,5 @@
 
 <div class="row">
-
-
-
     <div class="col-12 col-lg-8 d-flex">
        <div class="card radius-10 w-100">
          <div class="card-header">
@@ -40,9 +37,16 @@
          </div>
            <div class="card-body">
              <div class="d-flex align-items-center ms-auto font-13 gap-2 mb-3">
-                 <span class="border px-1 rounded cursor-pointer"><i class="bx bxs-circle me-1" style="color: #14abef" ></i>Sales &#8377 {{ number_format(abs($chartSaleAmt), 2) }}</span>
-                 <span class="border px-1 rounded cursor-pointer"><i class="bx bxs-circle me-1" style="color: #ffc107"></i>Receipt &#8377 {{ number_format(abs($chartReceiptAmt), 2) }}</span>
-             </div>
+                <span class="border px-1 rounded cursor-pointer">
+                    <i class="bx bxs-circle me-1" style="color: #14abef"></i>
+                    Sales &#8377 <span class="sales-total">{{ number_format(abs($chartSaleAmt), 2) }}</span>
+                </span>
+                
+                <span class="border px-1 rounded cursor-pointer">
+                    <i class="bx bxs-circle me-1" style="color: #ffc107"></i>
+                    Receipt &#8377 <span class="receipts-total">{{ number_format(abs($chartReceiptAmt), 2) }}</span>
+                </span>
+            </div>
              <div class="chart-container-1">
                  <canvas id="salereceiptchart"></canvas>
                  <canvas id="chart1" class="d-none"></canvas>

@@ -58,10 +58,12 @@ class ReportBalanceSheetProfitLossController extends Controller
         $companyGuids = $this->reportService->companyData();
 
         if ($request->ajax()) {
-
-            $query = TallyGroup::where('parent', '')->orWhereNull('parent')->whereIn('company_guid', $companyGuids);
-
-
+            
+            $query = TallyGroup::where(function($query) {
+                $query->where('parent', '')
+                      ->orWhereNull('parent');
+            })->whereIn('company_guid', $companyGuids);
+            
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->editColumn('account_type', function ($data) {

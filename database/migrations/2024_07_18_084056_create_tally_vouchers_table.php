@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('company_guid')->nullable();
             $table->string('voucher_type')->nullable();
             $table->string('is_cancelled')->nullable();
+            $table->string('is_optional')->nullable();
             $table->string('alter_id')->nullable();
             $table->string('party_ledger_name')->nullable();
             $table->string('ledger_guid')->nullable();

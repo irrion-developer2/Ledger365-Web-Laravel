@@ -3,6 +3,7 @@
 @section("style")
 <link href="{{ url('assets/plugins/bs-stepper/css/bs-stepper.css') }}" rel="stylesheet" />
 <link href="{{ url('assets/plugins/datatable/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 @endsection
 @section("wrapper")
     <div class="page-wrapper">
@@ -100,116 +101,127 @@
 <script src="{{ url('assets/plugins/bs-stepper/js/main.js') }}"></script>
 <script src="{{ url('assets/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ url('assets/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-    <script>
-        $(document).ready(function() {
+<script>
+    $(document).ready(function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var startDate = urlParams.get('start_date');
+        var endDate = urlParams.get('end_date');
 
-            var table = $('#voucherEntriesTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: '{{ route("customers.vouchers", ["customer" => $ledger->guid]) }}',
-                columns: [
-                    { data: 'voucher_date', name: 'voucher_date' },
-                    // { data: 'ledger_name', name: 'ledger_name' },
-                    { data: 'voucher_number', name: 'voucher_number',
-                        render: function(data, type, row) {
-                            return '<a href="{{ url('reports/VoucherItem') }}/' + row.tally_voucher_id + '">' + data + '</a>';
-                        }
-                    },
-                    { data: 'voucher_type', name: 'voucher_type' },
-                    { data: 'debit', name: 'debit', className: 'text-end' },
-                    { data: 'credit', name: 'credit', className: 'text-end' },
-                    { data: null, defaultContent: '', className: 'text-end' }
-                ],
-                initComplete: function(settings, json) {
-                    $('#totalInvoices').text(json.recordsTotal);
-                },
-                drawCallback: function(settings) {
-                    $('#totalInvoices').text(settings.json.recordsTotal);
-
-                    var api = this.api();
-
-                    var totalDebit = 0;
-                    var totalCredit = 0;
-                    var runningBalance = 0;
-
-                    api.rows().every(function(rowIdx, tableLoop, rowLoop) {
-                        var data = this.data();
-                        var debit = parseFloat(data.debit) || 0;
-                        var credit = parseFloat(data.credit) || 0;
-
-                        totalDebit += debit;
-                        totalCredit += credit;
-
-                        runningBalance += credit + debit;
-
-                        // console.log('totalDebit', totalDebit);
-                        // console.log('totalCredit', totalCredit);
-                        // console.log('runningBalance', runningBalance);
-
-                        var balanceText = ((runningBalance)).toFixed(2);
-
-                        // if (runningBalance > 0) {
-                        //     balanceText += ' CR';
-                        // } else if (runningBalance < 0) {
-                        //     balanceText += ' DR';
-                        // }
-
-
-                        var balanceCell = api.cell({ row: rowIdx, column: 5 }).node();
-                        $(balanceCell).html(balanceText);
-                    });
-
-                    $('#totalDebit').text(totalDebit.toFixed(2));
-                    $('#totalCredit').text(totalCredit.toFixed(2));
-                    $('#totalRunningBalance').text((runningBalance).toFixed(2));
-                },
-                footerCallback: function(row, data, start, end, display) {
-                    var api = this.api();
-                    var totalDebit = api.column(3).data().reduce(function(a, b) {
-                        a = parseFloat(a) || 0;
-                        b = parseFloat(b) || 0;
-                        return a + b;
-                    }, 0);
-
-                    var totalCredit = api.column(4).data().reduce(function(a, b) {
-                        a = parseFloat(a) || 0;
-                        b = parseFloat(b) || 0;
-                        return a + b;
-                    }, 0);
-
-                    var totalRunningBalance = 0;
-                    var runningBalance = 0;
-                    api.rows().every(function(rowIdx) {
-                        var data = this.data();
-                        var debit = parseFloat(data.debit) || 0;
-                        var credit = parseFloat(data.credit) || 0;
-                        runningBalance += credit - debit;
-                    });
-
-                    totalRunningBalance = runningBalance;
-
-
-
-
-                    $(api.column(3).footer()).html(totalDebit.toFixed(2));
-                    $(api.column(4).footer()).html(totalCredit.toFixed(2));
-                    $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                    $('#openingBalance').text((totalDebit + totalCredit).toFixed(2));
-                    $('#outstanding').text((totalRunningBalance).toFixed(2));
-                    $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
-
-                    if ((totalRunningBalance) > 0) {
-                        $('.btn-outline-danger').show();
-                    } else {
-                        $('.btn-outline-danger').hide();
-                    }
+        var table = $('#voucherEntriesTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ route("customers.vouchers", ["customer" => $ledger->guid]) }}",
+                type: 'GET',
+                data: function (d) {
+                    d.start_date = startDate;
+                    d.end_date = endDate;   
                 }
-            });
+            },
+            columns: [
+                { data: 'voucher_date', name: 'voucher_date' },
+                { data: 'voucher_number', name: 'voucher_number',
+                    render: function(data, type, row) {
+                        return '<a href="{{ url('reports/VoucherItem') }}/' + row.tally_voucher_id + '">' + data + '</a>';
+                    }
+                },
+                { data: 'voucher_type', name: 'voucher_type' },
+                { data: 'debit', name: 'debit', className: 'text-end' },
+                { data: 'credit', name: 'credit', className: 'text-end' },
+                { data: 'running_balance', name: 'running_balance', className: 'text-end' },
+            ],
+            initComplete: function(settings, json) {
+                $('#totalInvoices').text(json.recordsTotal);
+            },
+            footerCallback: function(row, data, start, end, display) {
+                var api = this.api();
+                var totalDebit = api.column(3).data().reduce(function(a, b) {
+                    a = parseFloat(a) || 0;
+                    b = parseFloat(b) || 0;
+                    return a + b;
+                }, 0);
+
+                var totalCredit = api.column(4).data().reduce(function(a, b) {
+                    a = parseFloat(a) || 0;
+                    b = parseFloat(b) || 0;
+                    return a + b;
+                }, 0);
+
+                var totalRunningBalance = 0;
+                var runningBalance = 0;
+                api.rows().every(function(rowIdx) {
+                    var data = this.data();
+                    var debit = parseFloat(data.debit) || 0;
+                    var credit = parseFloat(data.credit) || 0;
+                    runningBalance += credit - debit;
+                });
+
+                totalRunningBalance = runningBalance;
+
+                $(api.column(3).footer()).html(totalDebit.toFixed(2));
+                $(api.column(4).footer()).html(totalCredit.toFixed(2));
+                $('#totalDebit').text(totalDebit.toFixed(2));
+                $('#totalCredit').text(totalCredit.toFixed(2));
+
+                var openingBalance = data.length > 0 ? parseFloat(data[0].opening_balance) || 0 : 0;
+
+                console.log(data);
+                
+                var firstRowAmount = data.length > 0 ? parseFloat(data[0].amount) || 0 : 0;
+                var firstRowRunningBalance = data.length > 0 ? parseFloat(data[0].running_balance) || 0 : 0;
+
+
+                var OeningB = firstRowAmount - firstRowRunningBalance;
+                
+                $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
+                $('#openingBalance').text((OeningB).toFixed(2));
+                $('#outstanding').text(Math.abs(totalRunningBalance).toFixed(2));
+                $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
+
+                if ((totalRunningBalance) > 0) {
+                    $('.btn-outline-danger').show();
+                } else {
+                    $('.btn-outline-danger').hide();
+                }
+            }
         });
-    </script>
+
+        const dateRangeInput = document.querySelector(".date-range");
+        flatpickr(dateRangeInput, {
+            mode: "range",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    let [startDate, endDate] = selectedDates.map(date => date.toISOString().split('T')[0]);
+                    let url = new URL(window.location.href);
+                    url.searchParams.set('start_date', startDate);
+                    url.searchParams.set('end_date', endDate);
+                    window.location.href = url.toString();
+                }
+            }
+        });
+
+        if (startDate && endDate) {
+            dateRangeInput._flatpickr.setDate([startDate, endDate], false);
+        }
+
+        $('#resetDateRange').on('click', function() {
+            $('.date-range').val('');
+            
+            // Remove the start_date and end_date from URL
+            let url = new URL(window.location.href);
+            url.searchParams.delete('start_date');
+            url.searchParams.delete('end_date');
+
+            window.location.href = url.toString();
+        });
 
 
-
+    });
+</script>
 
 @endsection

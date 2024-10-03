@@ -148,44 +148,6 @@ class HomeController extends Controller
         ];
     }
 
-    // private function chartSaleReceipt($companyGuids)
-    // {
-    //     $salesData = [];
-    //     $receiptData = [];
-
-    //     for ($month = 4; $month <= 12; $month++) {
-    //         $monthName = DateTime::createFromFormat('!m', $month)->format('F');
-
-    //         $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
-    //             $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
-    //                  ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
-    //         })
-    //         ->where('tally_vouchers.voucher_type', 'Sales')
-    //         ->whereIn('tally_vouchers.company_guid', $companyGuids)
-    //         ->whereMonth('tally_vouchers.voucher_date', $month)
-    //         ->sum('tally_voucher_heads.amount');
-
-    //         $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
-    //             $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
-    //                  ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
-    //         })
-    //         ->where('tally_vouchers.voucher_type', 'Receipt')
-    //         ->whereIn('tally_vouchers.company_guid', $companyGuids)
-    //         ->whereMonth('tally_vouchers.voucher_date', $month)
-    //         ->sum('tally_voucher_heads.amount');
-
-    //         $salesData[$monthName] = $totalSales;
-    //         $receiptData[$monthName] = $totalReceipts;
-    //     }
-
-    //     return [
-    //         'sales' => $salesData,
-    //         'receipts' => $receiptData,
-    //     ];
-    // }
-
-
-
     private function calculatePayableCreditNote($companyGuids)
     {
         $CreditAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
@@ -197,20 +159,6 @@ class HomeController extends Controller
                 ->where('tally_vouchers.voucher_type', 'debit note')
                 ->whereIn('tally_vouchers.company_guid', $companyGuids)
                 ->sum('tally_voucher_heads.amount');
-
-        // $PurchaseledgerIds = TallyVoucher::where('voucher_type', 'Purcahse')
-        //                 ->whereIn('company_guid', $companyGuids)
-        //                 ->pluck('ledger_guid');
-
-        // $PurcahseAmount = TallyVoucherHead::whereIn('ledger_guid', $PurchaseledgerIds)
-        //     ->sum('amount');
-
-        // $SaleledgerIds = TallyVoucher::where('voucher_type', 'Sales')
-        //                 ->whereIn('company_guid', $companyGuids)
-        //                 ->pluck('ledger_guid');
-
-        // $SaleAmount = TallyVoucherHead::whereIn('ledger_guid', $SaleledgerIds)
-        //     ->sum('amount');
 
         $total = $CreditAmount + $DebitAmount;
 

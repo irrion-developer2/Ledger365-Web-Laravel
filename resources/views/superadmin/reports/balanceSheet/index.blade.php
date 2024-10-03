@@ -110,9 +110,6 @@
         </div>
     </div>
 
-    
-
-                            
     <span class="d-none">
         @include('superadmin.reports.balanceSheet.dataTable.Expense')
         @include('superadmin.reports.balanceSheet.dataTable.OpeningStock')

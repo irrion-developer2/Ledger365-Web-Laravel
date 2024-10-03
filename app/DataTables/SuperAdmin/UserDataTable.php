@@ -20,9 +20,16 @@ class UserDataTable extends DataTable
             ->editColumn('updated_at', function ($user) {
                 return Carbon::parse($user->updated_at)->format('Y-m-d');
             })
+            ->addColumn('name', function ($user) {
+                $url = route('users.show', ['user' => $user->id]);
+                return '<a href="' . htmlspecialchars($url) . '" style="color: #337ab7;">' . htmlspecialchars($user->name) . '</a>';
+            })
+            
             ->addColumn('status', function ($user) {
-                return view('superadmin.users.user_action', compact('user'));
-            });
+                return view('superadmin.users._user_action', compact('user'));
+            })
+
+            ->rawColumns(['name']);
     }
 
     public function query(User $model)
@@ -102,17 +109,6 @@ class UserDataTable extends DataTable
             Column::make('tally_connector_id')->title(__('Tally Connector Id')),
             Column::make('role')->title(__('Role')),
             Column::make('status')->title(__('Status')),
-            // Column::make('status')
-            //     ->title(__('Status'))
-            //     ->render('function() {
-            //         var status = this.status ? "Active" : "Inactive";
-            //         var statusClass = this.status ? "btn-success" : "btn-danger";
-            //         return `<button class="btn ${statusClass} dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">${status}</button>
-            //                 <ul class="dropdown-menu">
-            //                     <li><a class="dropdown-item" href="#" onclick="changeStatus(${this.id}, 1)">Active</a></li>
-            //                     <li><a class="dropdown-item" href="#" onclick="changeStatus(${this.id}, 0)">Inactive</a></li>
-            //                 </ul>`;
-            //     }'),
             Column::make('created_at')->title(__('Created At')),
             Column::make('updated_at')->title(__('Updated At')),
         ];

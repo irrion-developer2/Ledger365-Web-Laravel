@@ -155,8 +155,8 @@ class SupplierController extends Controller
 
                     $ledgerSaleData = TallyVoucher::where('ledger_guid', $data->guid)
                     ->where('voucher_type', 'Purchase')
-                    ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
-                        ->where('voucher_date', '<=', Carbon::now()->endOfDay())
+                    // ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
+                    //     ->where('voucher_date', '<=', Carbon::now()->endOfDay())
                     ->pluck('id', 'ledger_guid');
 
                     $ledgerSaleGuids = $ledgerSaleData->keys();
@@ -192,8 +192,8 @@ class SupplierController extends Controller
 
                     $ledgerData = TallyVoucher::where('ledger_guid', $data->guid)
                     ->where('voucher_type', 'Debit Note')
-                    ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
-                    ->where('voucher_date', '<=', Carbon::now()->endOfDay())
+                    // ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
+                    // ->where('voucher_date', '<=', Carbon::now()->endOfDay())
                     ->pluck('id', 'ledger_guid');
 
                     $ledgerGuids = $ledgerData->keys();

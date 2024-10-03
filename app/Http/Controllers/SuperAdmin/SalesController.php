@@ -230,7 +230,6 @@ class SalesController extends Controller
         ]);
     }
 
-
     public function getSaleItemData($saleItemId)
     {
         $companyGuids = $this->reportService->companyData();

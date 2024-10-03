@@ -216,7 +216,7 @@
             </li>
             @endif
 
-
+            @if(auth()->check() && auth()->user()->status == 1 && auth()->user()->role == 'Users')
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
                   <div class="parent-icon"><i class="bx bx-buildings"></i>
@@ -235,6 +235,7 @@
                   @endforeach
                 </ul>
             </li>
+            @endif
             
          </ul>
        </div>

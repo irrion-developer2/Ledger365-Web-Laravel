@@ -21,15 +21,12 @@ use Illuminate\Support\Facades\Log;
 
 class ReportBalanceSheetAssetStockController extends Controller
 {
-
-
     protected $reportService;
 
     public function __construct(ReportService $reportService)
     {
         $this->reportService = $reportService;
     }
-
 
     public function index()
     {

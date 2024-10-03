@@ -34,8 +34,8 @@
                                     <th>GSTIN</th>
                                     <th>
                                         Sales
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span>
+                                        {{-- <br>
+                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span> --}}
                                     </th>
                                     <th>Net ₹ Due</th>
                                     <th>₹ Overdue</th>

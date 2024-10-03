@@ -44,8 +44,11 @@ class ReportBalanceSheetController extends Controller
 
         if ($request->ajax()) {
 
-            $query = TallyGroup::where('parent', '')->orWhereNull('parent')->whereIn('company_guid', $companyGuids);
-
+            $query = TallyGroup::where(function($query) {
+                $query->where('parent', '')
+                      ->orWhereNull('parent');
+            })->whereIn('company_guid', $companyGuids);
+            
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -332,59 +335,5 @@ class ReportBalanceSheetController extends Controller
                 ->make(true);
         }
     }
-
-    // public function getAssetItemData(Request $request)
-    // {
-    //     $companyGuids = $this->reportService->companyData();
-
-    //     if ($request->ajax()) {
-    //         $tallyItem = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids);
-    //         // $Group = TallyGroup::select('parent')
-    //         // ->whereIn('parent', ['Capital Account', 'Loans (Liability)', 'Current Liabilities'])
-    //         // ->groupBy('parent');
-
-
-    //         return DataTables::of($tallyItem)
-    //             ->addIndexColumn()
-    //             ->addColumn('amount', function ($entry) {
-    //                 $stockOnHandBalance = 0;
-    //                 $openingBalance = 0;
-    //                 $stockOnHandValue = 0;
-
-    //                 $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
-    //                 $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-
-    //                 $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
-    //                 $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-    //                 $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
-    //                 $stockItemVoucherHandBalance = $stockItemData['balance'];
-
-    //                 $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
-    //                 $stockItemVoucherPurchaseAmount = $stockAmountData['purchase_amt'];
-    //                 $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
-
-
-    //                 $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
-    //                 // $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
-    //                 $finalOpeningValue = $openingValue - $openingAmount;
-    //                 // $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
-    //                 $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
-
-
-    //                 if ($openingBalance == 0) {
-    //                     $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-    //                     $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-    //                 } else {
-    //                     $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-    //                     $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
-    //                     $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-    //                 }
-    //                 $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-    //                 return number_format($stockOnHandValue, 3);
-    //             })
-
-    //             ->make(true);
-    //     }
-    // }
 
 }

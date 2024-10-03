@@ -155,13 +155,13 @@ class CustomerController extends Controller
             if ($request->has('filter_sale') && $request->filter_sale == 'true') {
                 $customers->where(function($customers) {
                     $ledgerSaleGuids = TallyVoucher::where('voucher_type', 'Sales')
-                        ->whereBetween('voucher_date', [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()])
+                        // ->whereBetween('voucher_date', [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()])
                         ->pluck('ledger_guid')
                         ->unique();
 
                     $tallySaleVoucherIds = TallyVoucher::where('voucher_type', 'Sales')
                         ->whereIn('ledger_guid', $ledgerSaleGuids)
-                        ->whereBetween('voucher_date', [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()])
+                        // ->whereBetween('voucher_date', [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()])
                         ->pluck('id');
 
                     $totalSalesByGuid = TallyVoucherHead::whereIn('ledger_guid', $ledgerSaleGuids)
@@ -183,8 +183,8 @@ class CustomerController extends Controller
                 ->addColumn('sales_last_30_days', function ($data) {
                     $ledgerSaleData = TallyVoucher::where('ledger_guid', $data->guid)
                         ->where('voucher_type', 'Sales')
-                        ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
-                        ->where('voucher_date', '<=', Carbon::now()->endOfDay())
+                        // ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
+                        // ->where('voucher_date', '<=', Carbon::now()->endOfDay())
                         ->pluck('id', 'ledger_guid');
 
                     $ledgerSaleGuids = $ledgerSaleData->keys();
@@ -278,8 +278,8 @@ class CustomerController extends Controller
 
                     $ledgerSaleData = TallyVoucher::where('ledger_guid', $data->guid)
                     ->where('voucher_type', 'Sales')
-                    ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
-                        ->where('voucher_date', '<=', Carbon::now()->endOfDay())
+                    // ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
+                    //     ->where('voucher_date', '<=', Carbon::now()->endOfDay())
                     ->pluck('id', 'ledger_guid');
 
                     $ledgerSaleGuids = $ledgerSaleData->keys();
@@ -364,12 +364,14 @@ class CustomerController extends Controller
         return view('superadmin.customers._customers-view', compact('ledger'));
     }
 
-    public function getVoucherEntries($customer)
+    public function getVoucherEntries($customer, Request $request)
     {
         $companyGuids = $this->reportService->companyData();
+        
         $ledger = TallyLedger::where('guid', $customer)
                                 ->whereIn('company_guid', $companyGuids)
                                 ->firstOrFail();
+
         $voucherHeads = TallyVoucherHead::where('ledger_guid', $ledger->guid)
             ->with('voucherHead')
             ->get();
@@ -380,15 +382,48 @@ class CustomerController extends Controller
 
         $combinedEntries = $voucherHeads->merge($voucherEntries);
 
+    
+        // Initialize the running balance
+        $runningBalance = 0; // Set starting balance if needed
+
+        // Loop through each entry and calculate running balance
+        $combinedEntries = $combinedEntries->map(function ($entry) use (&$runningBalance) {
+            // Assuming there is a 'debit' and 'credit' field in each entry (adjust field names as necessary)
+            $debit = $entry->voucherHead->debit ?? 0;  // Use 0 if no value found
+            $credit = $entry->voucherHead->credit ?? 0;
+
+            // Calculate the running balance
+            $runningBalance += ($debit - $credit);
+
+            $entry->running_balance = $runningBalance;
+
+            return $entry;
+        });
+
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        if ($startDate && $endDate) {
+            $combinedEntries = $combinedEntries->filter(function ($entry) use ($startDate, $endDate) {
+                $voucherDate = \Carbon\Carbon::parse($entry->voucherHead->voucher_date);
+                return $voucherDate->between($startDate, $endDate);
+            });
+        }
+        
         return datatables()->of($combinedEntries)
             ->addColumn('credit', function ($entry) {
-                return $entry->entry_type == 'credit' ? number_format(($entry->amount), 2, '.', '') : '0.00';
+                return $entry->entry_type == 'credit' ? number_format(abs($entry->amount), 2, '.', '') : '0.00';
             })
             ->addColumn('debit', function ($entry) {
-                return $entry->entry_type == 'debit' ? number_format(($entry->amount), 2, '.', '') : '0.00';
+                return $entry->entry_type == 'debit' ? number_format(abs($entry->amount), 2, '.', '') : '0.00';
+            })
+            ->addColumn('running_balance', function ($entry) use ($ledger) {
+                return $entry->running_balance ?  $entry->running_balance : "";
             })
             ->addColumn('voucher_number', function ($entry) {
                 return $entry->voucherHead ? $entry->voucherHead->voucher_number : '';
+            })
+            ->addColumn('opening_balance', function () use ($ledger) {
+                return $ledger->opening_balance;
             })
             ->addColumn('voucher_type', function ($entry) {
                 return $entry->voucherHead ? $entry->voucherHead->voucher_type : '';

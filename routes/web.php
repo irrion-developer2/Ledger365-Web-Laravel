@@ -62,10 +62,6 @@ Route::get('/',function(){
   return redirect('/login');
 });
 
-
-
-
-
 Route::post('/send-otp', [AuthController::class, 'sendOTP'])->name('send-otp');
 Route::post('/verify-otp', [AuthController::class, 'verifyOTP'])->name('verify-otp');
 
@@ -75,12 +71,7 @@ Route::middleware([
     'verified'
 ]
 )->group(function () {
-    // Route::get('/dashboard', function () {
-    //     return view('dashboard');
-    // });
-    // ->name('dashboard');
 
-    
     Route::post('/set-company-session', function (Request $request) {
         $request->validate([
             'company_id' => 'required|integer',
@@ -105,10 +96,8 @@ Route::middleware([
 
         Route::get('/analytics', [AnalyticController::class, 'index'])->name('analytics.index');
 
-
         // routes/web.php
         Route::get('/fetch-company-data/{company_id}', [CompanyController::class, 'fetchCompanyData'])->name('fetch.company.data');
-
 
         Route::resource('tenants', TenantController::class);
 
@@ -116,8 +105,6 @@ Route::middleware([
         Route::get('/customers/get-data', [CustomerController::class, 'getData'])->name('customers.get-data');
         Route::get('otherLedgers', [CustomerController::class, 'otherLedgers'])->name('otherLedgers.index');
         Route::get('/otherLedgers/get-data', [CustomerController::class, 'ledgergetData'])->name('otherLedgers.get-data');
-
-
 
 
         Route::get('/ledgerView/{customer}', [CustomerController::class, 'show'])->name('customers.show');
@@ -222,6 +209,11 @@ Route::middleware([
 
         Route::resource('users', UserController::class);
         Route::post('/update-user-status', [UserController::class, 'updateStatus'])->name('update.user.status');
+        
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::get('/users/{users}/get-data', [UserController::class, 'getData'])->name('users-company.get-data');
+
+        Route::post('/users/company/delete', [UserController::class, 'deleteCompany'])->name('users-company.delete');
 
     });
 

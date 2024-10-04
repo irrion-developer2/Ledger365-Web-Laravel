@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
-use App\Models\TallyLicense;
 use App\Models\TallyCompany;
 use App\Models\TallyGroup;
 use App\Models\TallyLedger;
@@ -44,110 +43,68 @@ class LedgerController extends Controller
     public function companyJsonImport(Request $request)
     {
         try {
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
-            
-
             $jsonData = null;
             $fileName = 'tally_company_data_' . date('YmdHis') . '.json';
-    
-            // Check if a file has been uploaded
+
             if ($request->hasFile('uploadFile')) {
                 $uploadedFile = $request->file('uploadFile');
                 $jsonFilePath = storage_path('app/' . $fileName);
-    
+
                 $uploadedFile->move(storage_path('app'), $fileName);
                 $jsonData = file_get_contents($jsonFilePath);
+
             } else {
-                // If no file is uploaded, get JSON from request body
                 $jsonData = $request->getContent();
                 $jsonFilePath = storage_path('app/' . $fileName);
                 file_put_contents($jsonFilePath, $jsonData);
             }
-    
-            // Decode JSON data
+
             $data = json_decode($jsonData, true);
+
             $result = $this->findTallyMessage($data);
-    
+
             if ($result === null) {
                 throw new \Exception('TALLYMESSAGE key not found in the JSON data.');
             }
-    
+
             $messagesPath = $result['path'];
             $messages = $result['value'];
-    
-            // Retrieve existing company GUIDs
+
             $companyGuids = TallyCompany::pluck('guid')->toArray();
             Log::info('Company GUIDs in Database:', ['companyGuids' => $companyGuids]);
-    
-            // Process each message in the JSON data
+
             foreach ($messages as $message) {
                 if (isset($message['COMPANY'])) {
                     $companyData = $message['COMPANY']['REMOTECMPINFO.LIST'];
                     $companyGuid = $companyData['NAME'];
-    
+
                     if (!in_array($companyGuid, $companyGuids)) {
-                        // Create a new TallyCompany record if it doesn't exist
                         $company = TallyCompany::create([
                             'guid' => $companyGuid,
                             'name' => $companyData['REMOTECMPNAME'] ?? null,
                             'state' => $companyData['REMOTECMPSTATE'] ?? null,
                         ]);
-    
+
                         if (!$company) {
                             throw new \Exception('Failed to create tally company record.');
                         }
-    
-                        // Add the new GUID to the array
+
                         $companyGuids[] = $companyGuid;
                     }
                 }
             }
-    
+
             return response()->json(['message' => 'Tally data saved successfully.', 'path' => $messagesPath]);
-    
+
         } catch (\Exception $e) {
             Log::error('Error importing data: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
     public function masterJsonImport(Request $request)
     {
         try {
-
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
-            
-
             $jsonData = null;
             $fileName = 'tally_master_data_' . date('YmdHis') . '.json';
 
@@ -298,24 +255,6 @@ class LedgerController extends Controller
     public function stockItemJsonImport(Request $request)
     {
         try {
-
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
-
             $jsonData = null;
             $fileName = 'tally_stock_item_data_' . date('YmdHis') . '.json';
 
@@ -556,26 +495,10 @@ class LedgerController extends Controller
     public function voucherJsonImport(Request $request)
     {
         try {
-
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
-
             $jsonData = null;
             $fileName = 'tally_voucher_data_' . now()->format('YmdHis') . '.json';
+
+
 
             if ($request->hasFile('uploadFile')) {
                 $uploadedFile = $request->file('uploadFile');
@@ -760,6 +683,8 @@ class LedgerController extends Controller
         }
     }
 
+
+    // Method to delete related data of the voucher
     private function deleteRelatedVoucherData($voucherId, $voucherHeadIds, $inventoryEntriesWithId)
     {
         TallyVoucherHead::where('tally_voucher_id', $voucherId)->delete();
@@ -1107,6 +1032,7 @@ class LedgerController extends Controller
         }
     }
 
+
     private function processAccountingAllocations(array $entries, $companyGuid)
     {
         $ledgerEntries = [];
@@ -1184,27 +1110,11 @@ class LedgerController extends Controller
         return $date; // Return original if format is incorrect
     }
 
+
     public function reportJsonImport(Request $request)
     {
         try {
-            
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
-            
+            // Initialize JSON data variable
             $jsonData = null;
 
             Log::info('Starting reportJsonImport method.');

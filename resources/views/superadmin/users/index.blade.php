@@ -2,9 +2,9 @@
 @section('title', __('Users | PreciseCA'))
 @section("wrapper")
     <div class="page-wrapper">
-    <div class="page-content">
+    <div class="page-content pt-2">
         <!--breadcrumb-->
-        <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
+        <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-2">
             <div class="breadcrumb-title pe-3">Users</div>
             <div class="ps-3">
                 <nav aria-label="breadcrumb">

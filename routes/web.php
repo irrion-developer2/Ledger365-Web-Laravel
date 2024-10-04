@@ -5,33 +5,37 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SuperAdmin\AnalyticController;
-use App\Http\Controllers\SuperAdmin\CompanyController;
-use App\Http\Controllers\SuperAdmin\CustomerController;
-use App\Http\Controllers\SuperAdmin\SupplierController;
-use App\Http\Controllers\SuperAdmin\StockItemController;
-use App\Http\Controllers\SuperAdmin\SalesController;
-use App\Http\Controllers\SuperAdmin\ColumnarController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportCashBankController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportGeneralLedgerController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportDayBookController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportPaymentRegisterController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportReceiptRegisterController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportCustomerGroupController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportItemGroupController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportBalanceSheetController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportBalanceSheetProfitLossController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportBalanceSheetAssetStockController;
-use App\Http\Controllers\SuperAdmin\Reports\ReportBalanceSheetLiabilityController;
-use App\Http\Controllers\SuperAdmin\BankReconciliationController;
 use App\Http\Controllers\SuperAdmin\UserController;
+use App\Http\Controllers\SuperAdmin\SettingController;
 use App\Http\Controllers\SuperAdmin\TallyController;
+
 use Laravel\Jetstream\Http\Controllers\CurrentTeamController;
 use Laravel\Jetstream\Http\Controllers\Inertia\TeamController;
 use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
 use Laravel\Jetstream\Http\Controllers\Inertia\ApiTokenController;
 use Laravel\Jetstream\Http\Controllers\Inertia\UserProfileController;
+
+
+use App\Http\Controllers\App\AnalyticController;
+use App\Http\Controllers\App\CompanyController;
+use App\Http\Controllers\App\CustomerController;
+use App\Http\Controllers\App\SupplierController;
+use App\Http\Controllers\App\StockItemController;
+use App\Http\Controllers\App\SalesController;
+use App\Http\Controllers\App\ColumnarController;
+use App\Http\Controllers\App\BankReconciliationController;
+use App\Http\Controllers\App\Reports\ReportController;
+use App\Http\Controllers\App\Reports\ReportCashBankController;
+use App\Http\Controllers\App\Reports\ReportGeneralLedgerController;
+use App\Http\Controllers\App\Reports\ReportDayBookController;
+use App\Http\Controllers\App\Reports\ReportPaymentRegisterController;
+use App\Http\Controllers\App\Reports\ReportReceiptRegisterController;
+use App\Http\Controllers\App\Reports\ReportCustomerGroupController;
+use App\Http\Controllers\App\Reports\ReportItemGroupController;
+use App\Http\Controllers\App\Reports\ReportBalanceSheetController;
+use App\Http\Controllers\App\Reports\ReportBalanceSheetProfitLossController;
+use App\Http\Controllers\App\Reports\ReportBalanceSheetAssetStockController;
+use App\Http\Controllers\App\Reports\ReportBalanceSheetLiabilityController;
 use Illuminate\Http\Request;
 
 /*
@@ -93,10 +97,8 @@ Route::middleware([
 
     Route::group(['middleware' => 'checkUserRoleAndStatus'], function () {
 
-
         Route::get('/analytics', [AnalyticController::class, 'index'])->name('analytics.index');
 
-        // routes/web.php
         Route::get('/fetch-company-data/{company_id}', [CompanyController::class, 'fetchCompanyData'])->name('fetch.company.data');
 
         Route::resource('tenants', TenantController::class);
@@ -202,7 +204,6 @@ Route::middleware([
 
         Route::post('/upload-pdf', [BankReconciliationController::class, 'uploadPdf']);
 
-
     });
 
     Route::group(['middleware' => 'checkAdminRoleAndStatus'], function () {
@@ -214,6 +215,9 @@ Route::middleware([
         Route::get('/users/{users}/get-data', [UserController::class, 'getData'])->name('users-company.get-data');
 
         Route::post('/users/company/delete', [UserController::class, 'deleteCompany'])->name('users-company.delete');
+
+        Route::resource('/settings', SettingController::class);
+        Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
 
     });
 

@@ -39,6 +39,7 @@ class UserController extends Controller
         $user->save();
 
         return response()->json(['success' => true]);
+    
     }
 
     public function show($user)

@@ -39,12 +39,12 @@
              <div class="d-flex align-items-center ms-auto font-13 gap-2 mb-3">
                 <span class="border px-1 rounded cursor-pointer">
                     <i class="bx bxs-circle me-1" style="color: #14abef"></i>
-                    Sales &#8377 <span class="sales-total">{{ number_format(abs($chartSaleAmt), 2) }}</span>
+                    Sales <span class="sales-total">{{ indian_format(abs($chartSaleAmt), 2) }}</span>
                 </span>
                 
                 <span class="border px-1 rounded cursor-pointer">
                     <i class="bx bxs-circle me-1" style="color: #ffc107"></i>
-                    Receipt &#8377 <span class="receipts-total">{{ number_format(abs($chartReceiptAmt), 2) }}</span>
+                    Receipt <span class="receipts-total">{{ indian_format(abs($chartReceiptAmt), 2) }}</span>
                 </span>
             </div>
              <div class="chart-container-1">
@@ -55,13 +55,13 @@
            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-2 g-0 row-group text-center border-top">
              <div class="col">
                <div class="p-3">
-                 <h5 class="mb-0">&#8377 {{ number_format(abs($lastMonthsTotal['sales']), 2) }}</h5>
+                 <h5 class="mb-0">&#8377 {{ indian_format(abs($lastMonthsTotal['sales']), 2) }}</h5>
                  <small class="mb-0">Sales this Month</small>
                </div>
              </div>
              <div class="col">
                <div class="p-3">
-                 <h5 class="mb-0">&#8377 {{ number_format(abs($lastMonthsTotal['receipts']), 2) }}</h5>
+                 <h5 class="mb-0">&#8377 {{ indian_format(abs($lastMonthsTotal['receipts']), 2) }}</h5>
                  <small class="mb-0">Receipt this Month</small>
                </div>
              </div>

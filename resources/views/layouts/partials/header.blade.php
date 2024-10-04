@@ -1,51 +1,29 @@
-    <!--start header wrapper-->
+<?php
+    $reportService = new App\Services\ReportService();
+    $companyGuids = $reportService->companyData();
+    $companies = App\Models\TallyCompany::whereIn('guid', $companyGuids)->get();
+?>
     <div class="header-wrapper">
         <header>
             <div class="topbar d-flex align-items-center">
                 <nav class="navbar navbar-expand gap-3">
                     <div class="topbar-logo-header d-none d-lg-flex">
-                        {{-- <a href="{{ route('dashboard') }}"> --}}
-                            <div class="">
-                                <img src="{{ asset('assets/images/precise/preciseCA-logo.png') }}" class="logo-icon" alt="logo icon" style="width: 220px;">
-                            </div>
-                            {{-- <div class="">
-                                <h4 class="logo-text">Rocker</h4>
-                            </div> --}}
-                        {{-- </a> --}}
+                        <div class="">
+                            <img src="{{ asset('assets/images/precise/preciseCA-logo.png') }}" class="logo-icon" alt="logo icon" style="width: 220px;">
+                        </div>
                     </div>
                     <div class="mobile-toggle-menu d-block d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"><i class='bx bx-menu'></i></div>
-                    {{-- <div class="position-relative search-bar d-lg-block d-none" data-bs-toggle="modal" data-bs-target="#SearchModal">
-                        <input class="form-control px-5" disabled type="search" placeholder="Search">
-                        <span class="position-absolute top-50 search-show ms-3 translate-middle-y start-0 top-50 fs-5"><i class='bx bx-search'></i></span>
-                      </div> --}}
                       <div class="top-menu ms-auto">
                         <ul class="navbar-nav align-items-center gap-1">
-                           <!--  <li class="nav-item mobile-search-icon d-flex d-lg-none" data-bs-toggle="modal" data-bs-target="#SearchModal">
-                                <a class="nav-link" href="avascript:;"><i class='bx bx-search'></i>
-                                </a>
-                            </li> -->
-                            {{-- <li class="nav-item dropdown dropdown-laungauge d-none d-sm-flex">
-                                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="avascript:;" data-bs-toggle="dropdown"><img src="{{ asset('assets/images/county/02.png') }}" width="22" alt="">
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="{{ asset('assets/images/county/01.png') }}" width="20" alt=""><span class="ms-2">English</span></a>
-                                    </li>
-                                    <li><a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="{{ asset('assets/images/county/02.png') }}" width="20" alt=""><span class="ms-2">Catalan</span></a>
-                                    </li>
-                                    <li><a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="{{ asset('assets/images/county/03.png') }}" width="20" alt=""><span class="ms-2">French</span></a>
-                                    </li>
-                                    <li><a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="{{ asset('assets/images/county/04.png') }}" width="20" alt=""><span class="ms-2">Belize</span></a>
-                                    </li>
-                                    <li><a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="{{ asset('assets/images/county/05.png') }}" width="20" alt=""><span class="ms-2">Colombia</span></a>
-                                    </li>
-                                    <li><a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="{{ asset('assets/images/county/06.png') }}" width="20" alt=""><span class="ms-2">Spanish</span></a>
-                                    </li>
-                                    <li><a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="{{ asset('assets/images/county/07.png') }}" width="20" alt=""><span class="ms-2">Georgian</span></a>
-                                    </li>
-                                    <li><a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="{{ asset('assets/images/county/08.png') }}" width="20" alt=""><span class="ms-2">Hindi</span></a>
-                                    </li>
-                                </ul>
-                            </li> --}}
+
+                            @foreach($companies as $company)
+                                <li class="nav-item dark-mode d-none d-sm-flex">
+                                    <div class="user-info">
+                                        <p class="user-name mb-0">{{ $company->name }}</p>
+                                    </div>
+                                </li>
+                            @endforeach
+
                             <li class="nav-item dark-mode d-none d-sm-flex">
                                 <a class="nav-link dark-mode-icon" href="javascript:;"><i class='bx bx-moon'></i>
                                 </a>

@@ -41,7 +41,7 @@
                         <th></th>
                         <th id="totalDebit"></th>
                         <th id="totalCredit"></th>
-                        <th id="totalRunningBalance"></th>
+                        <th></th>
                     </tr>
                 </tfoot>
             </table>

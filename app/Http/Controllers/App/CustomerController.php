@@ -52,8 +52,7 @@ class CustomerController extends Controller
             $endDate = $request->get('end_date');
 
             $customDateRange = $request->get('custom_date_range');
-
-
+            
             // Handle custom date ranges
             if ($customDateRange) {
                 switch ($customDateRange) {

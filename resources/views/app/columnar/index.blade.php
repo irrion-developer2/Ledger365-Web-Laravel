@@ -27,7 +27,12 @@
                         <div class="col-lg-3">
                             <form id="dateRangeForm">
                                 {{-- <label for="date_range" class="form-label">Date Range</label> --}}
-                                <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
+                                <div class="input-group">
+                                    <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
+                                        <button type="button" id="resetDateRange" class="btn btn-outline-secondary">
+                                            <i class="fadeIn animated bx bx-refresh" aria-hidden="true"></i> 
+                                        </button>
+                                </div>
                             </form>
                         </div>
                         <div class="col-lg-2">
@@ -121,12 +126,15 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     $(document).ready(function() {
-        // Initialize DataTable
         var urlParams = new URLSearchParams(window.location.search);
         var startDate = urlParams.get('start_date');
         var endDate = urlParams.get('end_date');
 
         var customDateRange = urlParams.get('custom_date_range');
+
+        if (customDateRange) {
+            $('#custom_date_range').val(customDateRange);
+        }
 
         var table = $('#SalesColumnar-datatable').DataTable({
             fixedColumns: {
@@ -141,11 +149,10 @@
                 url: "{{ route('columnar.get-data') }}",
                 type: 'GET',
                 data: function (d) {
-                    var urlParams = new URLSearchParams(window.location.search);
-                    d.start_date = urlParams.get('start_date') || $('#date_range').data('start');
-                    d.end_date = urlParams.get('end_date') || $('#date_range').data('end');
-                    d.voucher_type = $('#voucher_type').val();
+                    d.start_date = startDate;
+                    d.end_date = endDate;
                     d.custom_date_range = customDateRange;
+                    // d.voucher_type = $('#voucher_type').val();
                 }
             },
             columns: [
@@ -239,53 +246,34 @@
                 $(api.column(15).footer()).html(totalCGST.toFixed(3));
                 $(api.column(16).footer()).html(Math.abs(totalRoundOff).toFixed(3));
             },
+            search: {
+                orthogonal: {
+                    search: 'plain'
+                }
+            }
         });
 
-        function updateUrlParameter(key, value) {
-            var url = new URL(window.location.href);
-            url.searchParams.set(key, value);
-            window.history.pushState({}, '', url);
-        }
+         
 
-        function getInitialDates() {
-            var urlParams = new URLSearchParams(window.location.search);
-            var startDate = urlParams.get('start_date');
-            var endDate = urlParams.get('end_date');
-
-            if (startDate && endDate) {
-                return [startDate, endDate];
-            }
-
-            return [new Date(new Date().setDate(new Date().getDate() - 30)), new Date()];
-        }
-
+        const dateRangeInput = document.querySelector(".date-range");
         flatpickr(".date-range", {
             mode: "range",
             altInput: true,
             altFormat: "F j, Y",
             dateFormat: "Y-m-d",
-            defaultDate: getInitialDates(),
-            onChange: function(selectedDates) {
+            defaultDate: [new Date(new Date().setDate(new Date().getDate() - 30)), new Date()],
+            onChange: function(selectedDates, dateStr, instance) {
                 if (selectedDates.length === 2) {
-                    let startDate = selectedDates[0].toISOString().split('T')[0];
-                    let endDate = selectedDates[1].toISOString().split('T')[0];
-
-                    $('#date_range').data('start', startDate);
-                    $('#date_range').data('end', endDate);
-
-                    updateUrlParameter('start_date', startDate);
-                    updateUrlParameter('end_date', endDate);
-
-                    table.ajax.reload();
+                    let startDate = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                    let endDate = flatpickr.formatDate(selectedDates[1], "Y-m-d");
+                    let url = new URL(window.location.href);
+                    url.searchParams.set('start_date', startDate);
+                    url.searchParams.set('end_date', endDate);
+                    window.location.href = url.toString();
+                    // table.ajax.reload(); // Refresh the table data
                 }
             }
         });
-
-        var initialDates = getInitialDates();
-        if (initialDates[0] && initialDates[1]) {
-            $('#date_range').data('start', initialDates[0]);
-            $('#date_range').data('end', initialDates[1]);
-        }
 
         if (startDate && endDate) {
             dateRangeInput._flatpickr.setDate([startDate, endDate], false);
@@ -295,6 +283,16 @@
             var selectedRange = $(this).val();
             var url = new URL(window.location.href);
             url.searchParams.set('custom_date_range', selectedRange);
+            window.location.href = url.toString();
+        });
+
+        
+        $('#resetDateRange').on('click', function() {
+            $('.date-range').val('');
+            let url = new URL(window.location.href);
+            url.searchParams.delete('start_date');
+            url.searchParams.delete('end_date');
+
             window.location.href = url.toString();
         });
 
@@ -316,6 +314,8 @@
             var column = table.column($(this).attr('data-column'));
             column.visible(!column.visible());
         });
+
+
     });
 </script>
 @endsection

@@ -52,7 +52,7 @@ class CustomerController extends Controller
             $endDate = $request->get('end_date');
 
             $customDateRange = $request->get('custom_date_range');
-            
+
             // Handle custom date ranges
             if ($customDateRange) {
                 switch ($customDateRange) {
@@ -300,7 +300,6 @@ class CustomerController extends Controller
 
                     return number_format($totalSales, 2);
                 })
-
                 ->addColumn('overdue', function ($data) {
                     $ledgerIds = TallyVoucher::where('ledger_guid', $data->guid)
                         ->where('voucher_type', 'Sales')

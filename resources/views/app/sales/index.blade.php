@@ -160,19 +160,9 @@
             }
         });
 
-        function sanitizeNumber(value) {
-            return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
-        }
+        
 
-        function number_format(number, decimals) {
-            if (isNaN(number)) return 0;
-            number = parseFloat(number).toFixed(decimals);
-            var parts = number.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            return parts.join('.');
-        }
-
-        // Initialize date range picker
+        const dateRangeInput = document.querySelector(".date-range");
         flatpickr(".date-range", {
             mode: "range",
             altInput: true,
@@ -202,6 +192,18 @@
             url.searchParams.set('custom_date_range', selectedRange);
             window.location.href = url.toString();
         });
+
+        function sanitizeNumber(value) {
+            return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
+        }
+
+        function number_format(number, decimals) {
+            if (isNaN(number)) return 0;
+            number = parseFloat(number).toFixed(decimals);
+            var parts = number.split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.join('.');
+        }
 
         $('#resetDateRange').on('click', function() {
             $('.date-range').val('');

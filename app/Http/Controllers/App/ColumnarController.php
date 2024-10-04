@@ -77,9 +77,7 @@ class ColumnarController extends Controller
             }
 
             if ($startDate && $endDate) {
-                // $columnars->whereHas('vouchers', function ($query) use ($startDate, $endDate) {
-                    $columnars->whereBetween('voucher_date', [$startDate, $endDate]);
-                // });
+                $columnars->whereBetween('voucher_date', [$startDate, $endDate]);
             }
 
             if ($request->has('voucher_type')) {
@@ -111,12 +109,6 @@ class ColumnarController extends Controller
 
                     return $totalQty > 0 ? number_format($totalQty, 3) : '0.00';
                 })
-                // ->addColumn('taxable_value', function ($data) use ($companyGuids){
-                //     $qtyItems = TallyVoucherItem::where('tally_voucher_id', $data->id)->get();
-                //     $totalQty = $qtyItems->sum('amount');
-
-                //     return $totalQty > 0 ? number_format($totalQty, 3) : '0.00';
-                // })
                 ->addColumn('taxable_value', function ($data) use ($companyGuids){
                     $excludedLedgerNames = is_array($data->party_ledger_name)
                         ? $data->party_ledger_name
@@ -131,12 +123,9 @@ class ColumnarController extends Controller
                     })
                     ->get();
                     $totalHeadAmount = $amtHead->sum('amount');
-
-                    // dd($amtHead);
                     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
                     ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
                         $query->whereIn('parent', ['Sales Accounts']);
-                        // ->whereNotIn('ledger_name', $excludedLedgerNames);
                     })
                     ->get();
                     $totalAccHeadAmount = $amtAccHead->sum('amount');

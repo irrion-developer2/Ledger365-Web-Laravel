@@ -44,8 +44,9 @@
                                                     <label for="inputRole" class="form-label">Role</label>
                                                     <select class="form-select mb-3" aria-label="Default select example" name="role">
                                                         <option selected="">Select Role</option>
-                                                        <option value="SuperAdmin">SuperAdmin</option>
-                                                        <option value="Users">Users</option>
+                                                        <option value="administrative">Super Admin</option>
+                                                        <option value="owner">Company Owner</option>
+                                                        <option value="employee">Staff Member</option>
                                                     </select>
                                                 </div>
                                                 {{-- <div class="col-12">

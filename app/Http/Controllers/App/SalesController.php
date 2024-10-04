@@ -114,21 +114,6 @@ class SalesController extends Controller
                 }
 
 
-            // if ($request->has('start_date') && $request->has('end_date')) {
-            //     $startDate = $request->input('start_date');
-            //     $endDate = $request->input('end_date');
-
-            //     if ($startDate && $endDate) {
-            //         try {
-            //             $startDate = Carbon::parse($startDate)->startOfDay();
-            //             $endDate = Carbon::parse($endDate)->endOfDay();
-            //             $query->whereBetween('voucher_date', [$startDate, $endDate]);
-            //         } catch (\Exception $e) {
-            //             \Log::error('Date parsing error: ' . $e->getMessage());
-            //         }
-            //     }
-            // }
-
             if ($startDate && $endDate) {
                 $query->whereBetween('voucher_date', [$startDate, $endDate]);
             }

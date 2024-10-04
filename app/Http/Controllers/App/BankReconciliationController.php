@@ -25,8 +25,6 @@ class BankReconciliationController extends Controller
         return view('app.bankReconciliation.index');
     }
     
-    
-
     public function uploadPdf(Request $request)
     {
         $request->validate([

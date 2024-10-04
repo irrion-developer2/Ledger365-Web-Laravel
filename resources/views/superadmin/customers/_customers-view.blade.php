@@ -165,15 +165,15 @@
                 $('#totalDebit').text(totalDebit.toFixed(2));
                 $('#totalCredit').text(totalCredit.toFixed(2));
 
-                var openingBalance = data.length > 0 ? parseFloat(data[0].opening_balance) || 0 : 0;
 
-                console.log(data);
+                var openingBalance = data.length > 0 ? (isNaN(parseFloat(data[0].opening_balance.replace(/,/g, ''))) ? 0 : parseFloat(data[0].opening_balance.replace(/,/g, ''))) : 0;
+                var runningBalance = openingBalance;
+
+                var firstRowRunningBalance = data.length > 0 ? (isNaN(parseFloat(data[0].running_balance.replace(/,/g, ''))) ? 0 : parseFloat(data[0].running_balance.replace(/,/g, ''))) : 0;
+                var firstRowAmount = data.length > 0 ? (isNaN(parseFloat(data[0].amount.replace(/,/g, ''))) ? 0 : parseFloat(data[0].amount.replace(/,/g, ''))) : 0;
                 
-                var firstRowAmount = data.length > 0 ? parseFloat(data[0].amount) || 0 : 0;
-                var firstRowRunningBalance = data.length > 0 ? parseFloat(data[0].running_balance) || 0 : 0;
-
-
-                var OeningB = firstRowAmount - firstRowRunningBalance;
+                var OeningB = firstRowRunningBalance - firstRowAmount;
+                
                 
                 $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
                 $('#openingBalance').text((OeningB).toFixed(2));
@@ -196,7 +196,8 @@
             dateFormat: "Y-m-d",
             onChange: function(selectedDates, dateStr, instance) {
                 if (selectedDates.length === 2) {
-                    let [startDate, endDate] = selectedDates.map(date => date.toISOString().split('T')[0]);
+                    let startDate = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                    let endDate = flatpickr.formatDate(selectedDates[1], "Y-m-d");
                     let url = new URL(window.location.href);
                     url.searchParams.set('start_date', startDate);
                     url.searchParams.set('end_date', endDate);

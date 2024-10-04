@@ -383,22 +383,17 @@ class CustomerController extends Controller
         $combinedEntries = $voucherHeads->merge($voucherEntries);
 
     
-        // Initialize the running balance
-        $runningBalance = 0; // Set starting balance if needed
-
-        // Loop through each entry and calculate running balance
-        $combinedEntries = $combinedEntries->map(function ($entry) use (&$runningBalance) {
-            // Assuming there is a 'debit' and 'credit' field in each entry (adjust field names as necessary)
-            $debit = $entry->voucherHead->debit ?? 0;  // Use 0 if no value found
-            $credit = $entry->voucherHead->credit ?? 0;
-
-            // Calculate the running balance
-            $runningBalance += ($debit - $credit);
-
-            $entry->running_balance = $runningBalance;
-
+        $runningBalance = 0;
+        $combinedEntries = $combinedEntries->map(function ($entry) use (&$runningBalance, $ledger) {
+            $Amount = floatval($entry->amount ?? 0); 
+            $openingBalance = floatval($ledger->opening_balance ?? 0); 
+            $runningBalance += ($openingBalance + $Amount);
+            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) 
+                                        ? '0.000' 
+                                        : number_format($runningBalance, 3, '.', '');
             return $entry;
         });
+
 
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');

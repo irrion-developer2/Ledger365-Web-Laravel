@@ -518,312 +518,10 @@
         });
     </script>
 
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var ctx = document.getElementById('salereceiptchart').getContext('2d');
-        var chart; // Declare chart globally
-
-        function preprocessData(data) {
-            return Object.values(data).map(value => {
-                return parseFloat(Math.abs(value)).toFixed(2);
-            });
-        }
-
-        function createChart(chartData) {
-            var salesData = preprocessData(chartData.sales);
-            var receiptsData = preprocessData(chartData.receipts);
-
-            if (chart) {
-                chart.destroy(); // Destroy the previous chart before creating a new one
-            }
-
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(chartData.sales),
-                    datasets: [
-                        {
-                            label: 'Sales',
-                            data: salesData,
-                            backgroundColor: '#14abef',
-                            borderColor: '#14abef',
-                            borderWidth: 2,
-                            barPercentage: 0.5,
-                            borderRadius: 10
-                        },
-                        {
-                            label: 'Receipts',
-                            data: receiptsData,
-                            backgroundColor: '#ffc107',
-                            borderColor: '#ffc107',
-                            borderWidth: 2,
-                            barPercentage: 0.5,
-                            borderRadius: 10
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#333'
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (tooltipItem) {
-                                    return tooltipItem.dataset.label + ': ' + parseFloat(Math.abs(tooltipItem.raw)).toFixed(2);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Months'
-                            },
-                            ticks: {
-                                color: '#555'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Amount'
-                            },
-                            ticks: {
-                                color: '#555',
-                                callback: function (value) {
-                                    return parseFloat(Math.abs(value)).toFixed(2);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Function to fetch chart data and update the chart and totals
-        function fetchChartData(filter) {
-            $.ajax({
-                url: '/get-filtered-data', // Your Laravel route for fetching filtered data
-                type: 'GET',
-                data: { filter: filter },
-                success: function (response) {
-                    createChart(response.chartData); // Update chart with the new data
-                    // Update sales and receipt totals
-                    $('.sales-total').text('₹ ' + parseFloat(response.salesTotal).toFixed(2));
-                    $('.receipts-total').text('₹ ' + parseFloat(response.receiptsTotal).toFixed(2));
-                },
-                error: function (error) {
-                    console.error('Error fetching filtered data:', error);
-                }
-            });
-        }
-
-        // Function to extract filter from the URL
-        function getFilterFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('filter') || 'this_year'; // Default to 'this_year' if no filter is found
-        }
-
-        // Function to update URL with selected filter
-        function setFilterInURL(filter) {
-            const url = new URL(window.location);
-            url.searchParams.set('filter', filter);
-            window.history.pushState({}, '', url); // Update the URL without reloading the page
-        }
-
-        // Handle the event when a filter option is selected from the dropdown
-        document.querySelectorAll('.filter-option').forEach(function (filterOption) {
-            filterOption.addEventListener('click', function () {
-                var filter = this.getAttribute('data-filter');
-                setFilterInURL(filter); // Update the URL with the selected filter
-                fetchChartData(filter); // Fetch and update the chart data
-            });
-        });
-
-        // On page load, fetch chart data based on the filter in the URL
-        function initializeChart() {
-            const filter = getFilterFromURL();
-            fetchChartData(filter); // Fetch and display chart based on the filter in URL
-        }
-
-        // Event listener to handle browser's back/forward buttons (popstate)
-        window.addEventListener('popstate', function () {
-            initializeChart(); // Reload chart based on the URL when navigating back/forward
-        });
-
-        // Initial chart load
-        initializeChart(); // Fetch and display the chart when the page is loaded
-    });
-</script>
-
-
-{{-- <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var ctx = document.getElementById('salereceiptchart').getContext('2d');
-        var chart; // Declare chart globally
-
-        function preprocessData(data) {
-            return Object.values(data).map(value => {
-                return parseFloat(Math.abs(value)).toFixed(2);
-            });
-        }
-
-        function createChart(chartData) {
-            var salesData = preprocessData(chartData.sales);
-            var receiptsData = preprocessData(chartData.receipts);
-
-            if (chart) {
-                chart.destroy(); // Destroy the previous chart before creating a new one
-            }
-
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(chartData.sales),
-                    datasets: [
-                        {
-                            label: 'Sales',
-                            data: salesData,
-                            backgroundColor: '#14abef',
-                            borderColor: '#14abef',
-                            borderWidth: 2,
-                            barPercentage: 0.5,
-                            borderRadius: 10
-                        },
-                        {
-                            label: 'Receipts',
-                            data: receiptsData,
-                            backgroundColor: '#ffc107',
-                            borderColor: '#ffc107',
-                            borderWidth: 2,
-                            barPercentage: 0.5,
-                            borderRadius: 10
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#333'
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (tooltipItem) {
-                                    return tooltipItem.dataset.label + ': ' + parseFloat(Math.abs(tooltipItem.raw)).toFixed(2);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Months'
-                            },
-                            ticks: {
-                                color: '#555'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Amount'
-                            },
-                            ticks: {
-                                color: '#555',
-                                callback: function (value) {
-                                    return parseFloat(Math.abs(value)).toFixed(2);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Function to extract filter from the URL
-        function getFilterFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('filter') || 'this_year'; // Default to 'this_year' if no filter is found
-        }
-
-        // Function to update URL with selected filter
-        function setFilterInURL(filter) {
-            const url = new URL(window.location);
-            url.searchParams.set('filter', filter);
-            window.history.pushState({}, '', url); // Update the URL without reloading the page
-        }
-
-        // Function to fetch chart data and update the chart
-        function fetchChartData(filter) {
-            $.ajax({
-                url: '/get-filtered-data', // Your Laravel route for fetching filtered data
-                type: 'GET',
-                data: { filter: filter },
-                success: function (response) {
-                    createChart(response.chartData); // Update chart with the new data
-                    // Update sales and receipt totals
-                    $('.sales-total').text('₹ ' + parseFloat(response.salesTotal).toFixed(2));
-                    $('.receipts-total').text('₹ ' + parseFloat(response.receiptsTotal).toFixed(2));
-                },
-                error: function (error) {
-                    console.error('Error fetching filtered data:', error);
-                }
-            });
-        }
-
-        // Handle the event when a filter option is selected from the dropdown
-        document.querySelectorAll('.filter-option').forEach(function (filterOption) {
-            filterOption.addEventListener('click', function () {
-                var filter = this.getAttribute('data-filter');
-                setFilterInURL(filter); // Update the URL with the selected filter
-                fetchChartData(filter); // Fetch and update the chart data
-            });
-        });
-
-        // On page load, fetch chart data based on the filter in the URL
-        function initializeChart() {
-            const filter = getFilterFromURL();
-            fetchChartData(filter); // Fetch and display chart based on the filter in URL
-        }
-
-        // Event listener to handle browser's back/forward buttons (popstate)
-        window.addEventListener('popstate', function () {
-            initializeChart(); // Reload chart based on the URL when navigating back/forward
-        });
-
-        // Initial chart load
-        initializeChart(); // Fetch and display the chart when the page is loaded
-    });
-</script> --}}
-
-
-
-
-
-{{--
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var ctx = document.getElementById('salereceiptchart').getContext('2d');
-
-            var chartData = @json($chartData);
+            var chart; // Declare chart globally
 
             function preprocessData(data) {
                 return Object.values(data).map(value => {
@@ -831,83 +529,141 @@
                 });
             }
 
-            var salesData = preprocessData(chartData.sales);
-            var receiptsData = preprocessData(chartData.receipts);
+            function createChart(chartData) {
+                var salesData = preprocessData(chartData.sales);
+                var receiptsData = preprocessData(chartData.receipts);
 
-            var chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(chartData.sales),
-                    datasets: [
-                        {
-                            label: 'Sales',
-                            data: salesData,
-                            backgroundColor: '#14abef', // Updated color
-                            borderColor: '#14abef', // Updated border color
-                            borderWidth: 2, // Updated border width
-                            barPercentage: 0.5, // Thinner bars
-                            borderRadius: 10 // Rounded corners
-                        },
-                        {
-                            label: 'Receipts',
-                            data: receiptsData,
-                            backgroundColor: '#ffc107', // Updated color
-                            borderColor: '#ffc107', // Updated border color
-                            borderWidth: 2, // Updated border width
-                            barPercentage: 0.5, // Thinner bars
-                            borderRadius: 10 // Rounded corners
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true, // Make chart responsive
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#333'
+                if (chart) {
+                    chart.destroy(); // Destroy the previous chart before creating a new one
+                }
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(chartData.sales),
+                        datasets: [
+                            {
+                                label: 'Sales',
+                                data: salesData,
+                                backgroundColor: '#14abef',
+                                borderColor: '#14abef',
+                                borderWidth: 2,
+                                barPercentage: 0.5,
+                                borderRadius: 10
+                            },
+                            {
+                                label: 'Receipts',
+                                data: receiptsData,
+                                backgroundColor: '#ffc107',
+                                borderColor: '#ffc107',
+                                borderWidth: 2,
+                                barPercentage: 0.5,
+                                borderRadius: 10
                             }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(tooltipItem) {
-                                    // Customize tooltip to display rounded values correctly
-                                    return tooltipItem.dataset.label + ': ' + parseFloat(Math.abs(tooltipItem.raw)).toFixed(2);
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#333'
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (tooltipItem) {
+                                        return tooltipItem.dataset.label + ': ' + parseFloat(Math.abs(tooltipItem.raw)).toFixed(2);
+                                    }
                                 }
                             }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Months' // Label for x-axis
-                            },
-                            ticks: {
-                                color: '#555' // Color of x-axis ticks
-                            }
                         },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Amt' // Label for y-axis
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Months'
+                                },
+                                ticks: {
+                                    color: '#555'
+                                }
                             },
-                            ticks: {
-                                color: '#555', // Color of y-axis ticks
-                                callback: function(value) {
-                                    // Display rounded values to two decimal places on the y-axis
-                                    return parseFloat(Math.abs(value)).toFixed(2);
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Amount'
+                                },
+                                ticks: {
+                                    color: '#555',
+                                    callback: function (value) {
+                                        return parseFloat(Math.abs(value)).toFixed(2);
+                                    }
                                 }
                             }
                         }
                     }
-                }
+                });
+            }
+
+            // Function to fetch chart data and update the chart and totals
+            function fetchChartData(filter) {
+                $.ajax({
+                    url: '/get-filtered-data', // Your Laravel route for fetching filtered data
+                    type: 'GET',
+                    data: { filter: filter },
+                    success: function (response) {
+                        createChart(response.chartData); // Update chart with the new data
+                        // Update sales and receipt totals
+                        $('.sales-total').text('₹ ' + parseFloat(response.salesTotal).toFixed(2));
+                        $('.receipts-total').text('₹ ' + parseFloat(response.receiptsTotal).toFixed(2));
+                    },
+                    error: function (error) {
+                        console.error('Error fetching filtered data:', error);
+                    }
+                });
+            }
+
+            // Function to extract filter from the URL
+            function getFilterFromURL() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get('filter') || 'this_year'; // Default to 'this_year' if no filter is found
+            }
+
+            // Function to update URL with selected filter
+            function setFilterInURL(filter) {
+                const url = new URL(window.location);
+                url.searchParams.set('filter', filter);
+                window.history.pushState({}, '', url); // Update the URL without reloading the page
+            }
+
+            // Handle the event when a filter option is selected from the dropdown
+            document.querySelectorAll('.filter-option').forEach(function (filterOption) {
+                filterOption.addEventListener('click', function () {
+                    var filter = this.getAttribute('data-filter');
+                    setFilterInURL(filter); // Update the URL with the selected filter
+                    fetchChartData(filter); // Fetch and update the chart data
+                });
             });
+
+            // On page load, fetch chart data based on the filter in the URL
+            function initializeChart() {
+                const filter = getFilterFromURL();
+                fetchChartData(filter); // Fetch and display chart based on the filter in URL
+            }
+
+            // Event listener to handle browser's back/forward buttons (popstate)
+            window.addEventListener('popstate', function () {
+                initializeChart(); // Reload chart based on the URL when navigating back/forward
+            });
+
+            // Initial chart load
+            initializeChart(); // Fetch and display the chart when the page is loaded
         });
-    </script> --}}
+    </script>
 
 @endsection
 

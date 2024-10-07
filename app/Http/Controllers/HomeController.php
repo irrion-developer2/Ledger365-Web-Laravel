@@ -28,7 +28,6 @@ class HomeController extends Controller
 
     public function index()
     {
-
         $companyGuids = $this->reportService->companyData();
         $user = User::count();
         $role = auth()->user()->role;
@@ -167,10 +166,9 @@ class HomeController extends Controller
 
     public function getFilteredData(Request $request)
     {
-        $filter = $request->get('filter', 'this_year'); // Default to 'this_year' if no filter is set
+        $filter = $request->get('filter', 'this_year');
         $companyGuids = $this->reportService->companyData();
 
-        // Determine the date range based on the filter
         switch ($filter) {
             case 'this_month':
                 $startDate = now()->startOfMonth();
@@ -199,10 +197,8 @@ class HomeController extends Controller
                 break;
         }
 
-        // Query to get the chart data based on the date range
         $chartData = $this->chartSaleReceipt($companyGuids, $startDate, $endDate);
 
-        // Return the filtered data in JSON format
         return response()->json([
             'chartData' => $chartData,
             'salesTotal' => array_sum($chartData['sales']),
@@ -221,10 +217,8 @@ class HomeController extends Controller
             $monthName = $date->format('F');
             $month = $date->month;
 
-            // Debugging: Log the current month and the company GUIDs being used
             \Log::info("Querying data for month: $monthName, Company GUIDs: " . json_encode($companyGuids));
 
-            // Get total sales for the current month
             $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
                     $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
                          ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
@@ -232,13 +226,11 @@ class HomeController extends Controller
                 ->where('tally_vouchers.voucher_type', 'Sales')
                 ->whereIn('tally_vouchers.company_guid', $companyGuids)
                 ->whereMonth('tally_vouchers.voucher_date', $month)
-                ->whereYear('tally_vouchers.voucher_date', $date->year) // Ensure the year matches
+                ->whereYear('tally_vouchers.voucher_date', $date->year)
                 ->sum('tally_voucher_heads.amount');
 
-            // Log total sales for the current month
             \Log::info("Total Sales for $monthName: $totalSales");
 
-            // Get total receipts for the current month
             $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
                     $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
                          ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
@@ -249,7 +241,6 @@ class HomeController extends Controller
                 ->whereYear('tally_vouchers.voucher_date', $date->year) // Ensure the year matches
                 ->sum('tally_voucher_heads.amount');
 
-            // Log total receipts for the current month
             \Log::info("Total Receipts for $monthName: $totalReceipts");
 
             $salesData[$monthName] = $totalSales;

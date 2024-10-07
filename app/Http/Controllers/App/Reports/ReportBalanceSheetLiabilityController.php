@@ -72,6 +72,8 @@ class ReportBalanceSheetLiabilityController extends Controller
             ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
             ->where('tally_groups.parent', $generalLedger->name)
             ->whereIn('tally_groups.company_guid', $companyGuids)
+            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+            ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('tally_vouchers.company_guid', $companyGuids)
             ->groupBy('tally_groups.id', 'tally_groups.name', 'tally_ledgers.opening_balance')
             ->get();

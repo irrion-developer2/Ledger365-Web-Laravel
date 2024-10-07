@@ -57,6 +57,8 @@ class ReceiptRegisterDataTable extends DataTable
             })
 
             ->where('tally_vouchers.voucher_type', 'Receipt')
+            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+            ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('company_guid', $companyGuids);
 
             $startDate = request()->get('start_date');

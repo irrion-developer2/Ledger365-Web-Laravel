@@ -186,9 +186,9 @@ class ReportCustomerGroupController extends Controller
                 NULLIF(SUM(CASE WHEN tally_vouchers.voucher_type = "sales" THEN tally_voucher_heads.amount ELSE 0 END) - 
                 SUM(CASE WHEN tally_vouchers.voucher_type = "credit note" THEN tally_voucher_heads.amount ELSE 0 END), 0) as percentage')
             )
-            // ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-            // ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('tally_ledgers.company_guid', $companyGuids)
+            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+            ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->groupBy('tally_ledgers.language_name', 'tally_ledgers.guid', 'tally_ledgers.opening_balance');
 
                 return DataTables::of($query)
@@ -221,11 +221,22 @@ class ReportCustomerGroupController extends Controller
                     ->editColumn('total_count', function ($row) {
                         return $row->sales_count + $row->credit_note_count;
                     })
+                    // ->editColumn('avg_sales', function ($row) {
+                    //     $totalSales = $row->sales_amount + $row->credit_note_amount;
+                    //     $avgSales = $totalSales / $row->sales_count; 
+                    //     return $this->formatNumber($avgSales);
+                    // }) 
                     ->editColumn('avg_sales', function ($row) {
                         $totalSales = $row->sales_amount + $row->credit_note_amount;
-                        $avgSales = $totalSales / $row->sales_count; 
+                    
+                        if ($row->sales_count == 0) {
+                            return $this->formatNumber(0);
+                        }
+                    
+                        $avgSales = $totalSales / $row->sales_count;
                         return $this->formatNumber($avgSales);
-                    }) 
+                    })
+                    
                     ->filterColumn('language_name', function ($query, $keyword) {
                         $query->where('tally_ledgers.language_name', 'like', "%{$keyword}%");
                     })

@@ -97,6 +97,8 @@ class ReportBalanceSheetController extends Controller
                     $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                                         ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
                                                         ->where('tally_voucher_heads.entry_type', 'debit')
+                                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                                                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                                         ->sum('tally_voucher_heads.amount');
 
@@ -105,6 +107,8 @@ class ReportBalanceSheetController extends Controller
                     $totalDebitBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                                                             ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                                                                             ->where('tally_voucher_acc_allocation_heads.entry_type', 'debit')
+                                                                            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                                                            ->whereNot('tally_vouchers.is_optional', 'Yes')
                                                                             ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                                                             ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -113,6 +117,8 @@ class ReportBalanceSheetController extends Controller
                     $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                         ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
                                         ->where('tally_voucher_heads.entry_type', 'credit')
+                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                         ->sum('tally_voucher_heads.amount');
 
@@ -121,6 +127,8 @@ class ReportBalanceSheetController extends Controller
                     $totalCreditBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                         ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                         ->where('tally_voucher_acc_allocation_heads.entry_type', 'credit')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -173,6 +181,8 @@ class ReportBalanceSheetController extends Controller
                     $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                                         ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
                                                         ->where('tally_voucher_heads.entry_type', 'debit')
+                                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                                                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                                         ->sum('tally_voucher_heads.amount');
 
@@ -181,6 +191,8 @@ class ReportBalanceSheetController extends Controller
                     $totalDebitBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                                                         ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                                                                         ->where('tally_voucher_acc_allocation_heads.entry_type', 'debit')
+                                                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                                                                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                                                         ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -188,6 +200,8 @@ class ReportBalanceSheetController extends Controller
                     $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                         ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
                                         ->where('tally_voucher_heads.entry_type', 'credit')
+                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                         ->sum('tally_voucher_heads.amount');
 
@@ -196,6 +210,8 @@ class ReportBalanceSheetController extends Controller
                     $totalCreditBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                         ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                         ->where('tally_voucher_acc_allocation_heads.entry_type', 'credit')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -288,6 +304,8 @@ class ReportBalanceSheetController extends Controller
                     $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                                         ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
                                                         ->where('tally_voucher_heads.entry_type', 'debit')
+                                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                                                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                                         ->sum('tally_voucher_heads.amount');
 
@@ -296,6 +314,8 @@ class ReportBalanceSheetController extends Controller
                     $totalDebitBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                                                             ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                                                                             ->where('tally_voucher_acc_allocation_heads.entry_type', 'debit')
+                                                                            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                                                            ->whereNot('tally_vouchers.is_optional', 'Yes')
                                                                             ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                                                             ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -304,6 +324,8 @@ class ReportBalanceSheetController extends Controller
                     $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                         ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
                                         ->where('tally_voucher_heads.entry_type', 'credit')
+                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                         ->sum('tally_voucher_heads.amount');
 
@@ -312,6 +334,8 @@ class ReportBalanceSheetController extends Controller
                     $totalCreditBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                         ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                         ->where('tally_voucher_acc_allocation_heads.entry_type', 'credit')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->sum('tally_voucher_acc_allocation_heads.amount');
 

@@ -28,14 +28,12 @@ class PaymentRegisterDataTable extends DataTable
                 return Carbon::parse($request->created_at)->format('Y-m-d H:i:s');
             })
             ->addColumn('entry_type', function ($entry) {
-                return $entry->entry_type; // Directly from the joined table
+                return $entry->entry_type;
             })
             ->addColumn('credit', function ($entry) {
-                // Return the credit amount if the entry type is credit
                 return $entry->entry_type === 'credit' ? number_format(abs($entry->amount), 2, '.', '') : '-';
             })
             ->addColumn('debit', function ($entry) {
-                // Return the debit amount if the entry type is debit
                 return $entry->entry_type === 'debit' ? number_format(abs($entry->amount), 2, '.', '') : '-';
             })
             ->addColumn('voucher_number', function ($entry) {
@@ -55,9 +53,11 @@ class PaymentRegisterDataTable extends DataTable
             ->select('tally_vouchers.*', 'tally_voucher_heads.entry_type', 'tally_voucher_heads.amount')
             ->leftJoin('tally_voucher_heads', function($join) {
                 $join->on('tally_vouchers.party_ledger_name', '=', 'tally_voucher_heads.ledger_name')
-                    ->on('tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id'); // Adjust as needed
+                    ->on('tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id');
             })
             ->where('tally_vouchers.voucher_type', 'Payment')
+            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+            ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('company_guid', $companyGuids);
 
 

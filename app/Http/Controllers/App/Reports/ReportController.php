@@ -29,7 +29,6 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-
         return view('app.reports.index');
     }
 
@@ -68,6 +67,8 @@ class ReportController extends Controller
                                     'tally_vouchers.id')
             ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
             ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
+            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+            ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('tally_ledgers.company_guid', $companyGuids)
             ->whereIn('tally_vouchers.company_guid', $companyGuids)
             ->where('tally_ledgers.guid', $cashBankLadgerGuid);
@@ -100,8 +101,11 @@ class ReportController extends Controller
         $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                 ->findOrFail($voucherItemId);
 
-        $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
-        // $saleReceiptItem = $voucherItemName->firstWhere('voucher_type', 'Receipt');
+        $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)
+                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
+                                        ->whereIn('company_guid', $companyGuids)
+                                        ->get();
 
         $saleReceiptItem = $voucherItemName->filter(function ($item) use ($voucherItem) {
             return $item->voucher_type !== $voucherItem->voucher_type;
@@ -114,26 +118,20 @@ class ReportController extends Controller
         } else {
             $voucherHeadsSaleReceipt = collect();
         }
-        // dd($saleReceiptItem);
-
 
         $bankAccItem = $voucherItemName->firstWhere('voucher_type', 'Receipt');
 
         if ($bankAccItem) {
-            $bankAccreceiptItem = $bankAccItem->id; // Only assign id if $bankAccItem is not null
+            $bankAccreceiptItem = $bankAccItem->id;
             $bankAcc = TallyVoucherHead::where('tally_voucher_id', $bankAccreceiptItem)
                 ->whereHas('ledger', function($q) {
                     $q->where('parent', 'Bank Accounts');
                 })
-                ->with('ledger') // Eager load the ledger relationship
+                ->with('ledger')
                 ->get();
         } else {
-            $bankAcc = collect(); // Return an empty collection if no bank account item is found
+            $bankAcc = collect();
         }
-
-
-        // dd($bankAcc);
-
 
         $ledgerData = TallyLedger::where('language_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
@@ -176,7 +174,10 @@ class ReportController extends Controller
         $totalCountLinkHeads = $voucherHeadsSaleReceipt->count();
         $subtotalsamount = $voucherItems->sum('amount');
 
-        $menuItems = TallyVoucher::whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyVoucher::whereIn('company_guid', $companyGuids)
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
+                    ->get();
 
         $voucherItemGuid = $voucherItem->company_guid;
         $companies = TallyCompany::where('guid', $voucherItemGuid)->get();
@@ -258,7 +259,12 @@ class ReportController extends Controller
         $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                         ->findOrFail($voucherItemId);
 
-        $saleItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $saleItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)
+                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
+                                        ->whereIn('company_guid', $companyGuids)
+                                        ->get();
+
         $saleReceiptItem = $saleItemName->firstWhere('voucher_type', 'Receipt');
 
         if (!$saleReceiptItem) {
@@ -266,7 +272,10 @@ class ReportController extends Controller
         }
         $receiptItem = $saleReceiptItem->id;
 
-        $query = TallyVoucher::where('id', $receiptItem)->whereIn('company_guid', $companyGuids)->get();
+        $query = TallyVoucher::where('id', $receiptItem)
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
+                        ->whereIn('company_guid', $companyGuids)->get();
         return DataTables::of($query)
             ->addIndexColumn()
             ->editColumn('created_at', function ($request) {
@@ -293,9 +302,12 @@ class ReportController extends Controller
         $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($voucherItemId);
 
-        $saleItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $saleItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)
+                                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                    ->whereNot('tally_vouchers.is_optional', 'Yes')
+                                    ->whereIn('company_guid', $companyGuids)
+                                    ->get();
         $saleReceiptItem = $saleItemName->firstWhere('voucher_type', 'Receipt');
-
 
         if (!$saleReceiptItem) {
             return DataTables::of(collect([]))->make(true);
@@ -327,7 +339,11 @@ class ReportController extends Controller
         $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($voucherItemId);
 
-        $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)
+                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
+                                        ->whereIn('company_guid', $companyGuids)
+                                        ->get();
 
         $saleReceiptItem = $voucherItemName->filter(function ($item) use ($voucherItem) {
             return $item->voucher_type !== $voucherItem->voucher_type;
@@ -393,7 +409,11 @@ class ReportController extends Controller
         $totalCountLinkHeads = $voucherHeadsSaleReceipt->count();
         $subtotalsamount = $voucherItems->sum('amount');
 
-        $menuItems = TallyVoucher::where('voucher_type', 'Payment')->whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyVoucher::where('voucher_type', 'Payment')
+                                ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                ->whereNot('tally_vouchers.is_optional', 'Yes')
+                                ->whereIn('company_guid', $companyGuids)
+                                ->get();
 
         return view('app.reports._voucher_payment_items', [
             'voucherItem' => $voucherItem,
@@ -425,7 +445,11 @@ class ReportController extends Controller
         $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($voucherItemId);
 
-        $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)
+                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
+                                        ->whereIn('company_guid', $companyGuids)
+                                        ->get();
 
         $saleReceiptItem = $voucherItemName->filter(function ($item) use ($voucherItem) {
             return $item->voucher_type !== $voucherItem->voucher_type;
@@ -486,7 +510,11 @@ class ReportController extends Controller
         $totalCountLinkHeads = $voucherHeadsSaleReceipt->count();
         $subtotalsamount = $voucherItems->sum('amount');
 
-        $menuItems = TallyVoucher::where('voucher_type', 'Receipt')->whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyVoucher::where('voucher_type', 'Receipt')
+                                ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                ->whereNot('tally_vouchers.is_optional', 'Yes')
+                                ->whereIn('company_guid', $companyGuids)
+                                ->get();
 
         return view('app.reports._voucher_receipt_items', [
             'voucherItem' => $voucherItem,

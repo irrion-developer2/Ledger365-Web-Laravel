@@ -15,7 +15,6 @@ use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
 use Laravel\Jetstream\Http\Controllers\Inertia\ApiTokenController;
 use Laravel\Jetstream\Http\Controllers\Inertia\UserProfileController;
 
-
 use App\Http\Controllers\App\AnalyticController;
 use App\Http\Controllers\App\CompanyController;
 use App\Http\Controllers\App\CustomerController;
@@ -36,27 +35,9 @@ use App\Http\Controllers\App\Reports\ReportBalanceSheetController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetProfitLossController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetAssetStockController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetLiabilityController;
+use App\Http\Controllers\App\Reports\ReportCancelledController;
+use App\Http\Controllers\App\Reports\ReportOptionalController;
 use Illuminate\Http\Request;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
-
-
-// Route::group(['prefix' => config('sanctum.prefix', 'sanctum')], static function () {
-//     Route::get('/csrf-cookie', [CsrfCookieController::class, 'show'])
-//         ->middleware([
-//             'web',
-//             InitializeTenancyByDomain::class // Use tenancy initialization middleware of your choice
-//         ])->name('sanctum.csrf-cookie');
-// });
 
 Route::get('/home',function(){
     return view('welcome');
@@ -108,7 +89,6 @@ Route::middleware([
         Route::get('otherLedgers', [CustomerController::class, 'otherLedgers'])->name('otherLedgers.index');
         Route::get('/otherLedgers/get-data', [CustomerController::class, 'ledgergetData'])->name('otherLedgers.get-data');
 
-
         Route::get('/ledgerView/{customer}', [CustomerController::class, 'show'])->name('customers.show');
         Route::get('/customers/data', [CustomerController::class, 'getCustomerData'])->name('customers.data');
         Route::get('customers/{customer}/vouchers', [CustomerController::class, 'getVoucherEntries'])->name('customers.vouchers');
@@ -124,10 +104,10 @@ Route::middleware([
         Route::get('stock-items/SaleStockItem/{SaleStockItem}', [StockItemController::class, 'AllSaleStockItemReports'])->name('SaleStockItem.items');
         Route::get('stock-items/SaleStockItem/data/{saleStockItemId}', [StockItemController::class, 'getSaleStockItemData'])->name('stock-items.SaleStockItem.data');
 
-
         Route::resource('reports', ReportController::class)->except(['show']);
 
         Route::get('reports/DayBook', [ReportDayBookController::class, 'index'])->name('reports.daybook');
+        Route::get('/daybook/get-data', [ReportDayBookController::class, 'getData'])->name('daybook.get-data');
 
         Route::get('reports/GeneralLedger', [ReportGeneralLedgerController::class, 'index'])->name('reports.GeneralLedger');
         Route::get('reports/GeneralLedger/{GeneralLedger}', [ReportGeneralLedgerController::class, 'AllGeneralLedgerReports'])->name('reports.GeneralLedger.details');
@@ -154,45 +134,42 @@ Route::middleware([
         Route::get('reports/VoucherItemReceipt/data/{VoucherItemId}', [ReportController::class, 'getVoucherItemReceiptData'])->name('reports.VoucherItemReceipt.data');
         Route::get('reports/VoucherItemReceiptInvoice/data/{VoucherItemId}', [ReportController::class, 'getVoucherItemReceiptInvoiceData'])->name('reports.VoucherItemReceiptInvoice.data');
 
-
         Route::get('reports/CustomerGroup', [ReportCustomerGroupController::class, 'index'])->name('reports.CustomerGroup');
         Route::get('/reports/CustomerGroup/get-data', [ReportCustomerGroupController::class, 'getData'])->name('reports.CustomerGroup.get-data');
         Route::get('reports/CustomerGroupLedger/{CustomerGroupLedger}', [ReportCustomerGroupController::class, 'AllCustomerGroupLedgerReports'])->name('reports.CustomerGroupLedger');
         Route::get('reports/CustomerGroupLedger/data/{customerGroupLedgerId}', [ReportCustomerGroupController::class, 'getCustomerGroupLedgerData'])->name('reports.CustomerGroupLedger.data');
-
 
         Route::get('reports/ItemGroup', [ReportItemGroupController::class, 'index'])->name('reports.ItemGroup');
         Route::get('/reports/ItemGroup/get-data', [ReportItemGroupController::class, 'getData'])->name('reports.ItemGroup.get-data');
         Route::get('reports/ItemGroupLedger/{ItemGroupLedger}', [ReportItemGroupController::class, 'AllItemGroupLedgerReports'])->name('reports.ItemGroupLedger');
         Route::get('/reports/ItemGroup/ItemGroupLedger/{itemGroupLedgerId}/get-data', [ReportItemGroupController::class, 'ledgergetData'])->name('reports.ItemGroupLedger.get-data');
 
-
         Route::get('reports/BalanceSheet', [ReportBalanceSheetController::class, 'index'])->name('reports.BalanceSheet');
         Route::get('/reports/BalanceSheet/get-data', [ReportBalanceSheetController::class, 'getData'])->name('reports.BalanceSheet.get-data');
         Route::get('/reports/BalanceAssetSheet/get-data', [ReportBalanceSheetController::class, 'getAssetData'])->name('reports.BalanceAssetSheet.get-data');
         Route::get('/reports/BalanceAssetSheetItem/get-data', [ReportBalanceSheetController::class, 'getAssetItemData'])->name('reports.BalanceAssetSheetItem.get-data');
-
 
         Route::get('reports/BalanceSheetProfitLoss', [ReportBalanceSheetProfitLossController::class, 'index'])->name('reports.BalanceSheetProfitLoss');
         Route::get('/reports/BalanceSheetProfitLoss/get-data', [ReportBalanceSheetProfitLossController::class, 'getData'])->name('reports.BalanceSheetProfitLoss.get-data');
         Route::get('/reports/BalanceSheetProfitLossExpense/get-data', [ReportBalanceSheetProfitLossController::class, 'getExpenseData'])->name('reports.BalanceSheetProfitLossExpense.get-data');
         Route::get('/reports/BalanceSheetProfitLossClosingStock/get-data', [ReportBalanceSheetProfitLossController::class, 'getClosingStockData'])->name('reports.BalanceSheetProfitLossClosingStock.get-data');
 
-
         Route::get('reports/BalanceSheetLiability/{Liability}', [ReportBalanceSheetLiabilityController::class, 'AllLiabilityReports'])->name('reports.BalanceSheet.Liability');
         Route::get('reports/BalanceSheetLiabilityDebitCredit/data/{LiabilityId}', [ReportBalanceSheetLiabilityController::class, 'getLiabilityData'])->name('reports.BalanceSheetLiability.get-data');
-
-
 
         Route::get('reports/BalanceSheetAssetStock', [ReportBalanceSheetAssetStockController::class, 'index'])->name('reports.BalanceSheetAssetStock');
         Route::get('/reports/BalanceSheetAssetStock/get-data', [ReportBalanceSheetAssetStockController::class, 'getData'])->name('reports.BalanceSheetAssetStock.get-data');
 
+        Route::get('reports/cancelled', [ReportCancelledController::class, 'index'])->name('reports.cancelled');
+        Route::get('/cancelled/get-data', [ReportCancelledController::class, 'getData'])->name('cancelled.get-data');
+
+        Route::get('reports/optional', [ReportOptionalController::class, 'index'])->name('reports.optional');
+        Route::get('/optional/get-data', [ReportOptionalController::class, 'getData'])->name('optional.get-data');
 
         Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');
         Route::get('/sales/get-data', [SalesController::class, 'getData'])->name('sales.get-data');
         Route::get('sales/Item/{SaleItem}', [SalesController::class, 'AllSaleItemReports'])->name('sales.items');
         Route::get('sales/SaleItem/data/{SaleItemId}', [SalesController::class, 'getSaleItemData'])->name('sales.SaleItem.data');
-
 
         Route::get('/columnar', [ColumnarController::class, 'index'])->name('columnar.index');
         Route::get('/columnar/get-data', [ColumnarController::class, 'getData'])->name('columnar.get-data');
@@ -200,7 +177,6 @@ Route::middleware([
         Route::get('/BankReconciliation', [BankReconciliationController::class, 'index'])->name('BankReconciliation.index');
         Route::post('/BankReconciliation/import', [BankReconciliationController::class, 'import'])->name('BankReconciliation.import');
         Route::get('/BankReconciliation/get-data', [BankReconciliationController::class, 'getData'])->name('BankReconciliation.get-data');
-
 
         Route::post('/upload-pdf', [BankReconciliationController::class, 'uploadPdf']);
 

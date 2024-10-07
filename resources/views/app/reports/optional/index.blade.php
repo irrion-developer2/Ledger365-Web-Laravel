@@ -1,5 +1,5 @@
 @extends("layouts.main")
-@section('title', __('Reports | PreciseCA'))
+@section('title', __('Optional Records | PreciseCA'))
 
 @section("style")
     <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
@@ -10,12 +10,12 @@
     <div class="page-wrapper">
         <div class="page-content pt-2">
             <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-2">
-                <div class="breadcrumb-title pe-3">Reports</div>
+                <div class="breadcrumb-title pe-3">Optional Records</div>
                 <div class="ps-3">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Daybook</li>
+                            <li class="breadcrumb-item active" aria-current="page">Optional Records</li>
                         </ol>
                     </nav>
                 </div>
@@ -35,38 +35,11 @@
                                 </div>
                             </form>
                         </div>
-                        <div class="col-lg-2">
-                            <form id="customDateForm">
-                                <select id="custom_date_range" name="custom_date_range" class="form-select">
-                                    <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
-                                    <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
-                                    <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
-                                    <option value="prev_quarter" {{ request('custom_date_range') === 'prev_quarter' ? 'selected' : '' }}>Prev Quarter</option>
-                                    <option value="this_year" {{ request('custom_date_range') === 'this_year' ? 'selected' : '' }}>This Year</option>
-                                    <option value="prev_year" {{ request('custom_date_range') === 'prev_year' ? 'selected' : '' }}>Prev Year</option>
-                                </select>
-                            </form>
-                        </div>
-                        <div class="col-lg-2">
-                            <form id="voucherTypeForm">
-                                <select id="voucher_type" name="voucher_type" class="form-select">
-                                    <option value="">All</option>
-                                    <option value="Sales">Sale</option>
-                                    <option value="Purchase">Purchase</option>
-                                    <option value="Credit Note">CreditNote</option>
-                                    <option value="Debit Note">DebitNote</option>
-                                    <option value="Receipt">Receipt</option>
-                                    <option value="Payment">Payment</option>
-                                    {{-- <option value="JournalVoucher">JournalVoucher</option> --}}
-                                    <!-- Add more options as needed -->
-                                </select>
-                            </form>
-                        </div>
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
 
-                        <table id="daybook-datatable" class="stripe row-border order-column" style="width:100%">
+                        <table id="optional-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -111,26 +84,23 @@
 
         var customDateRange = urlParams.get('custom_date_range');
 
-        var voucherType = urlParams.get('voucher_type');
-
         if (customDateRange) {
             $('#custom_date_range').val(customDateRange);
         }
 
-        var table = new DataTable('#daybook-datatable', {
+        var table = new DataTable('#optional-datatable', {
             fixedColumns: { start: 1, },
             paging: false,
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
             ajax: {
-                url: "{{ route('daybook.get-data') }}",
+                url: "{{ route('optional.get-data') }}",
                 type: 'GET',
                 data: function (d) {
                     d.start_date = startDate;
                     d.end_date = endDate;
                     d.custom_date_range = customDateRange;
-                    d.voucher_type = voucherType;
                 }
             },
             columns: [
@@ -225,15 +195,6 @@
             url.searchParams.delete('start_date');
             url.searchParams.delete('end_date');
 
-            window.location.href = url.toString();
-        });
-
-        
-        const voucherTypeSelect = document.getElementById('voucher_type');
-        voucherTypeSelect.addEventListener('change', function() {
-            let voucherType = this.value;
-            let url = new URL(window.location.href);
-            url.searchParams.set('voucher_type', voucherType);
             window.location.href = url.toString();
         });
 

@@ -7,14 +7,13 @@ use Carbon\Carbon;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
+use App\Services\ReportService;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherHead;
-use App\Services\ReportService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log; 
-use App\DataTables\SuperAdmin\DayBookDataTable;
 
-class ReportDayBookController extends Controller
+class ReportOptionalController extends Controller
 {
     protected $reportService;
 
@@ -25,7 +24,7 @@ class ReportDayBookController extends Controller
 
     public function index()
     {
-        return view ('app.reports.dayBook.index');
+        return view ('app.reports.optional.index');
     }
 
     public function getData(Request $request)
@@ -35,8 +34,7 @@ class ReportDayBookController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
 
-            $vouchers = TallyVoucher::whereNot('tally_vouchers.is_optional', 'Yes')
-                                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+            $vouchers = TallyVoucher::where('tally_vouchers.is_optional', 'Yes')
                                     ->whereIn('company_guid', $companyGuids);
 
             $endTime1 = microtime(true);
@@ -80,13 +78,6 @@ class ReportDayBookController extends Controller
 
             if ($startDate && $endDate) {
                     $vouchers->whereBetween('voucher_date', [$startDate, $endDate]);
-            }   
-            
-            if (request()->has('voucher_type')) {
-                $voucherType = request('voucher_type');
-                if ($voucherType) {
-                    $vouchers->where('voucher_type', $voucherType);
-                }
             }
 
             Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
@@ -120,4 +111,5 @@ class ReportDayBookController extends Controller
                 return $dataTable;
         }
     }
+
 }

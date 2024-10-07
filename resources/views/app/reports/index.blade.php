@@ -174,6 +174,28 @@
                                 </div>
                             </div>
 
+
+                            <div class="col">
+                                <div class="card radius-10 border-start border-0 border-4 border-warning">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <h4 class="my-1 text-warning">Other Reports</h4>
+                                                {{-- <p class="mb-0 font-13">Stay on top payments your business owes</p> --}}
+                                            </div>
+                                            <div class="widgets-icons-2 rounded-circle bg-gradient-blooker text-white ms-auto"><i class='bx bxs-wallet'></i>
+                                            </div>
+                                        </div>
+                                        <div class="pt-4">
+                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.cancelled') }}">Cancelled Records</a></h5>
+                                            <hr class="border-1">
+                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.optional') }}">Optional Records</a></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
                         </div>
 
 

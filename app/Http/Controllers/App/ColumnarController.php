@@ -39,6 +39,8 @@ class ColumnarController extends Controller
 
         if ($request->ajax()) {
             $columnars = TallyVoucher::where('voucher_type', 'Sales')
+                ->whereNot('is_cancelled', 'Yes')
+                ->whereNot('is_optional', 'Yes')
                 ->whereIn('company_guid', $companyGuids);
 
             $startDate = $request->get('start_date');
@@ -46,7 +48,6 @@ class ColumnarController extends Controller
 
             $customDateRange = $request->get('custom_date_range');
 
-            // Handle custom date ranges
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -312,6 +313,5 @@ class ColumnarController extends Controller
                 ->make(true);
         }
     }
-
 
 }

@@ -39,8 +39,7 @@ class SalesController extends Controller
         $companyGuids = $this->reportService->companyData();
 
         if ($request->ajax()) {
-            // Specify the table name for the ambiguous column
-            $query = TallyVoucher::whereIn('tally_vouchers.company_guid', $companyGuids) // Here we specify the table name
+            $query = TallyVoucher::whereIn('tally_vouchers.company_guid', $companyGuids)
                 ->select(
                     'tally_vouchers.*',
                     'tally_voucher_heads.entry_type',
@@ -74,7 +73,9 @@ class SalesController extends Controller
                 ->selectRaw('GROUP_CONCAT(DISTINCT related_heads.ledger_name) as related_ledger_names')
                 ->selectRaw('SUM(CASE WHEN related_heads.ledger_name LIKE "%IGST @18%" THEN related_heads.amount ELSE 0 END) as igst_amount')
                 ->selectRaw('SUM(CASE WHEN related_heads.ledger_name LIKE "%Round Off%" THEN related_heads.amount ELSE 0 END) as round_off_amount')
-                ->where('tally_vouchers.voucher_type', 'Sales');
+                ->where('tally_vouchers.voucher_type', 'Sales')
+                ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                ->whereNot('tally_vouchers.is_optional', 'Yes');
 
 
                 $startDate = $request->get('start_date');
@@ -82,8 +83,6 @@ class SalesController extends Controller
 
                 $customDateRange = $request->get('custom_date_range');
 
-
-                // Handle custom date ranges
                 if ($customDateRange) {
                     switch ($customDateRange) {
                         case 'this_month':
@@ -141,7 +140,10 @@ class SalesController extends Controller
         $saleItem = TallyVoucher::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($saleItemId);
 
-        $saleItemName = TallyVoucher::where('party_ledger_name', $saleItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $saleItemName = TallyVoucher::where('party_ledger_name', $saleItem->party_ledger_name)
+                                    ->whereNot('is_cancelled', 'Yes')
+                                    ->whereNot('is_optional', 'Yes')
+                                    ->whereIn('company_guid', $companyGuids)->get();
         $saleReceiptItem = $saleItemName->firstWhere('voucher_type', 'Receipt');
 
          if ($saleReceiptItem) {
@@ -194,7 +196,11 @@ class SalesController extends Controller
         $totalCountHeads = TallyVoucherHead::where('tally_voucher_id', $saleItemId)->count();
         $subtotalsamount = $voucherItems->sum('amount');
 
-        $menuItems = TallyVoucher::where('voucher_type', 'Sales')->whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyVoucher::where('voucher_type', 'Sales')
+                                    ->whereNot('is_cancelled', 'Yes')
+                                    ->whereNot('is_optional', 'Yes')
+                                    ->whereIn('company_guid', $companyGuids)
+                                    ->get();
 
         return view('app.sales._sale_item_list', [
             'saleItem' => $saleItem,

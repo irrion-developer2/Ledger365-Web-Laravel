@@ -155,6 +155,8 @@ class SupplierController extends Controller
 
                     $ledgerSaleData = TallyVoucher::where('ledger_guid', $data->guid)
                     ->where('voucher_type', 'Purchase')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     // ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
                     //     ->where('voucher_date', '<=', Carbon::now()->endOfDay())
                     ->pluck('id', 'ledger_guid');
@@ -171,6 +173,8 @@ class SupplierController extends Controller
                 ->addColumn('outstanding', function ($data) {
                     $ledgerIds = TallyVoucher::where('ledger_guid', $data->guid)
                         ->where('voucher_type', 'Purchase')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->pluck('ledger_guid');
 
                     $totalSales = TallyVoucherHead::whereIn('ledger_guid', $ledgerIds)
@@ -181,6 +185,8 @@ class SupplierController extends Controller
                 ->addColumn('overdue', function ($data) {
                     $ledgerIds = TallyVoucher::where('ledger_guid', $data->guid)
                         ->where('voucher_type', 'Purchase')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->pluck('ledger_guid');
 
                     $totalSales = TallyVoucherHead::whereIn('ledger_guid', $ledgerIds)
@@ -192,6 +198,8 @@ class SupplierController extends Controller
 
                     $ledgerData = TallyVoucher::where('ledger_guid', $data->guid)
                     ->where('voucher_type', 'Debit Note')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     // ->where('voucher_date', '>=', Carbon::now()->subDays(30)->startOfDay())
                     // ->where('voucher_date', '<=', Carbon::now()->endOfDay())
                     ->pluck('id', 'ledger_guid');
@@ -210,6 +218,8 @@ class SupplierController extends Controller
 
                     $ledgerData = TallyVoucher::where('ledger_guid', $data->guid)
                         ->where('voucher_type', 'Purchase')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->pluck('id', 'ledger_guid');
 
                     $ledgerGuids = $ledgerData->keys();
@@ -229,6 +239,8 @@ class SupplierController extends Controller
                 ->addColumn('payment_collection', function ($data) {
                     $ledgerData = TallyVoucher::where('ledger_guid', $data->guid)
                         ->where('voucher_type', 'Payment')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->get(['id', 'ledger_guid']);
 
                     $ledgerGuids = $ledgerData->pluck('ledger_guid')->toArray();
@@ -244,6 +256,8 @@ class SupplierController extends Controller
 
                     $ledgerData = TallyVoucher::where('ledger_guid', $data->guid)
                         ->where('voucher_type', 'Payment')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->pluck('id', 'ledger_guid');
 
                     $ledgerGuids = $ledgerData->keys();

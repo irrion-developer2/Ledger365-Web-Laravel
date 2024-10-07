@@ -232,46 +232,9 @@ class StockItemController extends Controller
         ];
     }
 
-
-    // private function calculateStockItemVoucherAmount($stockItemName)
-    // {
-    //     // Sum of billed quantities for 'Sales' vouchers
-    //     $stockItemVoucherSaleAmount = TallyVoucherItem::where('stock_item_name', $stockItemName)
-    //         ->whereHas('tallyVoucher', function ($query) {
-    //             $query->where('voucher_type', 'Sales');
-    //         })->sum('amount');
-
-    //     // Sum of billed quantities for 'Purchase' vouchers
-    //     $stockItemVoucherPurchaseAmount = TallyVoucherItem::where('stock_item_name', $stockItemName)
-    //         ->whereHas('tallyVoucher', function ($query) {
-    //             $query->where('voucher_type', 'Purchase');
-    //         })->sum('amount');
-
-    //         // dd($stockItemVoucherPurchaseAmount);
-    //     // Sum of billed quantities for 'Credit Note' vouchers
-    //     $stockItemVoucherCreditNoteAmount = TallyVoucherItem::where('stock_item_name', $stockItemName)
-    //         ->whereHas('tallyVoucher', function ($query) {
-    //             $query->where('voucher_type', 'Credit Note');
-    //         })->sum('amount');
-
-    //     // Sum of billed quantities for 'Debit Note' vouchers
-    //     $stockItemVoucherDebitNoteAmount = TallyVoucherItem::where('stock_item_name', $stockItemName)
-    //         ->whereHas('tallyVoucher', function ($query) {
-    //             $query->where('voucher_type', 'Debit Note');
-    //         })->sum('amount');
-
-    //     return [
-    //         'purchase_amt' => $stockItemVoucherPurchaseAmount,
-    //         'debit_note_amt' => $stockItemVoucherDebitNoteAmount
-    //     ];
-    // }
-
     private function extractNumericValue($value)
     {
-        // Remove non-numeric characters except for decimal points
         $numericValue = preg_replace('/[^\d.]/', '', $value);
-
-        // Convert to float
         return (float) $numericValue;
     }
 
@@ -460,61 +423,6 @@ class StockItemController extends Controller
             'menuItems' => $menuItems,
         ]);
     }
-
-    // public function getSaleStockItemData($saleStockItemId)
-    // {
-    //     $saleStockItem = TallyItem::findOrFail($saleStockItemId);
-    //     $saleStockItemName = $saleStockItem->name;
-
-    //     $saleStockVoucherItem = TallyVoucherItem::where('stock_item_name', $saleStockItemName)
-    //     ->whereHas('tallyVoucher', function ($query) {
-    //         $query->where('voucher_type', 'Sales');
-    //     })
-    //     ->get();
-
-
-    //     $stockItemVoucherSaleItemConnect = [];
-    //     foreach ($saleStockVoucherItem as $saleStockItemVoucher) {
-    //         $id = $saleStockItemVoucher->tally_voucher_id;
-
-    //         $tallyVouchers = TallyVoucher::where('id', $id)->get();
-    //         if ($tallyVouchers->isNotEmpty()) {
-    //             $stockItemVoucherSaleItemConnect[] = [
-    //                 'tally_voucher_items' => $saleStockItemVoucher,
-    //                 'tally_vouchers' => $tallyVouchers,
-    //             ];
-    //         }
-    //     }
-
-    //     $partyLedgerNames = $saleStockVoucherItem->flatMap(function ($voucherItem) {
-    //         return TallyVoucher::where('id', $voucherItem->tally_voucher_id)
-    //             ->pluck('party_ledger_name');
-    //     })->unique()->toArray();
-
-    //     $partyLedgerNames = array_unique($partyLedgerNames);
-
-    //     $tallyLedgers = TallyLedger::whereIn('language_name', $partyLedgerNames)->get();
-
-    //     // Step 5: Prepare data with party_ledger_name from TallyVoucher
-    //     $query = $tallyLedgers->map(function ($ledger) {
-    //         // Find the corresponding party_ledger_name from TallyVoucher
-    //         $partyLedgerNames = TallyVoucher::where('party_ledger_name', $ledger->language_name)
-    //             ->pluck('party_ledger_name');
-
-    //         return [
-    //             'language_name' => $ledger->language_name,
-    //             'party_ledger_name' => $partyLedgerNames->first(), // Assuming one party_ledger_name per language_name
-    //         ];
-    //     });
-
-    //     // dd($query);
-    //     return DataTables::of($query)
-    //         ->addIndexColumn()
-    //         ->editColumn('created_at', function ($request) {
-    //             return Carbon::parse($request->created_at)->format('Y-m-d H:i:s');
-    //         })
-    //         ->make(true);
-    // }
 
     public function getSaleStockItemData($saleStockItemId)
     {

@@ -47,6 +47,9 @@ class DayBookDataTable extends DataTable
             })
             ->addColumn('voucher_date', function ($entry) {
                 return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
+            })  
+            ->filterColumn('voucher_number', function($query, $keyword) {
+                $query->where('voucher_number', 'like', "%{$keyword}%");
             })
             ->rawColumns(['voucher_number']);
     }
@@ -61,6 +64,8 @@ class DayBookDataTable extends DataTable
                 $join->on('tally_vouchers.party_ledger_name', '=', 'tally_voucher_heads.ledger_name')
                     ->on('tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id'); // Adjust as needed
             })
+            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+            ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('tally_vouchers.company_guid', $companyGuids);
 
         // Retrieve the start and end dates from the request
@@ -69,7 +74,6 @@ class DayBookDataTable extends DataTable
 
         $customDateRange = request()->get('custom_date_range');
 
-        // Handle custom date ranges
         if ($customDateRange) {
             switch ($customDateRange) {
                 case 'this_month':
@@ -99,7 +103,6 @@ class DayBookDataTable extends DataTable
             }
         }
 
-        // Apply date filters if both start and end dates are available
         if ($startDate && $endDate) {
             try {
                 $startDate = Carbon::parse($startDate)->startOfDay();
@@ -110,11 +113,6 @@ class DayBookDataTable extends DataTable
             }
         }
 
-        \Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
-        \Log::info('Start date:', ['startDate' => $startDate]);
-        \Log::info('End date:', ['endDate' => $endDate]);
-
-        // Filter by voucher type if provided
         if (request()->has('voucher_type')) {
             $voucherType = request('voucher_type');
             if ($voucherType) {
@@ -124,90 +122,6 @@ class DayBookDataTable extends DataTable
 
         return $query;
     }
-
-
-    // public function query(TallyVoucher $model)
-    // {
-    //     $companyGuids = $this->reportService->companyData();
-
-    //     $query = $model->newQuery()
-    //         ->select('tally_vouchers.*', 'tally_voucher_heads.entry_type', 'tally_voucher_heads.amount')
-    //         ->leftJoin('tally_voucher_heads', function($join) {
-    //             $join->on('tally_vouchers.party_ledger_name', '=', 'tally_voucher_heads.ledger_name')
-    //                 ->on('tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id'); // Adjust as needed
-    //         })
-    //         ->whereIn('tally_vouchers.company_guid', $companyGuids);
-
-    //         $startDate = $request->get('start_date');
-    //         $endDate = $request->get('end_date');
-
-    //         $customDateRange = $request->get('custom_date_range');
-
-    //         // Handle custom date ranges
-    //         if ($customDateRange) {
-    //             switch ($customDateRange) {
-    //                 case 'this_month':
-    //                     $startDate = now()->startOfMonth()->toDateString();
-    //                     $endDate = now()->endOfMonth()->toDateString();
-    //                     break;
-    //                 case 'last_month':
-    //                     $startDate = now()->subMonth()->startOfMonth()->toDateString();
-    //                     $endDate = now()->subMonth()->endOfMonth()->toDateString();
-    //                     break;
-    //                 case 'this_quarter':
-    //                     $startDate = now()->firstOfQuarter()->toDateString();
-    //                     $endDate = now()->lastOfQuarter()->toDateString();
-    //                     break;
-    //                 case 'prev_quarter':
-    //                     $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
-    //                     $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
-    //                     break;
-    //                 case 'this_year':
-    //                     $startDate = now()->startOfYear()->toDateString();
-    //                     $endDate = now()->endOfYear()->toDateString();
-    //                     break;
-    //                 case 'prev_year':
-    //                     $startDate = now()->subYear()->startOfYear()->toDateString();
-    //                     $endDate = now()->subYear()->endOfYear()->toDateString();
-    //                     break;
-    //             }
-    //         }
-
-    //     // if (request()->has('start_date') && request()->has('end_date')) {
-    //     //     $startDate = request('start_date');
-    //     //     $endDate = request('end_date');
-
-    //     //     if ($startDate && $endDate) {
-    //     //         try {
-    //     //             $startDate = Carbon::parse($startDate)->startOfDay();
-    //     //             $endDate = Carbon::parse($endDate)->endOfDay();
-    //     //             $query->whereBetween('voucher_date', [$startDate, $endDate]);
-    //     //         } catch (\Exception $e) {
-    //     //             \Log::error('Date parsing error: ' . $e->getMessage());
-    //     //         }
-    //     //     }
-    //     // }
-
-    //     if ($startDate && $endDate) {
-    //         $daybook->whereHas('vouchers', function ($query) use ($startDate, $endDate) {
-    //             $query->whereBetween('voucher_date', [$startDate, $endDate]);
-    //         });
-    //     }
-
-    //     Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
-    //     Log::info('Start date:', ['startDate' => $startDate]);
-    //     Log::info('End date:', ['endDate' => $endDate]);
-
-
-    //     if (request()->has('voucher_type')) {
-    //         $voucherType = request('voucher_type');
-    //         if ($voucherType) {
-    //             $query->where('voucher_type', $voucherType);
-    //         }
-    //     }
-
-    //     return $query;
-    // }
 
     public function html()
     {
@@ -276,7 +190,6 @@ class DayBookDataTable extends DataTable
     protected function getColumns()
     {
         return [
-            // Column::make('No')->data('DT_RowIndex')->name('DT_RowIndex')->searchable(false)->orderable(false),
             Column::make('voucher_date')->title(__('Date')),
             Column::make('party_ledger_name')->title(__('Ledger')),
             Column::make('voucher_type')->title(__('Transaction Type')),

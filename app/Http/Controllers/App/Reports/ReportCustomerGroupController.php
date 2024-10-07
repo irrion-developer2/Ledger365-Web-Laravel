@@ -15,9 +15,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log; 
-use App\DataTables\SuperAdmin\DayBookDataTable;
-use App\DataTables\SuperAdmin\CustomerGroupDataTable;
-use App\DataTables\SuperAdmin\CashBankDataTable;
 use Illuminate\Support\Facades\DB;
 use App\Services\ReportService;
 
@@ -45,26 +42,12 @@ class ReportCustomerGroupController extends Controller
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('total_sales', function ($data) use ($companyGuids) {
-                    // $salesAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
-                    //     $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-                    //         ->where('tally_ledgers.parent', $data->name)
-                    //         ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                    //         ->where('tally_vouchers.voucher_type', 'sales');
-                    // })->where('entry_type', 'debit')
-                    // ->sum('amount');
-            
-                    // $creditAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
-                    //     $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-                    //         ->where('tally_ledgers.parent', $data->name)
-                    //         ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                    //         ->where('tally_vouchers.voucher_type', 'credit note');
-                    // })
-                    // ->sum('amount');
-
 
                     $salesAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
                         $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
                             ->where('tally_ledgers.parent', $data->name)
+                            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                            ->whereNot('tally_vouchers.is_optional', 'Yes')
                             ->whereIn('tally_vouchers.company_guid', $companyGuids)
                             ->where('tally_vouchers.voucher_type', 'sales');
                     })->where('entry_type', 'debit')
@@ -74,6 +57,8 @@ class ReportCustomerGroupController extends Controller
                     $creditAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
                         $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
                             ->where('tally_ledgers.parent', $data->name)
+                            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                            ->whereNot('tally_vouchers.is_optional', 'Yes')
                             ->whereIn('tally_vouchers.company_guid', $companyGuids)
                             ->where('tally_vouchers.voucher_type', 'credit note');
                     })
@@ -88,12 +73,16 @@ class ReportCustomerGroupController extends Controller
                     $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
                         ->where('tally_ledgers.parent', $data->name)
                         ->where('tally_vouchers.voucher_type', 'sales')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->count();
 
                     $creditCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
                         ->where('tally_ledgers.parent', $data->name)
                         ->where('tally_vouchers.voucher_type', 'credit note')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->count();
 
@@ -105,6 +94,8 @@ class ReportCustomerGroupController extends Controller
                     $salesAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
                         $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
                             ->where('tally_ledgers.parent', $data->name)
+                            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                            ->whereNot('tally_vouchers.is_optional', 'Yes')
                             ->whereIn('tally_vouchers.company_guid', $companyGuids)
                             ->where('tally_vouchers.voucher_type', 'sales');
                     })->where('entry_type', 'debit')
@@ -113,6 +104,8 @@ class ReportCustomerGroupController extends Controller
                     $creditAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
                         $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
                             ->where('tally_ledgers.parent', $data->name)
+                            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                            ->whereNot('tally_vouchers.is_optional', 'Yes')
                             ->whereIn('tally_vouchers.company_guid', $companyGuids)
                             ->where('tally_vouchers.voucher_type', 'credit note');
                     })
@@ -123,6 +116,8 @@ class ReportCustomerGroupController extends Controller
                     $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
                         ->where('tally_ledgers.parent', $data->name)
                         ->where('tally_vouchers.voucher_type', 'sales')
+                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                        ->whereNot('tally_vouchers.is_optional', 'Yes')
                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->count();
 
@@ -133,85 +128,6 @@ class ReportCustomerGroupController extends Controller
                 ->make(true);
         }
     }
-
-    // public function getData(Request $request)
-    // {
-    //     $companyGuids = $this->reportService->companyData();
-
-    //     if ($request->ajax()) {
-    //         $query = TallyGroup::whereIn('company_guid', $companyGuids)->where('name', 'Sundry Debtors');
-
-    //         return DataTables::of($query)
-    //             ->addIndexColumn()
-    //             ->addColumn('total_sales', function ($data) {
-
-    //                 $salesAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data) {
-    //                     $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-    //                           ->where('tally_ledgers.parent', $data->name)
-    //                           ->where('tally_vouchers.voucher_type', 'sales');
-    //                 })->where('entry_type', 'debit')
-    //                 ->sum('amount');
-            
-    //                 $creditAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data) {
-    //                     $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-    //                           ->where('tally_ledgers.parent', $data->name)
-    //                           ->where('tally_vouchers.voucher_type', 'credit note');
-    //                 })
-    //                 ->sum('amount');
-            
-            
-    //                 $Amt = $salesAmt + $creditAmt;
-    
-    //                 return number_format(abs($Amt), 2); 
-    //             })
-    //             ->addColumn('transaction', function ($data) {
-
-    //                 $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-    //                     ->where('tally_ledgers.parent', $data->name)
-    //                     ->where('tally_vouchers.voucher_type', 'sales')
-    //                     ->count();
-
-    //                 $creditCountCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-    //                     ->where('tally_ledgers.parent', $data->name)
-    //                     ->where('tally_vouchers.voucher_type', 'credit note')
-    //                     ->count();
-
-    //                 $transaction = $salesCount + $creditCountCount;
-
-    //                 return number_format($transaction, 2);
-    
-    //             })
-    //             ->addColumn('avg_sales', function ($data) {
-
-    //                 $salesAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data) {
-    //                     $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-    //                           ->where('tally_ledgers.parent', $data->name)
-    //                           ->where('tally_vouchers.voucher_type', 'sales');
-    //                 })->where('entry_type', 'debit')
-    //                 ->sum('amount');
-            
-    //                 $creditAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data) {
-    //                     $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-    //                           ->where('tally_ledgers.parent', $data->name)
-    //                           ->where('tally_vouchers.voucher_type', 'credit note');
-    //                 })
-    //                 ->sum('amount');
-            
-            
-    //                 $totalAmount = $salesAmt + $creditAmt;
-
-    //                 $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
-    //                          ->where('tally_ledgers.parent', $data->name) // Adjust 'name' as needed based on your data
-    //                         ->where('tally_vouchers.voucher_type', 'sales')
-    //                         ->count();
-
-    //                 $avgSales = $totalAmount / $salesCount;
-
-    //                 return number_format(abs($avgSales), 2);
-    //             })
-    //             ->make(true);
-    //     }
-    // }
 
     public function AllCustomerGroupLedgerReports($customerGroupLedgerId)
     {
@@ -237,7 +153,6 @@ class ReportCustomerGroupController extends Controller
                                     ->findOrFail($customerGroupLedgerId);
         $generalLedgerName = $generalLedger->name;
     
-        // Define your normalized names array
         $normalizedNames = [
             'Direct Expenses, Expenses (Direct)' => 'Direct Expenses',
             'Direct Incomes, Income (Direct)' => 'Direct Incomes',
@@ -245,7 +160,6 @@ class ReportCustomerGroupController extends Controller
             'Indirect Incomes, Income (Indirect)' => 'Indirect Incomes',
         ];
     
-        // Check if the generalLedgerName is in the normalized names array
         if (array_key_exists($generalLedgerName, $normalizedNames)) {
             $generalLedgerName = $normalizedNames[$generalLedgerName];
         }
@@ -272,6 +186,8 @@ class ReportCustomerGroupController extends Controller
                 NULLIF(SUM(CASE WHEN tally_vouchers.voucher_type = "sales" THEN tally_voucher_heads.amount ELSE 0 END) - 
                 SUM(CASE WHEN tally_vouchers.voucher_type = "credit note" THEN tally_voucher_heads.amount ELSE 0 END), 0) as percentage')
             )
+            // ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+            // ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('tally_ledgers.company_guid', $companyGuids)
             ->groupBy('tally_ledgers.language_name', 'tally_ledgers.guid', 'tally_ledgers.opening_balance');
 
@@ -284,7 +200,6 @@ class ReportCustomerGroupController extends Controller
                         return $this->formatNumber($row->opening_balance);
                     })
                     ->editColumn('total_sales', function ($row) {
-                        // Calculate total sales as debit minus credit note amounts
                         $totalSales = $row->sales_amount + $row->credit_note_amount;
                         return $this->formatNumber($totalSales);
                     })
@@ -298,13 +213,13 @@ class ReportCustomerGroupController extends Controller
                         return $this->formatNumber($row->closing_balance);
                     })
                     ->editColumn('sales_count', function ($row) {
-                        return $row->sales_count; // Display sales count
+                        return $row->sales_count;
                     })
                     ->editColumn('credit_note_count', function ($row) {
-                        return $row->credit_note_count; // Display credit note count
+                        return $row->credit_note_count;
                     })
                     ->editColumn('total_count', function ($row) {
-                        return $row->sales_count + $row->credit_note_count; // Display total count of sales and credit notes
+                        return $row->sales_count + $row->credit_note_count;
                     })
                     ->editColumn('avg_sales', function ($row) {
                         $totalSales = $row->sales_amount + $row->credit_note_amount;
@@ -327,12 +242,10 @@ class ReportCustomerGroupController extends Controller
                         // Filtering logic for derived columns is not supported in SQL. You can handle it in PHP.
                     })
                     ->orderColumn('total_count', function($row, $order) {
-                        // Custom sorting logic for `stock_on_hand_opening_balance`
                         $direction = $order === 'desc' ? 'desc' : 'asc';
                         
                     })
                     ->orderColumn('avg_sales', function($row, $order) {
-                        // Custom sorting logic for `stock_on_hand_opening_balance`
                         $direction = $order === 'desc' ? 'desc' : 'asc';
                         
                     })

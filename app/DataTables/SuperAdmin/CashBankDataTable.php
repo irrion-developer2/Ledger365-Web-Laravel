@@ -71,7 +71,6 @@ class CashBankDataTable extends DataTable
                 return $groupCount;
             })
 
-
             ->editColumn('total_credit', function ($data) {
                 $companyGuids = $this->reportService->companyData();
 
@@ -104,6 +103,8 @@ class CashBankDataTable extends DataTable
                 $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_heads.entry_type', 'credit')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_heads.amount');
 
@@ -111,6 +112,8 @@ class CashBankDataTable extends DataTable
                 $totalCreditBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'credit')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -153,6 +156,8 @@ class CashBankDataTable extends DataTable
                 $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_heads.entry_type', 'debit')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_heads.amount');
 
@@ -160,6 +165,8 @@ class CashBankDataTable extends DataTable
                 $totalDebitBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'debit')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -240,6 +247,8 @@ class CashBankDataTable extends DataTable
                 $totalDebitHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_heads.entry_type', 'debit')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_heads.amount');
 
@@ -247,6 +256,8 @@ class CashBankDataTable extends DataTable
                 $totalDebitBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'debit')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -255,6 +266,8 @@ class CashBankDataTable extends DataTable
                 $totalCreditHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                 ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                 ->where('tally_voucher_heads.entry_type', 'credit')
+                ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                ->whereNot('tally_vouchers.is_optional', 'Yes')
                 ->whereIn('tally_vouchers.company_guid', $companyGuids)
                 ->sum('tally_voucher_heads.amount');
 
@@ -262,6 +275,8 @@ class CashBankDataTable extends DataTable
                 $totalCreditBankHead = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                     ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $allLedgerIds)
                     ->where('tally_voucher_acc_allocation_heads.entry_type', 'credit')
+                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                     ->whereIn('tally_vouchers.company_guid', $companyGuids)
                     ->sum('tally_voucher_acc_allocation_heads.amount');
 
@@ -274,7 +289,6 @@ class CashBankDataTable extends DataTable
 
                 $total = $totalDebit + $totalCredit;
 
-                // $closingBalance = $openingBalance + $totalDebit + $totalCredit;
                 $closingBalance = $openingBalance + $total;
 
                 if ($closingBalance == 0) {
@@ -361,10 +375,10 @@ class CashBankDataTable extends DataTable
         return [
             Column::make('name')->title(__('Account')),
             Column::make('parent')->title(__('Account Type')),
-            Column::make('opening_balance')->title(__('Opening Balance'))->addClass('text-end'),
-            Column::make('total_debit')->title(__('Debit'))->addClass('text-end'),
-            Column::make('total_credit')->title(__('Credit'))->addClass('text-end'),
-            Column::make('closing_balance')->title(__('Closing Balance'))->addClass('text-end'),
+            Column::make('opening_balance')->title(__('Opening Balance'))->addClass('text-end')->searchable(false),
+            Column::make('total_debit')->title(__('Debit'))->addClass('text-end')->searchable(false),
+            Column::make('total_credit')->title(__('Credit'))->addClass('text-end')->searchable(false),
+            Column::make('closing_balance')->title(__('Closing Balance'))->addClass('text-end')->searchable(false),
         ];
     }
 

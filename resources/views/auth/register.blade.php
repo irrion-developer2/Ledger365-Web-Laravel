@@ -44,19 +44,11 @@
                                                     <label for="inputRole" class="form-label">Role</label>
                                                     <select class="form-select mb-3" aria-label="Default select example" name="role">
                                                         <option selected="">Select Role</option>
-                                                        <option value="administrative">Super Admin</option>
-                                                        <option value="owner">Company Owner</option>
-                                                        <option value="employee">Staff Member</option>
+                                                        <option value="Administrative">Super Admin</option>
+                                                        <option value="Owner">Company Owner</option>
+                                                        {{-- <option value="Employee">Staff Member</option> --}}
                                                     </select>
                                                 </div>
-                                                {{-- <div class="col-12">
-                                                    <label for="inputStatus" class="form-label">Status</label>
-                                                    <select class="form-select mb-3" aria-label="Default select example" name="status">
-                                                        <option selected="">Select Status</option>
-                                                        <option value="1">Active</option>
-                                                        <option value="0">InActive</option>
-                                                    </select>
-                                                </div> --}}
                                                 <div class="col-12">
                                                     <label for="inputChoosePassword" class="form-label">Password</label>
                                                     <div class="input-group" id="show_hide_password">

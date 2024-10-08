@@ -17,9 +17,10 @@ return new class extends Migration
             $table->id();
             $table->string('guid')->unique();
             $table->string('company_guid')->nullable();
+            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             $table->string('name')->nullable();
             $table->string('language_name')->nullable();
-            $table->string('parent')->nullable();
+            $table->string('parent')->nullable()->index();
             $table->string('category')->nullable();
             $table->string('gst_applicable')->nullable();
             $table->string('tax_classification_name')->nullable();

@@ -17,12 +17,13 @@ return new class extends Migration
             $table->id();
             $table->string('guid')->unique();
             $table->string('company_guid')->nullable();
+            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             $table->string('voucher_type')->nullable();
             $table->string('is_cancelled')->nullable();
             $table->string('is_optional')->nullable();
             $table->string('alter_id')->nullable();
             $table->string('party_ledger_name')->nullable();
-            $table->string('ledger_guid')->nullable();
+            $table->string('ledger_guid')->nullable()->index();
             $table->string('voucher_number')->nullable();
             $table->date('voucher_date')->nullable();
             $table->string('reference_no')->nullable();

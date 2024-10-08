@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tally_voucher_id')->nullable();
             $table->foreign('tally_voucher_id')->references('id')->on('tally_vouchers')->onDelete('cascade');
             $table->string('ledger_name')->nullable();
-            $table->string('ledger_guid')->nullable();
+            $table->string('ledger_guid')->nullable()->index();
             $table->string('amount')->nullable();
             $table->string('entry_type')->nullable();
             $table->string('isdeemedpositive')->nullable();

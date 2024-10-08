@@ -1,7 +1,6 @@
 @extends("layouts.main")
 @section('title', __('Ledger View | PreciseCA'))
 @section("style")
-<link href="{{ url('assets/plugins/bs-stepper/css/bs-stepper.css') }}" rel="stylesheet" />
 <link href="{{ url('assets/plugins/datatable/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 @endsection
@@ -97,8 +96,6 @@
 @push('javascript')
 @endpush
 @section("script")
-<script src="{{ url('assets/plugins/bs-stepper/js/bs-stepper.min.js') }}"></script>
-<script src="{{ url('assets/plugins/bs-stepper/js/main.js') }}"></script>
 <script src="{{ url('assets/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ url('assets/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -136,56 +133,120 @@
                 $('#totalInvoices').text(json.recordsTotal);
             },
             footerCallback: function(row, data, start, end, display) {
-                var api = this.api();
-                var totalDebit = api.column(3).data().reduce(function(a, b) {
-                    a = parseFloat(a) || 0;
-                    b = parseFloat(b) || 0;
-                    return a + b;
-                }, 0);
+                    var api = this.api();
+                    var totalDebit = api.column(3).data().reduce(function(a, b) {
+                        a = parseFloat(a) || 0;
+                        b = parseFloat(b) || 0;
+                        return a + b;
+                    }, 0);
 
-                var totalCredit = api.column(4).data().reduce(function(a, b) {
-                    a = parseFloat(a) || 0;
-                    b = parseFloat(b) || 0;
-                    return a + b;
-                }, 0);
+                    var totalCredit = api.column(4).data().reduce(function(a, b) {
+                        a = parseFloat(a) || 0;
+                        b = parseFloat(b) || 0;
+                        return a + b;
+                    }, 0);
 
-                var totalRunningBalance = 0;
-                var runningBalance = 0;
-                api.rows().every(function(rowIdx) {
-                    var data = this.data();
-                    var debit = parseFloat(data.debit) || 0;
-                    var credit = parseFloat(data.credit) || 0;
-                    runningBalance += credit - debit;
-                });
+                    var totalRunningBalance = 0;
+                    var runningBalance = 0;
+                    api.rows().every(function(rowIdx) {
+                        var data = this.data();
+                        var debit = parseFloat(data.debit) || 0;
+                        var credit = parseFloat(data.credit) || 0;
+                        runningBalance += credit - debit;
+                    });
 
-                totalRunningBalance = runningBalance;
+                    totalRunningBalance = runningBalance;
 
-                $(api.column(3).footer()).html(totalDebit.toFixed(2));
-                $(api.column(4).footer()).html(totalCredit.toFixed(2));
-                $('#totalDebit').text(totalDebit.toFixed(2));
-                $('#totalCredit').text(totalCredit.toFixed(2));
+                    $(api.column(3).footer()).html(totalDebit.toFixed(2));
+                    $(api.column(4).footer()).html(totalCredit.toFixed(2));
+                    $('#totalDebit').text(totalDebit.toFixed(2));
+                    $('#totalCredit').text(totalCredit.toFixed(2));
 
+                    // Fixing the issue here
+                    var openingBalance = 0;
+                    if (data.length > 0 && data[0].opening_balance) {
+                        openingBalance = isNaN(parseFloat(data[0].opening_balance.replace(/,/g, '')))
+                            ? 0
+                            : parseFloat(data[0].opening_balance.replace(/,/g, ''));
+                    }
 
-                var openingBalance = data.length > 0 ? (isNaN(parseFloat(data[0].opening_balance.replace(/,/g, ''))) ? 0 : parseFloat(data[0].opening_balance.replace(/,/g, ''))) : 0;
-                var runningBalance = openingBalance;
+                    var firstRowRunningBalance = data.length > 0 && data[0].running_balance
+                        ? isNaN(parseFloat(data[0].running_balance.replace(/,/g, '')))
+                            ? 0
+                            : parseFloat(data[0].running_balance.replace(/,/g, ''))
+                        : 0;
 
-                var firstRowRunningBalance = data.length > 0 ? (isNaN(parseFloat(data[0].running_balance.replace(/,/g, ''))) ? 0 : parseFloat(data[0].running_balance.replace(/,/g, ''))) : 0;
-                var firstRowAmount = data.length > 0 ? (isNaN(parseFloat(data[0].amount.replace(/,/g, ''))) ? 0 : parseFloat(data[0].amount.replace(/,/g, ''))) : 0;
-                
-                var OeningB = firstRowRunningBalance - firstRowAmount;
-                
-                
-                $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                $('#openingBalance').text((OeningB).toFixed(2));
-                $('#outstanding').text(Math.abs(totalRunningBalance).toFixed(2));
-                $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
+                    var firstRowAmount = data.length > 0 && data[0].amount
+                        ? isNaN(parseFloat(data[0].amount.replace(/,/g, '')))
+                            ? 0
+                            : parseFloat(data[0].amount.replace(/,/g, ''))
+                        : 0;
 
-                if ((totalRunningBalance) > 0) {
-                    $('.btn-outline-danger').show();
-                } else {
-                    $('.btn-outline-danger').hide();
+                    var OeningB = firstRowRunningBalance - firstRowAmount;
+
+                    $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
+                    $('#openingBalance').text(OeningB.toFixed(2));
+                    $('#outstanding').text(Math.abs(totalRunningBalance).toFixed(2));
+                    $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
+
+                    if ((totalRunningBalance) > 0) {
+                        $('.btn-outline-danger').show();
+                    } else {
+                        $('.btn-outline-danger').hide();
+                    }
                 }
-            }
+
+            // footerCallback: function(row, data, start, end, display) {
+            //     var api = this.api();
+            //     var totalDebit = api.column(3).data().reduce(function(a, b) {
+            //         a = parseFloat(a) || 0;
+            //         b = parseFloat(b) || 0;
+            //         return a + b;
+            //     }, 0);
+
+            //     var totalCredit = api.column(4).data().reduce(function(a, b) {
+            //         a = parseFloat(a) || 0;
+            //         b = parseFloat(b) || 0;
+            //         return a + b;
+            //     }, 0);
+
+            //     var totalRunningBalance = 0;
+            //     var runningBalance = 0;
+            //     api.rows().every(function(rowIdx) {
+            //         var data = this.data();
+            //         var debit = parseFloat(data.debit) || 0;
+            //         var credit = parseFloat(data.credit) || 0;
+            //         runningBalance += credit - debit;
+            //     });
+
+            //     totalRunningBalance = runningBalance;
+
+            //     $(api.column(3).footer()).html(totalDebit.toFixed(2));
+            //     $(api.column(4).footer()).html(totalCredit.toFixed(2));
+            //     $('#totalDebit').text(totalDebit.toFixed(2));
+            //     $('#totalCredit').text(totalCredit.toFixed(2));
+
+
+            //     var openingBalance = data.length > 0 ? (isNaN(parseFloat(data[0].opening_balance.replace(/,/g, ''))) ? 0 : parseFloat(data[0].opening_balance.replace(/,/g, ''))) : 0;
+            //     var runningBalance = openingBalance;
+
+            //     var firstRowRunningBalance = data.length > 0 ? (isNaN(parseFloat(data[0].running_balance.replace(/,/g, ''))) ? 0 : parseFloat(data[0].running_balance.replace(/,/g, ''))) : 0;
+            //     var firstRowAmount = data.length > 0 ? (isNaN(parseFloat(data[0].amount.replace(/,/g, ''))) ? 0 : parseFloat(data[0].amount.replace(/,/g, ''))) : 0;
+                
+            //     var OeningB = firstRowRunningBalance - firstRowAmount;
+                
+                
+            //     $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
+            //     $('#openingBalance').text((OeningB).toFixed(2));
+            //     $('#outstanding').text(Math.abs(totalRunningBalance).toFixed(2));
+            //     $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
+
+            //     if ((totalRunningBalance) > 0) {
+            //         $('.btn-outline-danger').show();
+            //     } else {
+            //         $('.btn-outline-danger').hide();
+            //     }
+            // }
         });
 
         const dateRangeInput = document.querySelector(".date-range");
@@ -218,7 +279,6 @@
 
             window.location.href = url.toString();
         });
-
 
     });
 </script>

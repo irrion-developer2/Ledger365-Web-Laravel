@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('company_guid')->nullable();
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             $table->string('language_name')->nullable();
-            $table->string('parent')->nullable();
+            $table->string('parent')->nullable()->index();
             $table->string('tax_classification_name')->nullable();
             $table->string('tax_type')->nullable();
             $table->string('bill_credit_period')->nullable();

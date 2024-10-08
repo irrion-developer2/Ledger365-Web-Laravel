@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('guid')->unique();
             $table->string('company_guid')->nullable();
-            // $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
+            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             $table->string('name')->nullable();
             $table->string('parent')->nullable();
             $table->string('affects_stock')->nullable();

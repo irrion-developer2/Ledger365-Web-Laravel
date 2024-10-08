@@ -21,7 +21,7 @@ class CheckUserRoleAndStatus
             $user = auth()->user();
 
             // Check user status and role
-            if ($user->status == 1 && $user->role == 'Users') {
+            if ($user->status == 1 && ($user->role == 'Owner' || $user->role == 'Employee')) {
                 
                 return $next($request);
             }

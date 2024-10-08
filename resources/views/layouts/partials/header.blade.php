@@ -594,10 +594,10 @@
                                     </form>
                                 </a>
                             </li>
-                            @if(auth()->check() && auth()->user()->status == 1 && auth()->user()->role == 'SuperAdmin')
-                                <li>
-                                    <div class="dropdown-divider mb-0"></div>
-                                </li>
+                            @if(auth()->check() && auth()->user()->status == 1 && auth()->user()->role == 'Owner')
+                            <li>
+                                <div class="dropdown-divider mb-0"></div>
+                            </li>
                                 <li><a class="dropdown-item d-flex align-items-center" href="{{ route('settings.index') }}"><i class="bx bx-cog fs-5"></i><span>Settings</span></a></li>
                             @endif
                         </ul>

@@ -75,11 +75,11 @@
                                         <br>
                                         <span style="font-size: smaller;color: gray;">FY</span>
                                     </th>
-                                    <th>
+                                    {{-- <th>
                                         Last Payment
                                     </th>
                                     <th>₹ Credit Limit</th>
-                                    <th>₹ Credit Period</th>
+                                    <th>₹ Credit Period</th> --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -93,9 +93,9 @@
                                     <th></th>
                                     <th></th>
                                     <th></th>
+                                    {{-- <th></th>
                                     <th></th>
-                                    <th></th>
-                                    <th></th>
+                                    <th></th> --}}
                                 </tr>
                             </tfoot>
                         </table>
@@ -167,15 +167,15 @@
                 {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'payment_date', name: 'payment_date', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'credit_limit', name: 'credit_limit', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'bill_credit_period', name: 'bill_credit_period', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                // {data: 'payment_date', name: 'payment_date', render: function(data, type, row) {
+                //     return data ? data : '-';
+                // }},
+                // {data: 'credit_limit', name: 'credit_limit', render: function(data, type, row) {
+                //     return data ? data : '-';
+                // }},
+                // {data: 'bill_credit_period', name: 'bill_credit_period', render: function(data, type, row) {
+                //     return data ? data : '-';
+                // }},
 
             ],
             footerCallback: function (row, data, start, end, display) {

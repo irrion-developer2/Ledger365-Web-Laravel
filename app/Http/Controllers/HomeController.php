@@ -94,9 +94,9 @@ class HomeController extends Controller
         /* Cash Amount */
 
 
-        if ($role == 'SuperAdmin') {
+        if ($role == 'Administrative') {
             return view('dashboard', compact('user'));
-        } elseif ($role == 'Users') {
+        } elseif ($role == 'Owner' || $role == 'Employee') {
             return view('users-dashboard', compact('user','cashBankAmount','cashAmount','payableCreditNote','chartSaleAmt','chartReceiptAmt','chartData','lastMonthsTotal','pieChartDataOverall','pieChartDataTotal'));
         }
         abort(403, 'Unauthorized action.');

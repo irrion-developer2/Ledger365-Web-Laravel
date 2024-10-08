@@ -38,4 +38,9 @@ class TallyLedger extends Model
         return $this->hasMany(TallyVoucher::class, 'ledger_guid', 'guid');
     }
 
+    public function vouchersHeads()
+    {
+        return $this->hasMany(TallyVoucherHead::class, 'ledger_guid', 'id');
+    }
+
 }

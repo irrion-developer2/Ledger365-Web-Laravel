@@ -180,6 +180,12 @@ Route::middleware([
 
         Route::post('/upload-pdf', [BankReconciliationController::class, 'uploadPdf']);
 
+
+        Route::resource('/settings', SettingController::class);
+        Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
+
+
+        Route::resource('employee', EmployeeController::class);
     });
 
     Route::group(['middleware' => 'checkAdminRoleAndStatus'], function () {
@@ -192,8 +198,8 @@ Route::middleware([
 
         Route::post('/users/company/delete', [UserController::class, 'deleteCompany'])->name('users-company.delete');
 
-        Route::resource('/settings', SettingController::class);
-        Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
+        // Route::resource('/settings', SettingController::class);
+        // Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
 
     });
 

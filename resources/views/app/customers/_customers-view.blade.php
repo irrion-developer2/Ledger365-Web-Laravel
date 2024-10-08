@@ -117,6 +117,7 @@
                     d.end_date = endDate;   
                 }
             },
+            order: [],
             columns: [
                 { data: 'voucher_date', name: 'voucher_date' },
                 { data: 'voucher_number', name: 'voucher_number',

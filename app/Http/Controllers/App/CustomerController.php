@@ -640,15 +640,24 @@ class CustomerController extends Controller
         $combinedEntries = $voucherHeads->merge($voucherEntries);
     
         $runningBalance = 0;
-        $combinedEntries = $combinedEntries->map(function ($entry) use (&$runningBalance, $ledger) {
-            $Amount = floatval($entry->amount ?? 0); 
-            $openingBalance = floatval($ledger->opening_balance ?? 0); 
-            $runningBalance += ($openingBalance + $Amount);
-            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) 
-                                        ? '0.000' 
-                                        : number_format($runningBalance, 3, '.', '');
+        $openingBalanceAdded = false; // Flag to ensure opening balance is added only once
+
+        $combinedEntries = $combinedEntries->map(function ($entry) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
+            $Amount = floatval($entry->amount ?? 0);
+            $openingBalance = floatval($ledger->opening_balance ?? 0);
+
+            // Add the opening balance only once (to the first entry)
+            if (!$openingBalanceAdded) {
+                $runningBalance += $openingBalance;
+                $openingBalanceAdded = true; // Mark the flag as true after adding the opening balance
+            }
+
+            $runningBalance += $Amount;
+            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.000' : number_format($runningBalance, 3, '.', '');
+
             return $entry;
         });
+
     
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');

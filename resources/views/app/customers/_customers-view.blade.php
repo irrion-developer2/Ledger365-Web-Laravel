@@ -147,16 +147,16 @@
             },
             order: [],
             columns: [
-                { data: 'voucher_date', name: 'voucher_date' },
-                { data: 'voucher_number', name: 'voucher_number',
+                { data: 'voucher_date', name: 'voucher_date',orderable: false },
+                { data: 'voucher_number', name: 'voucher_number', orderable: false,
                     render: function(data, type, row) {
                         return '<a href="{{ url('reports/VoucherItem') }}/' + row.tally_voucher_id + '">' + data + '</a>';
                     }
                 },
-                { data: 'voucher_type', name: 'voucher_type' },
-                { data: 'debit', name: 'debit', className: 'text-end' },
-                { data: 'credit', name: 'credit', className: 'text-end' },
-                { data: 'running_balance', name: 'running_balance', className: 'text-end' },
+                { data: 'voucher_type', name: 'voucher_type', orderable: false },
+                { data: 'debit', name: 'debit', className: 'text-end', orderable: false },
+                { data: 'credit', name: 'credit', className: 'text-end', orderable: false },
+                { data: 'running_balance', name: 'running_balance', className: 'text-end', orderable: false },
             ],
             initComplete: function(settings, json) {
                 $('#totalInvoices').text(json.recordsTotal);
@@ -199,8 +199,8 @@
                 totalRunningBalance = runningBalance;
 
                 // Update footer
-                $(api.column(3).footer()).html(totalDebit.toFixed(2));
-                $(api.column(4).footer()).html(totalCredit.toFixed(2));
+                $(api.column(3).footer()).html(formatToIndianCurrency(totalDebit));
+                $(api.column(4).footer()).html(formatToIndianCurrency(totalCredit));
                 $('#totalDebit').text(formatToIndianCurrency(totalDebit));
                 $('#totalCredit').text(formatToIndianCurrency(totalCredit));
 

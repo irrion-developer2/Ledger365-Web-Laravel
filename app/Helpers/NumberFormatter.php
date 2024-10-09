@@ -8,7 +8,7 @@ if (!function_exists('indian_format')) {
      * @return string
      */
     function indian_format($num) {
-        // Convert the number to string and remove any decimals
+        // Convert the number to string
         $num = (string) $num;
         $decimals = '';
 
@@ -16,6 +16,8 @@ if (!function_exists('indian_format')) {
         if (strpos($num, '.') !== false) {
             list($num, $decimals) = explode('.', $num);
             $decimals = '.' . $decimals;  // Append the decimals back after formatting
+        } else {
+            $num = $num; // No decimals present
         }
 
         // Apply formatting for the last three digits and then two digits for the rest
@@ -26,6 +28,15 @@ if (!function_exists('indian_format')) {
             $formatted = $remaining . ',' . $lastThree;
         } else {
             $formatted = $lastThree;
+        }
+
+        // Format the decimal part
+        if (empty($decimals)) {
+            // If no decimals, add '.00'
+            $decimals = '.00';
+        } else {
+            // Ensure the decimal part is always two digits
+            $decimals = number_format((float)$decimals, 2, '.', '');
         }
 
         return $formatted . $decimals;

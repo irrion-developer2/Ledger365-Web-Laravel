@@ -542,7 +542,7 @@ class CustomerController extends Controller
             }
 
             $runningBalance += $Amount;
-            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : number_format($runningBalance, 2, '.', ',');
+            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance, 2, '.', ',');
 
             return $entry;
         });
@@ -561,10 +561,10 @@ class CustomerController extends Controller
     
         $dataTableResponse = datatables()->of($combinedEntries)
             ->addColumn('credit', function ($entry) {
-                return $entry->entry_type == 'credit' ? number_format(abs($entry->amount), 2, '.', ',') : '0.00';
+                return $entry->entry_type == 'credit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
             })
             ->addColumn('debit', function ($entry) {
-                return $entry->entry_type == 'debit' ? number_format(abs($entry->amount), 2, '.', ',') : '0.00';
+                return $entry->entry_type == 'debit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
             })
             ->addColumn('running_balance', function ($entry) use ($ledger) {
                 return $entry->running_balance ? $entry->running_balance : "";

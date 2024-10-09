@@ -162,69 +162,78 @@
                 $('#totalInvoices').text(json.recordsTotal);
             },
             footerCallback: function(row, data, start, end, display) {
-                    var api = this.api();
-                    var totalDebit = api.column(3).data().reduce(function(a, b) {
-                        a = parseFloat(a) || 0;
-                        b = parseFloat(b) || 0;
-                        return a + b;
-                    }, 0);
+                var api = this.api();
 
-                    var totalCredit = api.column(4).data().reduce(function(a, b) {
-                        a = parseFloat(a) || 0;
-                        b = parseFloat(b) || 0;
-                        return a + b;
-                    }, 0);
-
-                    var totalRunningBalance = 0;
-                    var runningBalance = 0;
-                    api.rows().every(function(rowIdx) {
-                        var data = this.data();
-                        var debit = parseFloat(data.debit) || 0;
-                        var credit = parseFloat(data.credit) || 0;
-                        runningBalance += credit - debit;
-                    });
-
-                    totalRunningBalance = runningBalance;
-
-                    $(api.column(3).footer()).html(totalDebit.toFixed(2));
-                    $(api.column(4).footer()).html(totalCredit.toFixed(2));
-                    $('#totalDebit').text(formatToIndianCurrency(totalDebit));
-                    $('#totalCredit').text(formatToIndianCurrency(totalCredit));
-
-                    // Fixing the issue here
-                    var openingBalance = 0;
-                    if (data.length > 0 && data[0].opening_balance) {
-                        openingBalance = isNaN(parseFloat(data[0].opening_balance.replace(/,/g, '')))
-                            ? 0
-                            : parseFloat(data[0].opening_balance.replace(/,/g, ''));
+                // Function to remove commas from amounts and parse as float
+                function parseAmount(value) {
+                    if (typeof value === 'string') {
+                        return parseFloat(value.replace(/,/g, '')) || 0;
                     }
-
-                    var firstRowRunningBalance = data.length > 0 && data[0].running_balance
-                        ? isNaN(parseFloat(data[0].running_balance.replace(/,/g, '')))
-                            ? 0
-                            : parseFloat(data[0].running_balance.replace(/,/g, ''))
-                        : 0;
-
-                    var firstRowAmount = data.length > 0 && data[0].amount
-                        ? isNaN(parseFloat(data[0].amount.replace(/,/g, '')))
-                            ? 0
-                            : parseFloat(data[0].amount.replace(/,/g, ''))
-                        : 0;
-
-                    var OeningB = firstRowRunningBalance - firstRowAmount;
-
-                    $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                    // $('#openingBalance').text(OeningB.toFixed(2));
-                    $('#openingBalance').text(formatToIndianCurrency(OeningB));
-                    $('#outstanding').text(formatToIndianCurrency(Math.abs(totalRunningBalance).toFixed(2)));
-                    $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
-
-                    if ((totalRunningBalance) > 0) {
-                        $('.btn-outline-danger').show();
-                    } else {
-                        $('.btn-outline-danger').hide();
-                    }
+                    return parseFloat(value) || 0;
                 }
+
+                // Calculate total debit
+                var totalDebit = api.column(3).data().reduce(function(a, b) {
+                    a = parseAmount(a);
+                    b = parseAmount(b);
+                    return a + b;
+                }, 0);
+
+                // Calculate total credit
+                var totalCredit = api.column(4).data().reduce(function(a, b) {
+                    a = parseAmount(a);
+                    b = parseAmount(b);
+                    return a + b;
+                }, 0);
+
+                // Calculate total running balance
+                var totalRunningBalance = 0;
+                var runningBalance = 0;
+                api.rows().every(function(rowIdx) {
+                    var rowData = this.data();
+                    var debit = parseAmount(rowData.debit);
+                    var credit = parseAmount(rowData.credit);
+                    runningBalance += credit - debit;
+                });
+
+                totalRunningBalance = runningBalance;
+
+                // Update footer
+                $(api.column(3).footer()).html(totalDebit.toFixed(2));
+                $(api.column(4).footer()).html(totalCredit.toFixed(2));
+                $('#totalDebit').text(formatToIndianCurrency(totalDebit));
+                $('#totalCredit').text(formatToIndianCurrency(totalCredit));
+
+                // Handle opening balance
+                var openingBalance = 0;
+                if (data.length > 0 && data[0].opening_balance) {
+                    openingBalance = parseAmount(data[0].opening_balance);
+                }
+
+                var firstRowRunningBalance = data.length > 0 && data[0].running_balance
+                    ? parseAmount(data[0].running_balance)
+                    : 0;
+
+                var firstRowAmount = data.length > 0 && data[0].amount
+                    ? parseAmount(data[0].amount)
+                    : 0;
+
+                var OeningB = firstRowRunningBalance - firstRowAmount;
+
+                // Update running balance and opening balance
+                $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
+                $('#openingBalance').text(formatToIndianCurrency(OeningB));
+                $('#outstanding').text(formatToIndianCurrency(Math.abs(totalRunningBalance).toFixed(2)));
+                $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
+
+                // Show/hide the button based on running balance
+                if (totalRunningBalance > 0) {
+                    $('.btn-outline-danger').show();
+                } else {
+                    $('.btn-outline-danger').hide();
+                }
+            }
+
 
         });
 

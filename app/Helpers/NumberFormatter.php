@@ -15,9 +15,9 @@ if (!function_exists('indian_format')) {
         // Split the number into integer and decimal parts
         if (strpos($num, '.') !== false) {
             list($num, $decimals) = explode('.', $num);
-            $decimals = '.' . $decimals;  // Append the decimals back after formatting
+            $decimals = '.' . str_pad($decimals, 2, '0', STR_PAD_RIGHT);  // Ensure two decimal places
         } else {
-            $num = $num; // No decimals present
+            $decimals = '.00'; // No decimals present
         }
 
         // Apply formatting for the last three digits and then two digits for the rest
@@ -28,15 +28,6 @@ if (!function_exists('indian_format')) {
             $formatted = $remaining . ',' . $lastThree;
         } else {
             $formatted = $lastThree;
-        }
-
-        // Format the decimal part
-        if (empty($decimals)) {
-            // If no decimals, add '.00'
-            $decimals = '.00';
-        } else {
-            // Ensure the decimal part is always two digits
-            $decimals = '.00';
         }
 
         return $formatted . $decimals;

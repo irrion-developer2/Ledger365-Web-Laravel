@@ -36,7 +36,7 @@ if (!function_exists('indian_format')) {
             $decimals = '.00';
         } else {
             // Ensure the decimal part is always two digits
-            $decimals = number_format((float)$decimals, 2, '.', '');
+            $decimals = '.00';
         }
 
         return $formatted . $decimals;

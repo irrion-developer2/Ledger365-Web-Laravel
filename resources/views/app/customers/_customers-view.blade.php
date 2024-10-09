@@ -220,10 +220,15 @@
 
                 var OeningB = firstRowRunningBalance - firstRowAmount;
 
+
+                var lastRowRunningBalance = data.length > 0 && data[data.length - 1].running_balance
+                    ? parseAmount(data[data.length - 1].running_balance)
+                    : 0;
+
                 // Update running balance and opening balance
                 $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
                 $('#openingBalance').text(formatToIndianCurrency(OeningB));
-                $('#outstanding').text(formatToIndianCurrency(Math.abs(totalRunningBalance).toFixed(2)));
+                $('#outstanding').text(formatToIndianCurrency(Math.abs(lastRowRunningBalance).toFixed(2)));
                 $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
 
                 // Show/hide the button based on running balance

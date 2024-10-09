@@ -35,10 +35,33 @@ class ReportDayBookController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
 
-            $vouchers = TallyVoucher::whereNot('tally_vouchers.is_optional', 'Yes')
+            $vouchers = TallyVoucher::select('tally_vouchers.id', 
+                                                'tally_vouchers.company_guid', 
+                                                'tally_vouchers.is_optional', 
+                                                'tally_vouchers.is_cancelled', 
+                                                'tally_vouchers.voucher_date', 
+                                                'tally_vouchers.party_ledger_name', 
+                                                'tally_vouchers.voucher_type', 
+                                                'tally_vouchers.voucher_number')
+                                    ->leftJoin('tally_voucher_heads', function ($join) {
+                                        $join->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
+                                                ->on('tally_voucher_heads.ledger_name', '=', 'tally_vouchers.party_ledger_name');
+                                    })
+                                    ->whereNot('tally_vouchers.is_optional', 'Yes')
                                     ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                                    ->whereIn('company_guid', $companyGuids);
+                                    ->whereIn('company_guid', $companyGuids)
+                                    ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END) as total_credit')
+                                    ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as total_debit')
+                                    ->groupBy('tally_vouchers.id', 
+                                                'tally_vouchers.company_guid', 
+                                                'tally_vouchers.is_optional', 
+                                                'tally_vouchers.is_cancelled', 
+                                                'tally_vouchers.voucher_date', 
+                                                'tally_vouchers.party_ledger_name', 
+                                                'tally_vouchers.voucher_type', 
+                                                'tally_vouchers.voucher_number');
 
+                                    
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
 
@@ -96,20 +119,10 @@ class ReportDayBookController extends Controller
             $dataTable = DataTables::of($vouchers)
                 ->addIndexColumn()
                 ->addColumn('credit', function ($data) {
-                    $totalCredit = TallyVoucherHead::where('ledger_name', $data->party_ledger_name)
-                        ->where('tally_voucher_id', $data->id)
-                        ->where('entry_type', 'credit')
-                        ->sum('amount');
-                
-                    return number_format(abs($totalCredit), 2);
+                    return indian_format(abs($data->total_credit));
                 })
                 ->addColumn('debit', function ($data) {
-                    $totalCredit = TallyVoucherHead::where('ledger_name', $data->party_ledger_name)
-                        ->where('tally_voucher_id', $data->id)
-                        ->where('entry_type', 'debit')
-                        ->sum('amount');
-                
-                    return number_format(abs($totalCredit), 2);
+                    return indian_format(abs($data->total_debit));
                 })
                 ->make(true);
 

@@ -25,6 +25,11 @@ use Illuminate\Support\Facades\Log;
 
 class LedgerController extends Controller
 {
+    private function ensureArray($data)
+    {
+        return is_array($data) ? $data : [$data];
+    }
+
     private function findTallyMessage($jsonArray, $path = '') {
         foreach ($jsonArray as $key => $value) {
             $currentPath = $path ? $path . '.' . $key : $key;
@@ -581,12 +586,10 @@ class LedgerController extends Controller
                 $uploadedFile = $request->file('uploadFile');
                 $jsonFilePath = storage_path('app/' . $fileName);
 
-                // Move uploaded file to storage and read contents
                 $uploadedFile->move(storage_path('app'), $fileName);
                 $jsonData = file_get_contents($jsonFilePath);
 
             } else {
-                // Fetch and store the incoming raw JSON data
                 $jsonData = $request->getContent();
                 $jsonFilePath = storage_path('app/' . $fileName);
                 file_put_contents($jsonFilePath, $jsonData);
@@ -594,7 +597,6 @@ class LedgerController extends Controller
 
             $data = json_decode($jsonData, true);
 
-            // Find TALLYMESSAGE key in the JSON data
             $result = $this->findTallyMessage($data);
 
             if ($result === null) {
@@ -604,7 +606,6 @@ class LedgerController extends Controller
             $messagesPath = $result['path'];
             $messages = $result['value'];
 
-            // Store ledger name to head_id mapping
             $ledgerHeadMap = [];
 
             foreach ($messages as $message) {
@@ -613,9 +614,14 @@ class LedgerController extends Controller
                     $partyLedgerName = $voucherData['PARTYLEDGERNAME'] ?? $voucherData['PARTYNAME'] ?? null;
                     $companyGuid = substr($voucherData['GUID'], 0, 36);
 
-                    $ledgerEntries = $this->normalizeEntries($voucherData['LEDGERENTRIES.LIST'] ?? []);
-                    $allLedgerEntries = $this->normalizeEntries($voucherData['ALLLEDGERENTRIES.LIST'] ?? []);
-                    $inventoryEntries = $this->normalizeEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? []);
+
+                    // $ledgerEntries = $this->normalizeEntries($voucherData['LEDGERENTRIES.LIST'] ?? []);
+                    // $allLedgerEntries = $this->normalizeEntries($voucherData['ALLLEDGERENTRIES.LIST'] ?? []);
+                    // $inventoryEntries = $this->normalizeEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? []);
+
+                    $ledgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['LEDGERENTRIES.LIST'] ?? []));
+                    $allLedgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['ALLLEDGERENTRIES.LIST'] ?? []));
+                    $inventoryEntries = $this->normalizeEntries($this->ensureArray($voucherData['ALLINVENTORYENTRIES.LIST'] ?? []));
 
                     $accountingAllocations = [];
                     foreach ($inventoryEntries as $inventoryEntry) {
@@ -623,6 +629,7 @@ class LedgerController extends Controller
                             $accountingAllocations = array_merge($accountingAllocations, $this->normalizeEntries($inventoryEntry['ACCOUNTINGALLOCATIONS.LIST']));
                         }
                     }
+
 
                     $combinedLedgerEntries = array_merge($ledgerEntries, $allLedgerEntries);
 
@@ -648,9 +655,11 @@ class LedgerController extends Controller
                         }
                     }
 
+
                     $combinedLedgerEntries = $this->processLedgerEntries($combinedLedgerEntries, $companyGuid);
                     $inventoryEntries = $this->processInventoryEntries($inventoryEntries);
                     $accountingAllocations = $this->processAccountingAllocations($accountingAllocations, $companyGuid);
+
 
                     $consigneeAddressList = $voucherData['BASICBUYERADDRESS.LIST']['BASICBUYERADDRESS'] ?? null;
                     if (is_array($consigneeAddressList)) {
@@ -697,7 +706,6 @@ class LedgerController extends Controller
                     }
 
 
-                    // Create new Tally Voucher
                     $tallyVoucher = TallyVoucher::create([
                         'guid' => $voucherData['GUID'],
                         'company_guid' => substr($voucherData['GUID'], 0, 36),
@@ -723,7 +731,10 @@ class LedgerController extends Controller
                         'bill_lading_no' => $voucherData['BILLOFLADINGNO'] ?? null,
                         'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
                         'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
-                        'terms' => $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null,
+                        // 'terms' => $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null,
+                        'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null) 
+                                    ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS']) 
+                                    : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
                         'consignee_name' => $voucherData['BASICBUYERNAME'] ?? null,
                         'consignee_state_name' => $voucherData['CONSIGNEESTATENAME'] ?? null,
                         'consignee_gstin' => $voucherData['CONSIGNEEGSTIN'] ?? null,

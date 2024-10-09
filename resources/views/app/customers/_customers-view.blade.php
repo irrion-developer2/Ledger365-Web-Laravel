@@ -228,7 +228,7 @@
                 // Update running balance and opening balance
                 $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
                 $('#openingBalance').text(formatToIndianCurrency(OeningB));
-                $('#outstanding').text(formatToIndianCurrency(Math.abs(lastRowRunningBalance).toFixed(2)));
+                $('#outstanding').text(formatToIndianCurrency(lastRowRunningBalance));
                 $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
 
                 // Show/hide the button based on running balance

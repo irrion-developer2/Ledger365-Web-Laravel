@@ -22,6 +22,7 @@ use App\Http\Controllers\App\SupplierController;
 use App\Http\Controllers\App\StockItemController;
 use App\Http\Controllers\App\SalesController;
 use App\Http\Controllers\App\ColumnarController;
+use App\Http\Controllers\App\EmployeeController;
 use App\Http\Controllers\App\BankReconciliationController;
 use App\Http\Controllers\App\Reports\ReportController;
 use App\Http\Controllers\App\Reports\ReportCashBankController;
@@ -185,7 +186,10 @@ Route::middleware([
         Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
 
 
-        Route::resource('employee', EmployeeController::class);
+        Route::resource('employees', EmployeeController::class);
+        Route::get('/employees/employees/get-data', [EmployeeController::class, 'getData'])->name('employees.get-data');
+        Route::get('/employees/employees/add', [EmployeeController::class, 'add'])->name('employees.add');
+        Route::post('/employees/save', [EmployeeController::class, 'saveEmployee'])->name('employees.save');
     });
 
     Route::group(['middleware' => 'checkAdminRoleAndStatus'], function () {

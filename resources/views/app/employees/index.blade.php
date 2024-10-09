@@ -1,5 +1,5 @@
 @extends("layouts.main")
-@section('title', __('Reports | PreciseCA'))
+@section('title', __('Employees | PreciseCA'))
 
 @section("style")
     <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
@@ -10,28 +10,32 @@
     <div class="page-wrapper">
         <div class="page-content pt-2">
             <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-2">
-                <div class="breadcrumb-title pe-3">Reports</div>
+                <div class="breadcrumb-title pe-3">Employees</div>
                 <div class="ps-3">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Daybook</li>
+                            <li class="breadcrumb-item active" aria-current="page">Employees</li>
                         </ol>
                     </nav>
+                </div>
+                <div class="ms-auto">
+                    <div class="btn-group">
+                            <a class="btn btn-primary" href="{{ route('employees.add') }}"><i class="bx bx-plus fs-5"></i><span>Employee</span></a>
+                    </div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-body">
                     <div class="d-lg-flex align-items-center gap-2">
-                        <div class="col-lg-3">
+                        {{-- <div class="col-lg-3">
                             <form id="dateRangeForm">
-                                {{-- <label for="date_range" class="form-label">Date Range</label> --}}
                                 <div class="input-group">
                                     <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
-                                        <button type="button" id="resetDateRange" class="btn btn-outline-secondary">
-                                            <i class="fadeIn animated bx bx-refresh" aria-hidden="true"></i> 
-                                        </button>
+                                    <button type="button" id="resetDateRange" class="btn btn-outline-secondary">
+                                        <i class="fadeIn animated bx bx-refresh" aria-hidden="true"></i> 
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -46,35 +50,21 @@
                                     <option value="prev_year" {{ request('custom_date_range') === 'prev_year' ? 'selected' : '' }}>Prev Year</option>
                                 </select>
                             </form>
-                        </div>
-                        <div class="col-lg-2">
-                            <form id="voucherTypeForm">
-                                <select id="voucher_type" name="voucher_type" class="form-select">
-                                    <option value="">All</option>
-                                    <option value="Sales">Sale</option>
-                                    <option value="Purchase">Purchase</option>
-                                    <option value="Credit Note">CreditNote</option>
-                                    <option value="Debit Note">DebitNote</option>
-                                    <option value="Receipt">Receipt</option>
-                                    <option value="Payment">Payment</option>
-                                    {{-- <option value="JournalVoucher">JournalVoucher</option> --}}
-                                    <!-- Add more options as needed -->
-                                </select>
-                            </form>
-                        </div>
+                        </div> --}}
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
 
-                        <table id="daybook-datatable" class="stripe row-border order-column" style="width:100%">
+                        <table id="employees-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Ledger</th>
-                                    <th>Transaction Type</th>
-                                    <th>Transaction</th>
-                                    <th>Debit</th>
-                                    <th>Credit</th>
+                                    <th>Employee Name</th>
+                                    <th>Email</th>
+                                    <th>Tally Connector Id</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created At</th>
+                                    <th>Updated At</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -82,7 +72,8 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th>Total</th>
+                                    <th></th>
+                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -91,7 +82,6 @@
                                 </tr>
                             </tfoot>
                         </table>
-
                     </div>
                 </div>
             </div>
@@ -104,77 +94,57 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     $(document).ready(function() {
-        
         var urlParams = new URLSearchParams(window.location.search);
 
         var startDate = urlParams.get('start_date');
         var endDate = urlParams.get('end_date');
-        var customDateRange = urlParams.get('custom_date_range');
-        var voucherType = urlParams.get('voucher_type');
 
-        if (!startDate || !endDate) {
-            var today = new Date();
-            startDate = today.toISOString().split('T')[0];
-            endDate = today.toISOString().split('T')[0];
-        }
+        var customDateRange = urlParams.get('custom_date_range');
 
         if (customDateRange) {
             $('#custom_date_range').val(customDateRange);
         }
 
-        var table = new DataTable('#daybook-datatable', {
-            fixedColumns: { start: 1, },
+        new DataTable('#employees-datatable', {
+            fixedColumns: {
+                start: 1,
+            },
             paging: false,
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
             ajax: {
-                url: "{{ route('daybook.get-data') }}",
+                url: "{{ route('employees.get-data') }}",
                 type: 'GET',
                 data: function (d) {
                     d.start_date = startDate;
                     d.end_date = endDate;
                     d.custom_date_range = customDateRange;
-                    d.voucher_type = voucherType;
                 }
             },
             columns: [
-                {data: 'voucher_date', name: 'voucher_date'},
-                {data: 'party_ledger_name', name: 'party_ledger_name', render: function(data, type, row) {
+                {data: 'name', name: 'name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'voucher_type', name: 'voucher_type', render: function(data, type, row) {
+                {data: 'email', name: 'email', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'voucher_number', name: 'voucher_number',
-                    render: function(data, type, row) {
-                        var url = '{{ route("reports.VoucherItem", ":id") }}';
-                        url = url.replace(':id', row.id);
-                        return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
-                    }
-                },
-                {data: 'debit', name: 'debit', render: function(data, type, row) {
+                {data: 'tally_connector_id', name: 'tally_connector_id', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'credit', name: 'credit', render: function(data, type, row) {
+                {data: 'role', name: 'role', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
+                {data: 'status', name: 'status', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
+                {data: 'created_at', name: 'created_at', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
+                {data: 'updated_at', name: 'updated_at', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
             ],
-            footerCallback: function (row, data, start, end, display) {
-                var api = this.api();
-                var DebitToTotal = 4;
-                var CreditToTotal = 5;
-
-                var Debittotal = api.column(DebitToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
-                var Credittotal = api.column(CreditToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
-
-                $(api.column(DebitToTotal).footer()).html(number_format(Math.abs(Debittotal), 2));
-                $(api.column(CreditToTotal).footer()).html(number_format(Math.abs(Credittotal), 2));
-            },
             search: {
                 orthogonal: {
                     search: 'plain'
@@ -212,6 +182,27 @@
             window.location.href = url.toString();
         });
 
+        $('#filter-outstanding').on('click', function () {
+            filterOutstanding = !filterOutstanding;
+            var newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('filter_outstanding', filterOutstanding ? 'true' : 'false');
+            window.location.href = newUrl.href;
+        });
+
+        $('#filter-ageing').on('click', function () {
+            filterAgeing = !filterAgeing;
+            var newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('filter_ageing', filterAgeing ? 'true' : 'false');
+            window.location.href = newUrl.href;
+        });
+
+        $('#filter-payment').on('click', function () {
+            filterPayment = !filterPayment;
+            var newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('filter_payment', filterPayment ? 'true' : 'false');
+            window.location.href = newUrl.href;
+        });
+
         function sanitizeNumber(value) {
             return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
         }
@@ -232,16 +223,29 @@
 
             window.location.href = url.toString();
         });
-
-        
-        const voucherTypeSelect = document.getElementById('voucher_type');
-        voucherTypeSelect.addEventListener('change', function() {
-            let voucherType = this.value;
-            let url = new URL(window.location.href);
-            url.searchParams.set('voucher_type', voucherType);
-            window.location.href = url.toString();
-        });
-
     });
+</script>    
+<script>
+    function changeStatus(userId, status) {
+        $.ajax({
+            url: '/update-user-status', // Replace with your route
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                user_id: userId,
+                status: status
+            },
+            success: function(response) {
+                if(response.success) {
+                    $('#user-table').DataTable().ajax.reload(); // Reload table data
+                } else {
+                    alert('Failed to update status.');
+                }
+            },
+            error: function() {
+                alert('An error occurred.');
+            }
+        });
+    }
 </script>
 @endsection

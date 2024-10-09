@@ -148,7 +148,7 @@
             @endif
 
             
-            {{-- @if(auth()->check() && auth()->user()->status == 1 && auth()->user()->role == 'Owner')
+            @if(auth()->check() && auth()->user()->status == 1 && auth()->user()->role == 'Owner')
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('employees.*') ? 'active' : '' }}" href="{{ route('employees.index') }}">
                   <div class="parent-icon"><i class='bx bx-building'></i><i class='bx bx-group'></i>
@@ -156,7 +156,7 @@
                   <div class="menu-title d-flex align-items-center">Employee</div>
               </a>
             </li>
-            @endif --}}
+            @endif
 
             <li class="nav-item dropdown d-none">
                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">

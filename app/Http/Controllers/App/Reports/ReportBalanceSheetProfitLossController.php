@@ -188,75 +188,40 @@ class ReportBalanceSheetProfitLossController extends Controller
             $tallyItems = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids)->get();
             $closingValueSum = 0;
 
+
             foreach ($tallyItems as $entry) {
                 $stockOnHandBalance = 0;
                 $openingBalance = 0;
                 $stockOnHandValue = 0;
-
+            
                 $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
                 $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-
+            
                 $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
                 $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-                            $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
+                $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
                 $stockItemVoucherHandBalance = $stockItemData['balance'];
-
-
+            
                 $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
                 $stockItemVoucherPurchaseAmount = $stockAmountData['purchase_amt'];
-                            $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
-
-
+                $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
+            
                 $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
                 $finalOpeningValue = $openingValue - $openingAmount;
                 $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
-
-                if ($openingBalance == 0) {
-                    $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                    $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                } else {
+            
+                if ($finalOpeningBalance != 0) {
                     $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
                     $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
-                    $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
+                } else {
+                    // Handle division by zero here, e.g., set a default value or skip this item
+                    $stockItemVoucherSaleValue = 0;  // or any other default value
                 }
-
+            
+                $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
                 $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-                 $closingValueSum += $stockOnHandValue;
+                $closingValueSum += $stockOnHandValue;
             }
-
-            // foreach ($tallyItems as $entry) {
-            //     $stockOnHandBalance = 0;
-            //     $openingBalance = 0;
-            //     $stockOnHandValue = 0;
-            
-            //     $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
-            //     $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-            
-            //     $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
-            //     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-            //     $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
-            //     $stockItemVoucherHandBalance = $stockItemData['balance'];
-            
-            //     $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
-            //     $stockItemVoucherPurchaseAmount = $stockAmountData['purchase_amt'];
-            //     $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
-            
-            //     $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
-            //     $finalOpeningValue = $openingValue - $openingAmount;
-            //     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
-            
-            //     if ($finalOpeningBalance != 0) {
-            //         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-            //         $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
-            //     } else {
-            //         // Handle division by zero here, e.g., set a default value or skip this item
-            //         $stockItemVoucherSaleValue = 0;  // or any other default value
-            //     }
-            
-            //     $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-            //     $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-            //     $closingValueSum += $stockOnHandValue;
-            // }
             
             $data = [
                 [

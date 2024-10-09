@@ -218,7 +218,7 @@
                     ? parseAmount(data[0].amount)
                     : 0;
 
-                var OeningB = firstRowRunningBalance - firstRowAmount;
+                var OeningB = firstRowRunningBalance + firstRowAmount;
 
                 // Update running balance and opening balance
                 $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));

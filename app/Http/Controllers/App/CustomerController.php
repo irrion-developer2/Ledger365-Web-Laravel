@@ -36,44 +36,29 @@ class CustomerController extends Controller
     public function getData(Request $request)
     {
         $companyGuids = $this->reportService->companyData();
-
+    
         if ($request->ajax()) {
             $startTime = microtime(true);
-
-            // $customers = TallyLedger::where('parent', 'Sundry Debtors')
-            //                     ->whereIn('company_guid', $companyGuids);
-
-            $customers = TallyLedger::select('tally_ledgers.company_guid','tally_ledgers.guid','tally_ledgers.language_name','tally_ledgers.party_gst_in') 
-                    ->where('parent', 'Sundry Debtors')
-                    ->whereIn('tally_ledgers.company_guid', $companyGuids) 
-                    ->leftJoin('tally_vouchers', function($join) {
-                        $join->on('tally_ledgers.guid', '=', 'tally_vouchers.ledger_guid')
-                            ->where('tally_vouchers.is_cancelled', 'No')
-                            ->where('tally_vouchers.is_optional', 'No');
-                    })
-                    ->leftJoin('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
-                    
-                    ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" THEN tally_voucher_heads.amount END), 0) as total_sales')
-                    ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" AND tally_vouchers.is_cancelled = "No" AND tally_vouchers.is_optional = "No" THEN tally_voucher_heads.amount END), 0) as outstanding')
-                    ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Receipt" THEN tally_voucher_heads.amount END), 0) as payment_collection')
     
-                  
-                    ->groupBy('tally_ledgers.guid')
-                    ->get();
-
-            // dd($customers);
-
-            $endTime1 = microtime(true);
-            $executionTime1 = $endTime1 - $startTime;
-
-            Log::info('Total first db request execution time for CustomerController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
-
+            $customersQuery = TallyLedger::select('tally_ledgers.company_guid', 'tally_ledgers.guid', 'tally_ledgers.language_name', 'tally_ledgers.party_gst_in')
+                ->where('parent', 'Sundry Debtors')
+                ->whereIn('tally_ledgers.company_guid', $companyGuids)
+                ->leftJoin('tally_vouchers', function ($join) {
+                    $join->on('tally_ledgers.guid', '=', 'tally_vouchers.ledger_guid')
+                        ->where('tally_vouchers.is_cancelled', 'No')
+                        ->where('tally_vouchers.is_optional', 'No');
+                })
+                ->leftJoin('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
+                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" THEN tally_voucher_heads.amount END), 0) as total_sales')
+                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" THEN tally_voucher_heads.amount END), 0) as outstanding')
+                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Receipt" THEN tally_voucher_heads.amount END), 0) as payment_collection')
+                ->groupBy('tally_ledgers.guid');
+    
+            // Handle custom date ranges
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
-
             $customDateRange = $request->get('custom_date_range');
-
-            // Handle custom date ranges
+    
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -102,147 +87,51 @@ class CustomerController extends Controller
                         break;
                 }
             }
-
+    
+            // Apply date range filter if startDate and endDate are provided
             if ($startDate && $endDate) {
-                $customers->whereHas('vouchers', function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('voucher_date', [$startDate, $endDate]);
-                });
+                $customersQuery->whereBetween('tally_vouchers.voucher_date', [$startDate, $endDate]);
             }
-
+    
+            // Fetch the data after applying all filters
+            $customers = $customersQuery->get();
+    
             Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
             Log::info('Start date:', ['startDate' => $startDate]);
             Log::info('End date:', ['endDate' => $endDate]);
-
-            if ($request->has('filter_outstanding') && $request->filter_outstanding == 'true') {
-                $customers->where(function($customers) {
-                    $ledgerGuids = TallyVoucher::where('voucher_type', 'Sales')
-                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                        ->whereNot('tally_vouchers.is_optional', 'Yes')
-                        ->pluck('ledger_guid');
-
-                    $totalSalesByGuid = TallyVoucherHead::whereIn('ledger_guid', $ledgerGuids)
-                        ->groupBy('ledger_guid')
-                        ->selectRaw('ledger_guid, SUM(amount) as total_amount')
-                        ->pluck('total_amount', 'ledger_guid');
-
-                    foreach ($totalSalesByGuid as $guid => $amount) {
-                        if ($amount != 0) {
-                            $customers->orWhere('guid', $guid);
-                        }
-                    }
-                });
-            }
-
-            if ($request->has('filter_ageing') && $request->filter_ageing == 'true') {
-                $customers->where(function($customers) {
-                    $ledgerGuids = TallyVoucher::where('voucher_type', 'Sales')
-                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                        ->whereNot('tally_vouchers.is_optional', 'Yes')
-                        ->pluck('ledger_guid');
-
-                    $totalSalesByGuid = TallyVoucherHead::whereIn('ledger_guid', $ledgerGuids)
-                        ->groupBy('ledger_guid')
-                        ->selectRaw('ledger_guid, SUM(amount) as total_amount')
-                        ->pluck('total_amount', 'ledger_guid');
-
-                    foreach ($totalSalesByGuid as $guid => $amount) {
-                        if ($amount != 0) {
-                            $customers->orWhere('guid', $guid);
-                        }
-                    }
-                });
-            }
-
-            if ($request->has('filter_collection') && $request->filter_collection == 'true') {
-                $customers->where(function($customers) {
-                    $ledgerData = TallyVoucher::where('voucher_type', 'Receipt')
-                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                    ->whereNot('tally_vouchers.is_optional', 'Yes')
-                    ->pluck('id', 'ledger_guid');
-
-                    $ledgerGuids = $ledgerData->keys();
-                    $tallyVoucherIds = $ledgerData->values();
-
-                    $totalSalesByGuid = TallyVoucherHead::whereIn('ledger_guid', $ledgerGuids)
-                        ->whereIn('tally_voucher_id', $tallyVoucherIds)
-                        ->groupBy('ledger_guid')
-                        ->selectRaw('ledger_guid, SUM(amount) as total_amount')
-                        ->pluck('total_amount', 'ledger_guid');
-
-                    foreach ($totalSalesByGuid as $guid => $amount) {
-                        if ($amount != 0) {
-                            $customers->orWhere('guid', $guid);
-                        }
-                    }
-                });
-            }
-
-            if ($request->has('filter_sale') && $request->filter_sale == 'true') {
-                $customers->where(function($customers) {
-                    $ledgerSaleGuids = TallyVoucher::where('voucher_type', 'Sales')
-                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                        ->whereNot('tally_vouchers.is_optional', 'Yes')
-                        // ->whereBetween('voucher_date', [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()])
-                        ->pluck('ledger_guid')
-                        ->unique();
-
-                    $tallySaleVoucherIds = TallyVoucher::where('voucher_type', 'Sales')
-                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                    ->whereNot('tally_vouchers.is_optional', 'Yes')
-                        ->whereIn('ledger_guid', $ledgerSaleGuids)
-                        // ->whereBetween('voucher_date', [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()])
-                        ->pluck('id');
-
-                    $totalSalesByGuid = TallyVoucherHead::whereIn('ledger_guid', $ledgerSaleGuids)
-                        ->whereIn('tally_voucher_id', $tallySaleVoucherIds)
-                        ->groupBy('ledger_guid')
-                        ->selectRaw('ledger_guid, SUM(amount) as total_amount')
-                        ->pluck('total_amount', 'ledger_guid');
-
-                    $guidToExclude = $totalSalesByGuid->filter(function ($amount) {
-                        return $amount != 0;
-                    })->keys();
-
-                    $customers->whereNotIn('guid', $guidToExclude);
-                });
-            }
-
+    
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for CustomerController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+    
             $dataTable = DataTables::of($customers)
                 ->addIndexColumn()
                 ->addColumn('sales_last_30_days', function ($data) {
-
                     $totalSales = $data->total_sales;
-
                     return number_format(abs($totalSales), 2);
                 })
                 ->addColumn('outstanding', function ($data) {
-
                     $outstanding = $data->outstanding;
-                    // dd($outstanding);
-
                     return number_format($outstanding, 2);
                 })
                 ->addColumn('overdue', function ($data) {
                     $outstanding = $data->outstanding;
-                    // dd($outstanding);
-
                     return number_format($outstanding, 2);
                 })
                 ->addColumn('payment_collection', function ($data) {
                     $payment_collection = $data->payment_collection;
-                    // dd($outstanding);
-
                     return number_format($payment_collection, 2);
                 })
                 ->make(true);
-
-                $endTime = microtime(true);
-                $executionTime = $endTime - $startTime;
-                Log::info('Total end execution time for CustomerController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
-
-                return $dataTable;
+    
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for CustomerController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+    
+            return $dataTable;
         }
     }
+    
 
 
     // public function getData(Request $request)
@@ -653,7 +542,7 @@ class CustomerController extends Controller
             }
 
             $runningBalance += $Amount;
-            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.000' : number_format($runningBalance, 3, '.', '');
+            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : number_format($runningBalance, 2, '.', '');
 
             return $entry;
         });

@@ -33,9 +33,9 @@
                                 <div class="col-lg-6">
                                     <h4 class="my-1 text-info">{{ $ledger->language_name }}</h4>
                                 </div>
-                                <div class="col-lg-6 text-end">
+                                {{-- <div class="col-lg-6 text-end">
                                     <p class="btn btn-outline-danger border-1"><i class='lni lni-warning'></i> Overdue</p>
-                                </div>
+                                </div> --}}
                             </div>
                         </div>
 
@@ -101,14 +101,42 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script>
+    function formatToIndianCurrency(amount) {
+        // Convert to float and handle negative numbers
+        amount = parseFloat(amount).toFixed(2);
+        
+        // Split into integer and decimal parts
+        var parts = amount.split('.');
+        var integerPart = parts[0];
+        var decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+        
+        // Indian number format (1st comma after 3 digits, and then every 2 digits)
+        var lastThreeDigits = integerPart.slice(-3);
+        var otherDigits = integerPart.slice(0, -3);
+        
+        if (otherDigits !== '') {
+            lastThreeDigits = ',' + lastThreeDigits;
+        }
+        
+        var indianFormatted = otherDigits.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThreeDigits + decimalPart;
+        
+        return indianFormatted;
+    }
+
     $(document).ready(function() {
         var urlParams = new URLSearchParams(window.location.search);
         var startDate = urlParams.get('start_date');
         var endDate = urlParams.get('end_date');
 
+        function formatDateForDisplay(date) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(date).toLocaleDateString(undefined, options);
+        }
+
         var table = $('#voucherEntriesTable').DataTable({
             processing: true,
             serverSide: true,
+            paging: false,
             ajax: {
                 url: "{{ route("customers.vouchers", ["customer" => $ledger->guid]) }}",
                 type: 'GET',
@@ -160,8 +188,8 @@
 
                     $(api.column(3).footer()).html(totalDebit.toFixed(2));
                     $(api.column(4).footer()).html(totalCredit.toFixed(2));
-                    $('#totalDebit').text(totalDebit.toFixed(2));
-                    $('#totalCredit').text(totalCredit.toFixed(2));
+                    $('#totalDebit').text(formatToIndianCurrency(totalDebit));
+                    $('#totalCredit').text(formatToIndianCurrency(totalCredit));
 
                     // Fixing the issue here
                     var openingBalance = 0;
@@ -186,8 +214,9 @@
                     var OeningB = firstRowRunningBalance - firstRowAmount;
 
                     $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                    $('#openingBalance').text(OeningB.toFixed(2));
-                    $('#outstanding').text(Math.abs(totalRunningBalance).toFixed(2));
+                    // $('#openingBalance').text(OeningB.toFixed(2));
+                    $('#openingBalance').text(formatToIndianCurrency(OeningB));
+                    $('#outstanding').text(formatToIndianCurrency(Math.abs(totalRunningBalance).toFixed(2)));
                     $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
 
                     if ((totalRunningBalance) > 0) {
@@ -197,57 +226,6 @@
                     }
                 }
 
-            // footerCallback: function(row, data, start, end, display) {
-            //     var api = this.api();
-            //     var totalDebit = api.column(3).data().reduce(function(a, b) {
-            //         a = parseFloat(a) || 0;
-            //         b = parseFloat(b) || 0;
-            //         return a + b;
-            //     }, 0);
-
-            //     var totalCredit = api.column(4).data().reduce(function(a, b) {
-            //         a = parseFloat(a) || 0;
-            //         b = parseFloat(b) || 0;
-            //         return a + b;
-            //     }, 0);
-
-            //     var totalRunningBalance = 0;
-            //     var runningBalance = 0;
-            //     api.rows().every(function(rowIdx) {
-            //         var data = this.data();
-            //         var debit = parseFloat(data.debit) || 0;
-            //         var credit = parseFloat(data.credit) || 0;
-            //         runningBalance += credit - debit;
-            //     });
-
-            //     totalRunningBalance = runningBalance;
-
-            //     $(api.column(3).footer()).html(totalDebit.toFixed(2));
-            //     $(api.column(4).footer()).html(totalCredit.toFixed(2));
-            //     $('#totalDebit').text(totalDebit.toFixed(2));
-            //     $('#totalCredit').text(totalCredit.toFixed(2));
-
-
-            //     var openingBalance = data.length > 0 ? (isNaN(parseFloat(data[0].opening_balance.replace(/,/g, ''))) ? 0 : parseFloat(data[0].opening_balance.replace(/,/g, ''))) : 0;
-            //     var runningBalance = openingBalance;
-
-            //     var firstRowRunningBalance = data.length > 0 ? (isNaN(parseFloat(data[0].running_balance.replace(/,/g, ''))) ? 0 : parseFloat(data[0].running_balance.replace(/,/g, ''))) : 0;
-            //     var firstRowAmount = data.length > 0 ? (isNaN(parseFloat(data[0].amount.replace(/,/g, ''))) ? 0 : parseFloat(data[0].amount.replace(/,/g, ''))) : 0;
-                
-            //     var OeningB = firstRowRunningBalance - firstRowAmount;
-                
-                
-            //     $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-            //     $('#openingBalance').text((OeningB).toFixed(2));
-            //     $('#outstanding').text(Math.abs(totalRunningBalance).toFixed(2));
-            //     $('#outstandingBalance').text((totalRunningBalance).toFixed(2));
-
-            //     if ((totalRunningBalance) > 0) {
-            //         $('.btn-outline-danger').show();
-            //     } else {
-            //         $('.btn-outline-danger').hide();
-            //     }
-            // }
         });
 
         const dateRangeInput = document.querySelector(".date-range");

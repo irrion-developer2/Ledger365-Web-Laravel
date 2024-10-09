@@ -542,7 +542,7 @@ class CustomerController extends Controller
             }
 
             $runningBalance += $Amount;
-            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance, 2, '.', ',');
+            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance);
 
             return $entry;
         });

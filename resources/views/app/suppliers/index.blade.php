@@ -47,11 +47,11 @@
                                 </select>
                             </form>
                         </div>
-                        <button id="filter-outstanding" class="btn btn-outline-secondary p-1">Outstanding</button>
+                        {{-- <button id="filter-outstanding" class="btn btn-outline-secondary p-1">Outstanding</button>
 
                         <button id="filter-ageing" class="btn btn-outline-secondary p-1">Overdue</button>
 
-                        <button id="filter-payment" class="btn btn-outline-secondary p-1">Payment</button>
+                        <button id="filter-payment" class="btn btn-outline-secondary p-1">Payment</button> --}}
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">

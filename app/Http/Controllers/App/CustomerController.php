@@ -8,7 +8,6 @@ use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyVoucher;
 use App\Models\TallyCompany;
-use App\Models\TallyVoucherAccAllocationHead;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
@@ -53,6 +52,8 @@ class CustomerController extends Controller
                 ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" THEN tally_voucher_heads.amount END), 0) as outstanding')
                 ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Receipt" THEN tally_voucher_heads.amount END), 0) as payment_collection')
                 ->groupBy('tally_ledgers.guid');
+
+            // dd($customersQuery);
     
             // Handle custom date ranges
             $startDate = $request->get('start_date');
@@ -95,6 +96,7 @@ class CustomerController extends Controller
     
             // Fetch the data after applying all filters
             $customers = $customersQuery->get();
+            // dd($customers);
     
             Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
             Log::info('Start date:', ['startDate' => $startDate]);
@@ -106,15 +108,11 @@ class CustomerController extends Controller
     
             $dataTable = DataTables::of($customers)
                 ->addIndexColumn()
-                ->addColumn('sales_last_30_days', function ($data) {
+                ->addColumn('sales', function ($data) {
                     $totalSales = $data->total_sales;
                     return number_format(abs($totalSales), 2);
                 })
                 ->addColumn('outstanding', function ($data) {
-                    $outstanding = $data->outstanding;
-                    return number_format($outstanding, 2);
-                })
-                ->addColumn('overdue', function ($data) {
                     $outstanding = $data->outstanding;
                     return number_format($outstanding, 2);
                 })
@@ -516,22 +514,22 @@ class CustomerController extends Controller
     
         \Log::info('Query 2: ', \DB::getQueryLog());
     
-        $voucherEntries = TallyVoucherAccAllocationHead::where('ledger_guid', $ledger->guid)
-            ->whereHas('voucherHead', function ($query) {
-                $query->where('is_cancelled', '!=', 'Yes')
-                    ->where('is_optional', '!=', 'Yes');
-            })
-            ->with('voucherHead')
-            ->get();
+        // $voucherEntries = TallyVoucherAccAllocationHead::where('ledger_guid', $ledger->guid)
+        //     ->whereHas('voucherHead', function ($query) {
+        //         $query->where('is_cancelled', '!=', 'Yes')
+        //             ->where('is_optional', '!=', 'Yes');
+        //     })
+        //     ->with('voucherHead')
+        //     ->get();
     
         \Log::info('Query 3: ', \DB::getQueryLog());
     
-        $combinedEntries = $voucherHeads->merge($voucherEntries);
+        // $combinedEntries = $voucherHeads->merge($voucherEntries);
     
         $runningBalance = 0;
         $openingBalanceAdded = false; // Flag to ensure opening balance is added only once
 
-        $combinedEntries = $combinedEntries->map(function ($entry) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
+        $voucherHeads = $voucherHeads->map(function ($entry) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
             $Amount = floatval($entry->amount ?? 0);
             $openingBalance = floatval($ledger->opening_balance ?? 0);
 
@@ -551,15 +549,15 @@ class CustomerController extends Controller
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
         if ($startDate && $endDate) {
-            $combinedEntries = $combinedEntries->filter(function ($entry) use ($startDate, $endDate) {
+            $voucherHeads = $voucherHeads->filter(function ($entry) use ($startDate, $endDate) {
                 $voucherDate = \Carbon\Carbon::parse($entry->voucherHead->voucher_date);
                 return $voucherDate->between($startDate, $endDate);
             });
         }
     
-        \Log::info('Combined Entries: ', $combinedEntries->toArray());
+        \Log::info('Combined Entries: ', $voucherHeads->toArray());
     
-        $dataTableResponse = datatables()->of($combinedEntries)
+        $dataTableResponse = datatables()->of($voucherHeads)
             ->addColumn('credit', function ($entry) {
                 return $entry->entry_type == 'credit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
             })

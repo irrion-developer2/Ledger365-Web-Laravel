@@ -10,7 +10,6 @@ use App\Models\TallyGroup;
 use Yajra\DataTables\DataTables;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
-use App\Models\TallyVoucherAccAllocationHead;
 use App\Models\TallyVoucherItem;
 use App\Models\TallyCompany;
 use Illuminate\Http\Request;
@@ -43,17 +42,11 @@ class HomeController extends Controller
                             ->whereIn('company_guid', $companyGuids)
                             ->pluck('guid');
 
-        $cashBankAmountHead = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
+        $cashBankAmount = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
         ->whereIn('tally_voucher_heads.ledger_guid', $cashBankLedgerIds)
         ->whereIn('tally_vouchers.company_guid', $companyGuids)
         ->sum('tally_voucher_heads.amount');
 
-        $cashBankAmountAcc = TallyVoucherAccAllocationHead::join('tally_vouchers', 'tally_voucher_acc_allocation_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-        ->whereIn('tally_voucher_acc_allocation_heads.ledger_guid', $cashBankLedgerIds)
-        ->whereIn('tally_vouchers.company_guid', $companyGuids)
-        ->sum('tally_voucher_acc_allocation_heads.amount');
-
-        $cashBankAmount = $cashBankAmountHead + $cashBankAmountAcc;
         /* cashBankAmount */
 
         /* Inventory Amount */

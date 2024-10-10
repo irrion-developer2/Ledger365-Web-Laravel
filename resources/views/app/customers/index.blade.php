@@ -47,13 +47,13 @@
                                 </select>
                             </form>
                         </div>
-                        <button id="filter-outstanding" class="btn btn-outline-secondary p-1">Outstanding</button>
+                        {{-- <button id="filter-outstanding" class="btn btn-outline-secondary p-1">Outstanding</button>
 
                         <button id="filter-ageing" class="btn btn-outline-secondary p-1">Overdue</button>
 
                         <button id="filter-collection" class="btn btn-outline-secondary p-1">Collections</button>
 
-                        <button id="filter-sale" class="btn btn-outline-secondary p-1">No Sales</button>
+                        <button id="filter-sale" class="btn btn-outline-secondary p-1">No Sales</button> --}}
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
@@ -63,13 +63,8 @@
                                 <tr>
                                     <th>Ledger Name</th>
                                     <th>GSTIN</th>
-                                    <th>
-                                        Sales
-                                        {{-- <br>
-                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span> --}}
-                                    </th>
-                                    <th>Net ₹ Due</th>
-                                    <th>₹ Overdue</th>
+                                    <th>Sales</th>
+                                    <th>outstanding</th>
                                     <th>
                                         ₹ Pmt Collection
                                         <br>
@@ -88,7 +83,6 @@
                             <tfoot>
                                 <tr>
                                     <th>Total</th>
-                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -113,11 +107,6 @@
 <script>
     $(document).ready(function() {
         var urlParams = new URLSearchParams(window.location.search);
-        var filterOutstanding = urlParams.get('filter_outstanding') === 'true';
-        var filterAgeing = urlParams.get('filter_ageing') === 'true';
-        var filterCollection = urlParams.get('filter_collection') === 'true';
-        var filterSale = urlParams.get('filter_sale') === 'true';
-
         var startDate = urlParams.get('start_date');
         var endDate = urlParams.get('end_date');
 
@@ -137,10 +126,6 @@
                 url: "{{ route('customers.get-data') }}",
                 type: 'GET',
                 data: function (d) {
-                    d.filter_outstanding = filterOutstanding;
-                    d.filter_ageing = filterAgeing;
-                    d.filter_collection = filterCollection;
-                    d.filter_sale = filterSale;
                     d.start_date = startDate;
                     d.end_date = endDate;
                     d.custom_date_range = customDateRange;
@@ -157,11 +142,8 @@
                 {data: 'party_gst_in', name: 'party_gst_in', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'sales_last_30_days', name: 'sales_last_30_days'},
+                {data: 'sales', name: 'sales'},
                 {data: 'outstanding', name: 'outstanding', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'overdue', name: 'overdue', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
@@ -182,16 +164,12 @@
                 var api = this.api();
                 var LastSaleToTotal = 2;
                 var OutstandingToTotal = 3;
-                var OverdueToTotal = 4;
-                var PmtToTotal = 5;
+                var PmtToTotal = 4;
 
                 var LastSaletotal = api.column(LastSaleToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
                 var Outstandingtotal = api.column(OutstandingToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
-                var Overduetotal = api.column(OverdueToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
                 var Pmttotal = api.column(PmtToTotal).data().reduce(function (a, b) {
@@ -200,7 +178,6 @@
 
                 $(api.column(LastSaleToTotal).footer()).html(number_format(Math.abs(LastSaletotal), 2));
                 $(api.column(OutstandingToTotal).footer()).html(number_format(Math.abs(Outstandingtotal), 2));
-                $(api.column(OverdueToTotal).footer()).html(number_format(Math.abs(Overduetotal), 2));
                 $(api.column(PmtToTotal).footer()).html(number_format(Math.abs(Pmttotal), 2));
             },
             search: {
@@ -238,35 +215,6 @@
             var url = new URL(window.location.href);
             url.searchParams.set('custom_date_range', selectedRange);
             window.location.href = url.toString();
-        });
-
-
-        $('#filter-outstanding').on('click', function () {
-            filterOutstanding = !filterOutstanding;
-            var newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('filter_outstanding', filterOutstanding ? 'true' : 'false');
-            window.location.href = newUrl.href;
-        });
-
-        $('#filter-ageing').on('click', function () {
-            filterAgeing = !filterAgeing;
-            var newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('filter_ageing', filterAgeing ? 'true' : 'false');
-            window.location.href = newUrl.href;
-        });
-
-        $('#filter-collection').on('click', function () {
-            filterCollection = !filterCollection;
-            var newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('filter_collection', filterCollection ? 'true' : 'false');
-            window.location.href = newUrl.href;
-        });
-
-        $('#filter-sale').on('click', function () {
-            filterSale = !filterSale;
-            var newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('filter_sale', filterSale ? 'true' : 'false');
-            window.location.href = newUrl.href;
         });
 
         function sanitizeNumber(value) {

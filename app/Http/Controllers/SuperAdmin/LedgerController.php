@@ -19,7 +19,6 @@ use App\Models\TallyVoucherItem;
 use App\Models\TallyBillAllocation;
 use App\Models\TallyBatchAllocation;
 use App\Models\TallyBankAllocation;
-use App\Models\TallyVoucherAccAllocationHead;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -46,27 +45,29 @@ class LedgerController extends Controller
         return null;
     }
 
+    private function validateLicenseNumber(Request $request)
+    {
+        $licenseNumber = $request->input('license_number');
+        if (empty($licenseNumber)) {
+            Log::info('Please enter your license number');
+            throw new \Exception('Please enter your license number');
+        }
+
+        $license = TallyLicense::where('license_number', $licenseNumber)->first();
+        if (!$license) {
+            Log::info('License not found for license number: ' . $licenseNumber);
+            throw new \Exception('License not found');
+        } elseif ($license->status != 1) {
+            Log::info('License not active for license number: ' . $licenseNumber);
+            throw new \Exception('License not active');
+        }
+    }
+
     public function companyJsonImport(Request $request)
     {
         try {
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
+            $this->validateLicenseNumber($request);
             
-
             $jsonData = null;
             $fileName = 'tally_company_data_' . date('YmdHis') . '.json';
     
@@ -135,23 +136,7 @@ class LedgerController extends Controller
     {
         try {
 
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
-            
+            $this->validateLicenseNumber($request);
 
             $jsonData = null;
             $fileName = 'tally_master_data_' . date('YmdHis') . '.json';
@@ -304,22 +289,7 @@ class LedgerController extends Controller
     {
         try {
 
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
+            $this->validateLicenseNumber($request);
 
             $jsonData = null;
             $fileName = 'tally_stock_item_data_' . date('YmdHis') . '.json';
@@ -562,22 +532,7 @@ class LedgerController extends Controller
     {
         try {
 
-            $licenseNumber = $request->input('license_number');
-    
-            if (empty($licenseNumber)) { 
-                Log::info('Please enter your license number');
-                return response()->json(['error' => 'Please enter your license number'], 400);
-            }
-    
-            $license = TallyLicense::where('license_number', $licenseNumber)->first();
-    
-            if (!$license) {
-                Log::info('License not found for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
-                Log::info('License not active for license number: ' . $licenseNumber);
-                return response()->json(['error' => 'License not active'], 403);
-            }
+            $this->validateLicenseNumber($request);
 
             $jsonData = null;
             $fileName = 'tally_voucher_data_' . now()->format('YmdHis') . '.json';
@@ -613,11 +568,6 @@ class LedgerController extends Controller
                     $voucherData = $message['VOUCHER'];
                     $partyLedgerName = $voucherData['PARTYLEDGERNAME'] ?? $voucherData['PARTYNAME'] ?? null;
                     $companyGuid = substr($voucherData['GUID'], 0, 36);
-
-
-                    // $ledgerEntries = $this->normalizeEntries($voucherData['LEDGERENTRIES.LIST'] ?? []);
-                    // $allLedgerEntries = $this->normalizeEntries($voucherData['ALLLEDGERENTRIES.LIST'] ?? []);
-                    // $inventoryEntries = $this->normalizeEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? []);
 
                     $ledgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['LEDGERENTRIES.LIST'] ?? []));
                     $allLedgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['ALLLEDGERENTRIES.LIST'] ?? []));
@@ -657,7 +607,7 @@ class LedgerController extends Controller
 
 
                     $combinedLedgerEntries = $this->processLedgerEntries($combinedLedgerEntries, $companyGuid);
-                    $inventoryEntries = $this->processInventoryEntries($inventoryEntries);
+                    $inventoryEntries = $this->processInventoryEntries($inventoryEntries, $companyGuid);
                     $accountingAllocations = $this->processAccountingAllocations($accountingAllocations, $companyGuid);
 
 
@@ -694,17 +644,11 @@ class LedgerController extends Controller
                                     ->first();
 
                     if ($existingVoucher) {
-                        // Retrieve the related voucher head IDs
                         $voucherHeadIds = TallyVoucherHead::where('tally_voucher_id', $existingVoucher->id)->pluck('id')->toArray();
                         $inventoryEntriesWithId = TallyVoucherItem::where('id', $existingVoucher->id)->pluck('id')->toArray();
-
-                        // Delete all related data
                         $this->deleteRelatedVoucherData($existingVoucher->id, $voucherHeadIds, $inventoryEntriesWithId);
-
-                        // Delete existing voucher
                         $existingVoucher->delete();
                     }
-
 
                     $tallyVoucher = TallyVoucher::create([
                         'guid' => $voucherData['GUID'],
@@ -754,7 +698,8 @@ class LedgerController extends Controller
                     if ($tallyVoucher) {
                         $voucherHeadIds = $this->processLedgerEntriesForVoucher($tallyVoucher->id, $combinedLedgerEntries);
                         $voucherHeadIds = $this->processAccountingAllocationForVoucher($tallyVoucher->id, $accountingAllocations);
-                        $inventoryEntriesWithId = $this->processInventoryEntriesForVoucher($tallyVoucher->id, $inventoryEntries);
+                        $ledgerGuid = $voucherHeadIds[0]['ledger_guid'] ?? [];
+                        $inventoryEntriesWithId = $this->processInventoryEntriesForVoucher($tallyVoucher->id, $inventoryEntries, $companyGuid, $voucherHeadIds,  $ledgerGuid ?? []);
                         $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
                         $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
                         $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations);
@@ -763,7 +708,7 @@ class LedgerController extends Controller
                     }
                 }
             }
-
+            
             return response()->json(['message' => 'Tally data saved successfully.', 'path' => $messagesPath]);
         } catch (\Exception $e) {
             Log::error('Error saving Tally voucher data: ' . $e->getMessage());
@@ -778,7 +723,6 @@ class LedgerController extends Controller
         TallyBillAllocation::where('head_id', $voucherHeadIds)->delete();
         TallyBankAllocation::where('head_id', $voucherHeadIds)->delete();
         TallyBatchAllocation::where('item_id', $inventoryEntriesWithId)->delete();
-        TallyVoucherAccAllocationHead::where('tally_voucher_id', $voucherId)->delete();
     }
 
     private function normalizeEntries($entries)
@@ -842,6 +786,105 @@ class LedgerController extends Controller
         }
 
         return $ledgerEntries;
+    }
+
+    private function processLedgerEntriesForVoucher($voucherId, array $entries)
+    {
+        $voucherHeadIds = [];
+        foreach ($entries as $entry) {
+            $voucherHead = TallyVoucherHead::updateOrCreate(
+                [
+                    'tally_voucher_id' => $voucherId,
+                    'ledger_name' => $entry['ledger_name'],
+                ],
+                [
+                    'amount' => $entry['amount'],
+                    'entry_type' => $entry['entry_type'],
+                    'ledger_guid' => $entry['ledger_guid'],
+                    'isdeemedpositive' => $entry['isdeemedpositive'],
+                ]
+            );
+            $voucherHeadIds[] = [
+                'id' => $voucherHead->id,
+                'ledger_name' => $entry['ledger_name'],
+            ];
+        }
+        return $voucherHeadIds;
+    }
+
+    private function processAccountingAllocations(array $entries, $companyGuid)
+    {
+        $ledgerEntries = [];
+
+        foreach ($entries as $entry) {
+            if (isset($entry['LEDGERNAME'], $entry['AMOUNT'])) {
+                $ledgerName = htmlspecialchars_decode($entry['LEDGERNAME']);
+                $amount = $entry['AMOUNT'];
+                $entryType = $amount < 0 ? "debit" : "credit";
+
+                // Retrieve the ledger GUID from the database
+                $ledgerGuid = TallyLedger::where('language_name', $ledgerName)
+                    ->where('company_guid', $companyGuid) // Ensure filtering by company GUID
+                    ->value('guid');
+
+                if ($ledgerGuid) {
+                    // Normalize GUIDs by extracting the base GUID part (before the first '-')
+                    $normalizedLedgerGuid = explode('-', $ledgerGuid)[0];
+                    $normalizedEntryGuid = explode('-', $companyGuid)[0];
+
+                    // Compare the normalized GUID
+                    if ($normalizedLedgerGuid === $normalizedEntryGuid) {
+                        // If the same ledger_name already exists, add the amount
+                        if (isset($ledgerEntries[$ledgerName])) {
+                            $ledgerEntries[$ledgerName]['amount'] += $amount;
+                        } else {
+                            $ledgerEntries[$ledgerName] = [
+                                'ledger_name' => $ledgerName,
+                                'amount' => $amount,
+                                'entry_type' => $entryType,
+                                'ledger_guid' => $ledgerGuid,
+                                'isdeemedpositive' => $entry['ISDEEMEDPOSITIVE'],
+                            ];
+                        }
+                    } else {
+                        // Log mismatch or handle the case
+                        Log::error('GUID mismatch for ledger: ' . $ledgerName . '. Expected GUID: ' . $normalizedEntryGuid . ', Found GUID: ' . $normalizedLedgerGuid);
+                    }
+                } else {
+                    // Handle case where GUID is not found in the database
+                    Log::error('Ledger GUID not found in database for ledger: ' . $ledgerName);
+                }
+            } else {
+                Log::error('Missing or invalid LEDGERNAME or AMOUNT in LEDGERENTRIES.LIST entry: ' . json_encode($entry));
+            }
+        }
+
+        // Convert associative array back to normal array
+        return array_values($ledgerEntries);
+    }
+
+    private function processAccountingAllocationForVoucher($voucherId, array $entries)
+    {
+        $voucherHeadIds = [];
+
+        foreach ($entries as $entry) {
+            // Create a new record for each entry, allowing duplicates
+            $voucherHead = TallyVoucherHead::create([
+                'tally_voucher_id' => $voucherId,
+                'ledger_name' => $entry['ledger_name'],
+                'amount' => $entry['amount'],
+                'entry_type' => $entry['entry_type'],
+                'ledger_guid' => $entry['ledger_guid'],
+                'isdeemedpositive' => $entry['isdeemedpositive'],
+            ]);
+
+            $voucherHeadIds[] = [
+                'id' => $voucherHead->id,
+                'ledger_name' => $entry['ledger_name'],
+            ];
+        }
+
+        return $voucherHeadIds;
     }
 
     private function processInventoryEntries(array $entries)
@@ -912,36 +955,22 @@ class LedgerController extends Controller
         return $inventoryEntries;
     }
 
-    private function processLedgerEntriesForVoucher($voucherId, array $entries)
-    {
-        $voucherHeadIds = [];
-        foreach ($entries as $entry) {
-            $voucherHead = TallyVoucherHead::updateOrCreate(
-                [
-                    'tally_voucher_id' => $voucherId,
-                    'ledger_name' => $entry['ledger_name'],
-                ],
-                [
-                    'amount' => $entry['amount'],
-                    'entry_type' => $entry['entry_type'],
-                    'ledger_guid' => $entry['ledger_guid'],
-                    'isdeemedpositive' => $entry['isdeemedpositive'],
-                ]
-            );
-            $voucherHeadIds[] = [
-                'id' => $voucherHead->id,
-                'ledger_name' => $entry['ledger_name'],
-            ];
-        }
-        return $voucherHeadIds;
-    }
-
-    private function processInventoryEntriesForVoucher($voucherId, array $entries)
+    private function processInventoryEntriesForVoucher($voucherId, array $entries, $companyGuid, $voucherHeadIds, array $ledgerGuid)
     {
         $inventoryEntriesWithId = [];
+        $voucherHeadIndex = 0;
 
         foreach ($entries as $item) {
-            // Create a new entry without checking for uniqueness
+            
+            $StockItemGuid = TallyItem::where('name', $item['stock_item_name'])
+            ->where('company_guid', $companyGuid)
+            ->value('guid');
+
+            $voucherHeadId = $voucherHeadIds[$voucherHeadIndex]['id'] ?? null;
+            $voucherHeadIndex = ($voucherHeadIndex + 1) % count($voucherHeadIds);
+
+            $ledgerGuid = is_array($ledgerGuid) ? implode(',', $ledgerGuid) : $ledgerGuid;
+
             $newEntry = TallyVoucherItem::create([
                 'tally_voucher_id' => $voucherId,
                 'stock_item_name' => $item['stock_item_name'],
@@ -960,9 +989,12 @@ class LedgerController extends Controller
                 'igst_rate' => $item['igst_rate'],
                 'gst_hsn_name' => $item['gst_hsn_name'],
                 'discount' => $item['discount'],
+                'stock_item_guid' => $StockItemGuid,
+                'company_guid' => $companyGuid,
+                'voucher_head_id' => $voucherHeadId,
+                'head_ledger_guid' => $ledgerGuid,
             ]);
 
-            // Add the newly created entry to the result list
             $inventoryEntriesWithId[] = [
                 'id' => $newEntry->id,
                 'stock_item_name' => $item['stock_item_name'],
@@ -1116,73 +1148,6 @@ class LedgerController extends Controller
                 }
             }
         }
-    }
-
-    private function processAccountingAllocations(array $entries, $companyGuid)
-    {
-        $ledgerEntries = [];
-
-        foreach ($entries as $entry) {
-            if (isset($entry['LEDGERNAME'], $entry['AMOUNT'])) {
-                $ledgerName = htmlspecialchars_decode($entry['LEDGERNAME']);
-                $amount = $entry['AMOUNT'];
-                $entryType = $amount < 0 ? "debit" : "credit";
-
-                // Retrieve the ledger GUID from the database
-                $ledgerGuid = TallyLedger::where('language_name', $ledgerName)
-                    ->where('company_guid', $companyGuid) // Ensure you are filtering by company GUID
-                    ->value('guid');
-
-                if ($ledgerGuid) {
-                    // Normalize GUIDs by extracting the base GUID part (before the first '-')
-                    $normalizedLedgerGuid = explode('-', $ledgerGuid)[0];
-                    $normalizedEntryGuid = explode('-', $companyGuid)[0];
-
-                    // Compare the normalized GUID
-                    if ($normalizedLedgerGuid === $normalizedEntryGuid) {
-                        $ledgerEntries[] = [
-                            'ledger_name' => $ledgerName,
-                            'amount' => $amount,
-                            'entry_type' => $entryType,
-                            'ledger_guid' => $ledgerGuid,
-                            'isdeemedpositive' => $entry['ISDEEMEDPOSITIVE'],
-                        ];
-                    } else {
-                        // Log mismatch or handle the case
-                        Log::error('GUID mismatch for ledger: ' . $ledgerName . '. Expected GUID: ' . $normalizedEntryGuid . ', Found GUID: ' . $normalizedLedgerGuid);
-                    }
-                } else {
-                    // Handle case where GUID is not found in the database
-                    Log::error('Ledger GUID not found in database for ledger: ' . $ledgerName);
-                }
-            } else {
-                Log::error('Missing or invalid LEDGERNAME or AMOUNT in LEDGERENTRIES.LIST entry: ' . json_encode($entry));
-            }
-        }
-
-        return $ledgerEntries;
-    }
-
-    private function processAccountingAllocationForVoucher($voucherId, array $entries)
-    {
-        $voucherHeadIds = [];
-        foreach ($entries as $entry) {
-            // Create a new record for each entry, allowing duplicates
-            $voucherHead = TallyVoucherAccAllocationHead::Create([
-                'tally_voucher_id' => $voucherId,
-                'ledger_name' => $entry['ledger_name'],
-                'amount' => $entry['amount'],
-                'entry_type' => $entry['entry_type'],
-                'ledger_guid' => $entry['ledger_guid'],
-                'isdeemedpositive' => $entry['isdeemedpositive'],
-            ]);
-
-            $voucherHeadIds[] = [
-                'id' => $voucherHead->id,
-                'ledger_name' => $entry['ledger_name'],
-            ];
-        }
-        return $voucherHeadIds;
     }
 
     private function convertToDesiredDateFormat($date)

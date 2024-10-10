@@ -17,6 +17,15 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('tally_voucher_id')->nullable();
             $table->foreign('tally_voucher_id')->references('id')->on('tally_vouchers')->onDelete('cascade');
+            
+            $table->unsignedBigInteger('voucher_head_id')->nullable();
+            $table->foreign('voucher_head_id')->references('id')->on('tally_voucher_heads')->onDelete('cascade');
+       
+            $table->string('company_guid')->nullable();
+            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
+
+            $table->string('head_ledger_guid')->nullable();
+           
             $table->string('stock_item_name')->nullable();
             $table->string('gst_taxability')->nullable();
             $table->string('gst_source_type')->nullable();

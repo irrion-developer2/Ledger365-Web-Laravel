@@ -32,4 +32,5 @@ class SettingController extends Controller
 
         return redirect()->back()->with('success', 'License saved successfully!');
     }
+    
 }

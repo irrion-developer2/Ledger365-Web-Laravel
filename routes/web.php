@@ -190,6 +190,7 @@ Route::middleware([
         Route::get('/employees/employees/get-data', [EmployeeController::class, 'getData'])->name('employees.get-data');
         Route::get('/employees/employees/add', [EmployeeController::class, 'add'])->name('employees.add');
         Route::post('/employees/save', [EmployeeController::class, 'saveEmployee'])->name('employees.save');
+        Route::post('/update-employees-status', [EmployeeController::class, 'updateStatus'])->name('update.employees.status');
     });
 
     Route::group(['middleware' => 'checkAdminRoleAndStatus'], function () {

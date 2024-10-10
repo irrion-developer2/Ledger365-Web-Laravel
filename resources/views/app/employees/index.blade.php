@@ -135,8 +135,18 @@
                 {data: 'role', name: 'role', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'status', name: 'status', render: function(data, type, row) {
-                    return data ? data : '-';
+                // {data: 'status', name: 'status', render: function(data, type, row) {
+                //     return data ? data : '-';
+                // }},
+                { data: 'status', name: 'status', render: function(data, type, row) {
+                    return `
+                        <button class="btn ${data ? 'btn-success' : 'btn-danger'} dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            ${data ? 'Active' : 'Inactive'}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="changeStatus(${row.id}, 1)">Active</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="changeStatus(${row.id}, 0)">Inactive</a></li>
+                        </ul>`;
                 }},
                 {data: 'created_at', name: 'created_at', render: function(data, type, row) {
                     return data ? data : '-';
@@ -223,12 +233,37 @@
 
             window.location.href = url.toString();
         });
+
+
+        window.changeStatus = function(employeeId, status) {
+            $.ajax({
+                url: '{{ route('update.employees.status') }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    employee_id: employeeId,
+                    status: status
+                },
+                success: function(response) {
+                    if (response.success) {
+                        employeesTable.ajax.reload();  // Reload DataTable
+                    } else {
+                        alert('Failed to update status.');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while updating the status.');
+                }
+            });
+        };
+
+
     });
 </script>    
-<script>
+{{-- <script>
     function changeStatus(userId, status) {
         $.ajax({
-            url: '/update-user-status', // Replace with your route
+            url: '/update-user-status',
             method: 'POST',
             data: {
                 _token: $('meta[name="csrf-token"]').attr('content'),
@@ -237,7 +272,7 @@
             },
             success: function(response) {
                 if(response.success) {
-                    $('#user-table').DataTable().ajax.reload(); // Reload table data
+                    $('#employees-table').DataTable().ajax.reload();
                 } else {
                     alert('Failed to update status.');
                 }
@@ -247,5 +282,5 @@
             }
         });
     }
-</script>
+</script> --}}
 @endsection

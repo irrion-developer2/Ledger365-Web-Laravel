@@ -13,7 +13,6 @@ use Yajra\DataTables\Facades\DataTables;
 
 class EmployeeController extends Controller
 {
-
     public function index()
     {
         return view ('app.employees.index');
@@ -77,9 +76,9 @@ class EmployeeController extends Controller
 
             $dataTable = DataTables::of($employees)
                 ->addIndexColumn()
-                ->addColumn('status', function ($user) {
-                    return view('app.employees._action', compact('user'))->render();
-                })
+                // ->addColumn('status', function ($data) {
+                //     return view('app.employees._action', compact('data'))->render();
+                // })
                 ->make(true);
 
                 $endTime = microtime(true);
@@ -88,6 +87,21 @@ class EmployeeController extends Controller
 
                 return $dataTable;
         }
+    }
+
+    public function updateStatus(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+            'status' => 'required|boolean',
+        ]);
+
+        $employee = User::find($request->employee_id);
+        $employee->status = $request->status;
+        $employee->save();
+
+        return response()->json(['success' => true]);
+    
     }
 
     public function add()
@@ -113,20 +127,6 @@ class EmployeeController extends Controller
         return redirect()->back()->with('success', 'Employee saved successfully!');
     }
 
-    public function updateStatus(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'status' => 'required|boolean',
-        ]);
-
-        $user = User::find($request->user_id);
-        $user->status = $request->status;
-        $user->save();
-
-        return response()->json(['success' => true]);
-    
-    }
 
     public function show($user)
     {

@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('tally_companies', function (Blueprint $table) {
             $table->id();
-            $table->string('guid')->unique();
+            $table->uuid('guid')->unique();
             $table->string('name')->nullable();
             $table->string('state')->nullable();
             $table->string('sub_id')->nullable();

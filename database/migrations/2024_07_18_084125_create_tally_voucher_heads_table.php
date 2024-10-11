@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreign('tally_voucher_id')->references('id')->on('tally_vouchers')->onDelete('cascade');
             $table->string('ledger_name')->nullable();
             $table->string('ledger_guid')->nullable()->index();
-            $table->string('amount')->nullable();
+            $table->decimal('amount', 15, 2)->nullable(); 
             $table->string('entry_type')->nullable();
             $table->string('isdeemedpositive')->nullable();
             $table->timestamps();

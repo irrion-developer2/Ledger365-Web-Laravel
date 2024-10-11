@@ -187,7 +187,7 @@
                             url = url.replace(':guid', row.guid);
                             return '<a href="' + url + '" style="color: #4c5258;">' + data + '</a>';
                         }},
-                    {data: 'AssetAmount', name: 'AssetAmount'},
+                    {data: 'amount', name: 'amount'},
                 ],
                 
                 initComplete: function () {

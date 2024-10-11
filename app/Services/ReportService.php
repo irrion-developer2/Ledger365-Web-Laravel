@@ -4,6 +4,8 @@ namespace App\Services;
 use App\Models\TallyVoucherItem;
 use App\Models\TallyItem;
 use App\Models\TallyCompany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class ReportService
@@ -46,6 +48,19 @@ class ReportService
 
         $floatValue = (float) $value;
         return number_format(abs($floatValue), 2, '.', '');
+    }
+
+
+    function getFinalQuery($query) {
+        $sql = $query->toSql();
+        $bindings = $query->getBindings();
+    
+        foreach ($bindings as $binding) {
+            $escapedBinding = is_numeric($binding) ? $binding : "'" . addslashes($binding) . "'";
+            $sql = preg_replace('/\?/', $escapedBinding, $sql, 1);
+        }
+    
+        return $sql;
     }
 
     public function calculateStockItemVoucherBalance($stockItemName)

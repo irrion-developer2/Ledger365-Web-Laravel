@@ -3,6 +3,7 @@
 
 @section("style")
     <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
+	<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 @endsection
 
 @section("wrapper")
@@ -22,34 +23,47 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="d-lg-flex align-items-center gap-3"></div>
+                    <div class="d-lg-flex align-items-center gap-2">
+                        <div class="col-lg-3">
+                            <form id="dateRangeForm">
+                                {{-- <label for="date_range" class="form-label">Date Range</label> --}}
+                                <div class="input-group">
+                                    <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
+                                        <button type="button" id="resetDateRange" class="btn btn-outline-secondary">
+                                            <i class="fadeIn animated bx bx-refresh" aria-hidden="true"></i> 
+                                        </button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-lg-2">
+                            <form id="customDateForm">
+                                <select id="custom_date_range" name="custom_date_range" class="form-select">
+                                    <option value="all" {{ request('custom_date_range') === 'all' ? 'selected' : '' }}>All</option>
+                                    <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
+                                    <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
+                                    <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
+                                    <option value="prev_quarter" {{ request('custom_date_range') === 'prev_quarter' ? 'selected' : '' }}>Prev Quarter</option>
+                                    <option value="this_year" {{ request('custom_date_range') === 'this_year' ? 'selected' : '' }}>This Year</option>
+                                    <option value="prev_year" {{ request('custom_date_range') === 'prev_year' ? 'selected' : '' }}>Prev Year</option>
+                                </select>
+                            </form>
+                        </div>
+                    </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
-                        
+
                         <table id="ledger-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    {{-- <th>Id</th> --}}
                                     <th>Ledger Name</th>
                                     <th>GSTIN</th>
-                                    <th>
-                                        Sales
-                                        {{-- <br>
-                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span> --}}
-                                    </th>
-                                    <th>Net ₹ Due</th>
-                                    <th>₹ Overdue</th>
+                                    <th>Sales</th>
+                                    <th>outstanding</th>
                                     <th>
                                         ₹ Pmt Collection
                                         <br>
                                         <span style="font-size: smaller;color: gray;">FY</span>
                                     </th>
-                                    <th>
-                                        Last Payment
-                                    </th>
-                                    <th>₹ Credit Limit</th>
-                                    <th>₹ Credit Period</th>
-                                    {{-- <th>GSTIN</th> --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -57,30 +71,15 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    {{-- <th>Id</th> --}}
-                                    <th>Ledger Name</th>
-                                    <th>GSTIN</th>
-                                    <th>
-                                        Sales
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span>
-                                    </th>
-                                    <th>Net ₹ Due</th>
-                                    <th>₹ Overdue</th>
-                                    <th>
-                                        ₹ Pmt Collection
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">FY</span>
-                                    </th>
-                                    <th>
-                                        Last Payment
-                                    </th>
-                                    <th>₹ Credit Limit</th>
-                                    <th>₹ Credit Period</th>
-                                    {{-- <th>GSTIN</th> --}}
+                                    <th>Total</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
                                 </tr>
                             </tfoot>
                         </table>
+
                     </div>
                 </div>
             </div>
@@ -90,12 +89,22 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
     $(document).ready(function() {
-        new DataTable('#ledger-datatable', {
-            fixedColumns: {
-                start: 1,
-            },
+        var urlParams = new URLSearchParams(window.location.search);
+        var startDate = urlParams.get('start_date');
+        var endDate = urlParams.get('end_date');
+
+        var customDateRange = urlParams.get('custom_date_range');
+
+        if (customDateRange) {
+            $('#custom_date_range').val(customDateRange);
+        }
+
+        var table = new DataTable('#ledger-datatable', {
+            fixedColumns: { start: 1, },
             paging: false,
             scrollCollapse: true,
             scrollX: true,
@@ -103,9 +112,13 @@
             ajax: {
                 url: "{{ route('otherLedgers.get-data') }}",
                 type: 'GET',
+                data: function (d) {
+                    d.start_date = startDate;
+                    d.end_date = endDate;
+                    d.custom_date_range = customDateRange;
+                }
             },
             columns: [
-                // {data: 'id', name: 'id'},
                 {data: 'language_name', name: 'language_name',
                     render: function(data, type, row) {
                         var url = '{{ route("customers.show", ":guid") }}';
@@ -116,27 +129,11 @@
                 {data: 'party_gst_in', name: 'party_gst_in', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'sales_last_30_days', name: 'sales_last_30_days',
-                    searchPanes: {
-                        orthogonal: 'plain'
-                    }
-                },
+                {data: 'sales', name: 'sales'},
                 {data: 'outstanding', name: 'outstanding', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'overdue', name: 'overdue', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
                 {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'payment_date', name: 'payment_date', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'credit_limit', name: 'credit_limit', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'bill_credit_period', name: 'bill_credit_period', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
             ],
@@ -144,9 +141,7 @@
                 var api = this.api();
                 var LastSaleToTotal = 2;
                 var OutstandingToTotal = 3;
-                var OverdueToTotal = 4;
-                var PmtToTotal = 5;
-
+                var PmtToTotal = 4;
 
                 var LastSaletotal = api.column(LastSaleToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
@@ -154,24 +149,49 @@
                 var Outstandingtotal = api.column(OutstandingToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
-                var Overduetotal = api.column(OverdueToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
                 var Pmttotal = api.column(PmtToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
 
-
-                $(api.column(LastSaleToTotal).footer()).html(number_format(Math.abs(LastSaletotal), 2));
-                $(api.column(OutstandingToTotal).footer()).html(number_format(Math.abs(Outstandingtotal), 2));
-                $(api.column(OverdueToTotal).footer()).html(number_format(Math.abs(Overduetotal), 2));
-                $(api.column(PmtToTotal).footer()).html(number_format(Math.abs(Pmttotal), 2));
+                $(api.column(LastSaleToTotal).footer()).html(jsIndianFormat(Math.abs(LastSaletotal)));
+                $(api.column(OutstandingToTotal).footer()).html(jsIndianFormat(Math.abs(Outstandingtotal)));
+                $(api.column(PmtToTotal).footer()).html(jsIndianFormat(Math.abs(Pmttotal)));
             },
             search: {
                 orthogonal: {
-                    search: 'plain' 
+                    search: 'plain'
                 }
             }
+        });
+
+        const dateRangeInput = document.querySelector(".date-range");
+        flatpickr(dateRangeInput, {
+            mode: "range",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    let startDate = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                    let endDate = flatpickr.formatDate(selectedDates[1], "Y-m-d");
+                    let url = new URL(window.location.href);
+                    url.searchParams.set('start_date', startDate);
+                    url.searchParams.set('end_date', endDate);
+                    window.location.href = url.toString();
+                }
+            }
+        });
+
+        // Prepopulate date range input if already set
+        if (startDate && endDate) {
+            dateRangeInput._flatpickr.setDate([startDate, endDate], false);
+        }
+
+        $('#custom_date_range').on('change', function() {
+            var selectedRange = $(this).val();
+            var url = new URL(window.location.href);
+            url.searchParams.set('custom_date_range', selectedRange);
+            window.location.href = url.toString();
         });
 
         function sanitizeNumber(value) {
@@ -185,6 +205,18 @@
             parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             return parts.join('.');
         }
+
+        $('#resetDateRange').on('click', function() {
+            $('.date-range').val('');
+            
+            // Remove the start_date and end_date from URL
+            let url = new URL(window.location.href);
+            url.searchParams.delete('start_date');
+            url.searchParams.delete('end_date');
+
+            window.location.href = url.toString();
+        });
+
     });
 </script>
 @endsection

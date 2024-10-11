@@ -38,6 +38,7 @@
                         <div class="col-lg-2">
                             <form id="customDateForm">
                                 <select id="custom_date_range" name="custom_date_range" class="form-select">
+                                    <option value="all" {{ request('custom_date_range') === 'all' ? 'selected' : '' }}>All</option>
                                     <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
                                     <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
                                     <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
@@ -104,6 +105,7 @@
 @section("script")
 @include('layouts.includes.datatable-js-css')
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
     $(document).ready(function() {
         var urlParams = new URLSearchParams(window.location.search);
@@ -176,9 +178,9 @@
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
 
-                $(api.column(LastSaleToTotal).footer()).html(number_format(Math.abs(LastSaletotal), 2));
-                $(api.column(OutstandingToTotal).footer()).html(number_format(Math.abs(Outstandingtotal), 2));
-                $(api.column(PmtToTotal).footer()).html(number_format(Math.abs(Pmttotal), 2));
+                $(api.column(LastSaleToTotal).footer()).html(jsIndianFormat(Math.abs(LastSaletotal)));
+                $(api.column(OutstandingToTotal).footer()).html(jsIndianFormat(Math.abs(Outstandingtotal)));
+                $(api.column(PmtToTotal).footer()).html(jsIndianFormat(Math.abs(Pmttotal)));
             },
             search: {
                 orthogonal: {
@@ -219,14 +221,6 @@
 
         function sanitizeNumber(value) {
             return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
-        }
-
-        function number_format(number, decimals) {
-            if (isNaN(number)) return 0;
-            number = parseFloat(number).toFixed(decimals);
-            var parts = number.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            return parts.join('.');
         }
 
         $('#resetDateRange').on('click', function() {

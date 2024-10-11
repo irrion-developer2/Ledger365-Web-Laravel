@@ -15,9 +15,11 @@ return new class extends Migration
     {
         Schema::create('tally_groups', function (Blueprint $table) {
             $table->id();
-            $table->string('guid')->unique();
-            $table->string('company_guid')->nullable();
+            $table->uuid('guid')->unique();
+
+            $table->uuid('company_guid')->nullable();
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
+            
             $table->string('name')->nullable();
             $table->string('parent')->nullable();
             $table->string('affects_stock')->nullable();

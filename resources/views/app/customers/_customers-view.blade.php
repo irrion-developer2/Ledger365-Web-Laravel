@@ -65,7 +65,7 @@
                                 <div class="col-lg-12">
                                     <div class="row">
                                         <div class="col-lg-2">
-                                            <p class="mb-0 font-13 btn btn border-0"><i class='bx bx-info-circle'></i></p>
+                                            
                                         </div>
                                         <div class="col-lg-10">
                                             <p class="mb-0 font-13">Net Outstanding</p>
@@ -99,30 +99,9 @@
 <script src="{{ url('assets/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ url('assets/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 
 <script>
-    function formatToIndianCurrency(amount) {
-        // Convert to float and handle negative numbers
-        amount = parseFloat(amount).toFixed(2);
-        
-        // Split into integer and decimal parts
-        var parts = amount.split('.');
-        var integerPart = parts[0];
-        var decimalPart = parts.length > 1 ? '.' + parts[1] : '';
-        
-        // Indian number format (1st comma after 3 digits, and then every 2 digits)
-        var lastThreeDigits = integerPart.slice(-3);
-        var otherDigits = integerPart.slice(0, -3);
-        
-        if (otherDigits !== '') {
-            lastThreeDigits = ',' + lastThreeDigits;
-        }
-        
-        var indianFormatted = otherDigits.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThreeDigits + decimalPart;
-        
-        return indianFormatted;
-    }
-
     $(document).ready(function() {
         var urlParams = new URLSearchParams(window.location.search);
         var startDate = urlParams.get('start_date');
@@ -160,6 +139,14 @@
             ],
             initComplete: function(settings, json) {
                 $('#totalInvoices').text(json.recordsTotal);
+                var defaultStartDate = json.first_voucher_date;
+                var defaultEndDate = json.last_voucher_date;
+
+                if (!startDate && !endDate) {
+                    startDate = defaultStartDate;
+                    endDate = defaultEndDate;
+                    dateRangeInput._flatpickr.setDate([startDate, endDate], false); 
+                }
             },
             footerCallback: function(row, data, start, end, display) {
                 var api = this.api();
@@ -199,10 +186,10 @@
                 totalRunningBalance = runningBalance;
 
                 // Update footer
-                $(api.column(3).footer()).html(formatToIndianCurrency(totalDebit));
-                $(api.column(4).footer()).html(formatToIndianCurrency(totalCredit));
-                $('#totalDebit').text(formatToIndianCurrency(totalDebit));
-                $('#totalCredit').text(formatToIndianCurrency(totalCredit));
+                $(api.column(3).footer()).html(jsIndianFormat(totalDebit));
+                $(api.column(4).footer()).html(jsIndianFormat(totalCredit));
+                $('#totalDebit').text(jsIndianFormat(totalDebit));
+                $('#totalCredit').text(jsIndianFormat(totalCredit));
 
                 // Handle opening balance
                 var openingBalance = 0;
@@ -227,8 +214,8 @@
 
                 // Update running balance and opening balance
                 $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                $('#openingBalance').text(formatToIndianCurrency(OeningB));
-                $('#outstanding').text(formatToIndianCurrency(lastRowRunningBalance));
+                $('#openingBalance').text(jsIndianFormat(OeningB));
+                $('#outstanding').text(jsIndianFormat(lastRowRunningBalance));
                 $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
 
                 // Show/hide the button based on running balance

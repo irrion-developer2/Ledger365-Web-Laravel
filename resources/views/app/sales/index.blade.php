@@ -28,18 +28,18 @@
                     <div class="d-lg-flex align-items-center gap-2">
                         <div class="col-lg-3">
                             <form id="dateRangeForm">
-                                {{-- <label for="date_range" class="form-label">Date Range</label> --}}
                                 <div class="input-group">
                                     <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
-                                    <button type="button" id="resetDateRange" class="btn btn-outline-secondary">
-                                        <i class="fadeIn animated bx bx-refresh" aria-hidden="true"></i> 
-                                    </button>
+                                        <button type="button" id="resetDateRange" class="btn btn-outline-secondary">
+                                            <i class="fadeIn animated bx bx-refresh" aria-hidden="true"></i> 
+                                        </button>
                                 </div>
                             </form>
                         </div>
                         <div class="col-lg-2">
                             <form id="customDateForm">
                                 <select id="custom_date_range" name="custom_date_range" class="form-select">
+                                    <option value="all" {{ request('custom_date_range') === 'all' ? 'selected' : '' }}>All</option>
                                     <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
                                     <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
                                     <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
@@ -90,8 +90,8 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
-
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
     $(document).ready(function() {
         var urlParams = new URLSearchParams(window.location.search);
@@ -151,7 +151,7 @@
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
 
-                $(api.column(InvoiceAmountToTotal).footer()).html(number_format(Math.abs(InvoiceAmounttotal), 2));
+                $(api.column(InvoiceAmountToTotal).footer()).html(jsIndianFormat(Math.abs(InvoiceAmounttotal)));
             },
             search: {
                 orthogonal: {
@@ -160,15 +160,12 @@
             }
         });
 
-        
-
         const dateRangeInput = document.querySelector(".date-range");
-        flatpickr(".date-range", {
+        flatpickr(dateRangeInput, {
             mode: "range",
             altInput: true,
             altFormat: "F j, Y",
             dateFormat: "Y-m-d",
-            defaultDate: [new Date(new Date().setDate(new Date().getDate() - 30)), new Date()],
             onChange: function(selectedDates, dateStr, instance) {
                 if (selectedDates.length === 2) {
                     let startDate = flatpickr.formatDate(selectedDates[0], "Y-m-d");
@@ -177,11 +174,11 @@
                     url.searchParams.set('start_date', startDate);
                     url.searchParams.set('end_date', endDate);
                     window.location.href = url.toString();
-                    // table.ajax.reload(); // Refresh the table data
                 }
             }
         });
 
+        // Prepopulate date range input if already set
         if (startDate && endDate) {
             dateRangeInput._flatpickr.setDate([startDate, endDate], false);
         }
@@ -195,14 +192,6 @@
 
         function sanitizeNumber(value) {
             return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
-        }
-
-        function number_format(number, decimals) {
-            if (isNaN(number)) return 0;
-            number = parseFloat(number).toFixed(decimals);
-            var parts = number.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            return parts.join('.');
         }
 
         $('#resetDateRange').on('click', function() {

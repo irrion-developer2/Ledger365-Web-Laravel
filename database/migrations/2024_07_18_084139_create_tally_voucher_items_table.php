@@ -35,12 +35,13 @@ return new class extends Migration
             $table->string('hsn_item_source')->nullable();
             $table->string('gst_rate_infer_applicability')->nullable();
             $table->string('gst_hsn_infer_applicability')->nullable();
-            $table->string('rate')->nullable();
+
+            $table->decimal('rate', 15, 2)->nullable(); 
             $table->string('unit')->nullable();
-            $table->string('billed_qty')->nullable();
-            $table->string('amount')->nullable();
-            $table->string('discount')->nullable();
-            $table->string('igst_rate')->nullable();
+            $table->decimal('billed_qty', 15, 2)->nullable(); 
+            $table->decimal('amount', 15, 2)->nullable(); 
+            $table->decimal('discount', 15, 2)->nullable();
+            $table->decimal('igst_rate', 15, 2)->nullable();
             $table->string('gst_hsn_name')->nullable();
             $table->timestamps();
         });

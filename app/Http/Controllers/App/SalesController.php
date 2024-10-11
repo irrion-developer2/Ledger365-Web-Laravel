@@ -33,106 +33,93 @@ class SalesController extends Controller
     {
         return $dataTable->render('app.sales.index');
     }
-
+    
     public function getData(Request $request)
     {
         $companyGuids = $this->reportService->companyData();
-
+    
         if ($request->ajax()) {
-            $query = TallyVoucher::whereIn('tally_vouchers.company_guid', $companyGuids)
-                ->select(
-                    'tally_vouchers.*',
-                    'tally_voucher_heads.entry_type',
-                    'tally_voucher_heads.amount',
-                    'tally_ledgers.parent',
-                    'tally_ledgers.bill_credit_period',
-                    'tally_ledgers.gst_in',
-                    'tally_ledgers.phone_no',
-                    'tally_ledgers.email'
-                )
-                ->leftJoin('tally_voucher_heads', function ($join) {
-                    $join->on('tally_vouchers.party_ledger_name', '=', 'tally_voucher_heads.ledger_name')
-                        ->on('tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id');
-                })
-                ->leftJoin('tally_ledgers', 'tally_vouchers.party_ledger_name', '=', 'tally_ledgers.language_name')
-                ->leftJoin('tally_voucher_heads as related_heads', 'tally_voucher_heads.tally_voucher_id', '=', 'related_heads.tally_voucher_id')
-                ->groupBy(
-                    'tally_vouchers.id',
-                    'tally_vouchers.party_ledger_name',
-                    'tally_vouchers.voucher_date',
-                    'tally_vouchers.voucher_number',
-                    'tally_vouchers.voucher_type',
-                    'tally_ledgers.parent',
-                    'tally_ledgers.bill_credit_period',
-                    'tally_ledgers.gst_in',
-                    'tally_ledgers.phone_no',
-                    'tally_ledgers.email',
-                    'tally_voucher_heads.entry_type',
-                    'tally_voucher_heads.amount'
-                )
-                ->selectRaw('GROUP_CONCAT(DISTINCT related_heads.ledger_name) as related_ledger_names')
-                ->selectRaw('SUM(CASE WHEN related_heads.ledger_name LIKE "%IGST @18%" THEN related_heads.amount ELSE 0 END) as igst_amount')
-                ->selectRaw('SUM(CASE WHEN related_heads.ledger_name LIKE "%Round Off%" THEN related_heads.amount ELSE 0 END) as round_off_amount')
-                ->where('tally_vouchers.voucher_type', 'Sales')
-                ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                ->whereNot('tally_vouchers.is_optional', 'Yes');
+            $startTime = microtime(true);
+      
+            $salesQuery = TallyVoucher::select('tally_vouchers.id', 'tally_vouchers.company_guid', 'tally_vouchers.voucher_type', 'tally_vouchers.party_ledger_name', 'tally_vouchers.voucher_date', 'tally_vouchers.voucher_number', 'tally_vouchers.place_of_supply')
+            ->where('voucher_type', 'Sales')
+            ->where('tally_vouchers.is_cancelled', 'No')
+            ->where('tally_vouchers.is_optional', 'No')
+            ->whereIn('tally_vouchers.company_guid', $companyGuids)
+            ->leftJoin('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
+            ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" AND tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END), 0) as total_debit')
+            ->groupBy('tally_vouchers.id','tally_vouchers.company_guid', 'tally_vouchers.voucher_type', 'tally_vouchers.party_ledger_name', 'tally_vouchers.voucher_date', 'tally_vouchers.voucher_number', 'tally_vouchers.place_of_supply');
 
+            Log::info("Sales Query");        
+            Log::info($this->reportService->getFinalQuery($salesQuery));
 
-                $startDate = $request->get('start_date');
-                $endDate = $request->get('end_date');
-
-                $customDateRange = $request->get('custom_date_range');
-
-                if ($customDateRange) {
-                    switch ($customDateRange) {
-                        case 'this_month':
-                            $startDate = now()->startOfMonth()->toDateString();
-                            $endDate = now()->endOfMonth()->toDateString();
-                            break;
-                        case 'last_month':
-                            $startDate = now()->subMonth()->startOfMonth()->toDateString();
-                            $endDate = now()->subMonth()->endOfMonth()->toDateString();
-                            break;
-                        case 'this_quarter':
-                            $startDate = now()->firstOfQuarter()->toDateString();
-                            $endDate = now()->lastOfQuarter()->toDateString();
-                            break;
-                        case 'prev_quarter':
-                            $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
-                            $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
-                            break;
-                        case 'this_year':
-                            $startDate = now()->startOfYear()->toDateString();
-                            $endDate = now()->endOfYear()->toDateString();
-                            break;
-                        case 'prev_year':
-                            $startDate = now()->subYear()->startOfYear()->toDateString();
-                            $endDate = now()->subYear()->endOfYear()->toDateString();
-                            break;
-                    }
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+            $customDateRange = $request->get('custom_date_range');
+    
+            if ($customDateRange) {
+                switch ($customDateRange) {
+                    case 'this_month':
+                        $startDate = now()->startOfMonth()->toDateString();
+                        $endDate = now()->endOfMonth()->toDateString();
+                        break;
+                    case 'last_month':
+                        $startDate = now()->subMonth()->startOfMonth()->toDateString();
+                        $endDate = now()->subMonth()->endOfMonth()->toDateString();
+                        break;
+                    case 'this_quarter':
+                        $startDate = now()->firstOfQuarter()->toDateString();
+                        $endDate = now()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'prev_quarter':
+                        $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
+                        $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'this_year':
+                        $startDate = now()->startOfYear()->toDateString();
+                        $endDate = now()->endOfYear()->toDateString();
+                        break;
+                    case 'prev_year':
+                        $startDate = now()->subYear()->startOfYear()->toDateString();
+                        $endDate = now()->subYear()->endOfYear()->toDateString();
+                        break;
+                    case 'all':
+                        break;
                 }
-
-
-            if ($startDate && $endDate) {
-                $query->whereBetween('voucher_date', [$startDate, $endDate]);
             }
+            if ($startDate && $endDate) {
+                $salesQuery->whereBetween('tally_vouchers.voucher_date', [$startDate, $endDate]);
+            }
+    
+            $sales = $salesQuery->get();
 
             Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
             Log::info('Start date:', ['startDate' => $startDate]);
             Log::info('End date:', ['endDate' => $endDate]);
-
-            return DataTables::of($query)
+    
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for SalesController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+    
+            $dataTable = DataTables::of($sales)
                 ->addIndexColumn()
-                ->addColumn('debit', function ($entry) {
-                    return $entry->entry_type === 'debit' ? number_format(abs($entry->amount), 2, '.', '') : '-';
+                ->addColumn('debit', function ($data) {
+                    $totalDebit = $data->total_debit;
+                    return indian_format(abs($totalDebit));
                 })
                 ->addColumn('voucher_date', function ($entry) {
                     return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
                 })
                 ->make(true);
+    
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for SalesController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+    
+            return $dataTable;
         }
     }
-
+    
     public function AllSaleItemReports($saleItemId)
     {
         $companyGuids = $this->reportService->companyData();

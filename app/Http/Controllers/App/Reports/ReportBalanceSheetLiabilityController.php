@@ -7,7 +7,6 @@ use Carbon\Carbon;
 use App\Models\TallyLedger;
 use App\Models\TallyGroup;
 use App\Models\TallyVoucherHead;
-use App\Models\TallyVoucherAccAllocationHead;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherItem;
 use App\Models\TallyItem;

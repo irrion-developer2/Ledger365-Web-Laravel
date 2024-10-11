@@ -38,6 +38,7 @@
                         <div class="col-lg-2">
                             <form id="customDateForm">
                                 <select id="custom_date_range" name="custom_date_range" class="form-select">
+                                    <option value="all" {{ request('custom_date_range') === 'all' ? 'selected' : '' }}>All</option>
                                     <option value="this_month" {{ request('custom_date_range') === 'this_month' ? 'selected' : '' }}>This Month</option>
                                     <option value="last_month" {{ request('custom_date_range') === 'last_month' ? 'selected' : '' }}>Last Month</option>
                                     <option value="this_quarter" {{ request('custom_date_range') === 'this_quarter' ? 'selected' : '' }}>This Quarter</option>
@@ -66,31 +67,12 @@
                                         {{-- <br>
                                         <span style="font-size: smaller;color: gray;">(Last 30 days)</span> --}}
                                     </th>
-                                    <th>
-                                        Returns
-                                        {{-- <br>
-                                        <span style="font-size: smaller;color: gray;">(Last 30 days)</span> --}}
-                                    </th>
-                                    <th>Net ₹ Due</th>
-                                    <th>₹ Overdue</th>
-                                    <th>
-                                        Overdue<br>
-                                        <span style="font-size: smaller;color: gray;">Since</span>
-                                    </th>
-                                    <th>
-                                        ₹ On Account<br>
-                                        <span style="font-size: smaller;color: gray;">As of Today</span>
-                                    </th>
+                                    <th>Outstanding</th>
                                     <th>
                                         ₹ Pmt Made
                                         <br>
                                         <span style="font-size: smaller;color: gray;">FY</span>
                                     </th>
-                                    <th>
-                                        Last Payment
-                                    </th>
-                                    <th>₹ Credit Limit</th>
-                                    <th>₹ Credit Period</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -99,13 +81,6 @@
                             <tfoot>
                                 <tr>
                                     <th>Total</th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -123,13 +98,10 @@
 @section("script")
 @include('layouts.includes.datatable-js-css')
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
     $(document).ready(function() {
         var urlParams = new URLSearchParams(window.location.search);
-        var filterOutstanding = urlParams.get('filter_outstanding') === 'true';
-        var filterAgeing = urlParams.get('filter_ageing') === 'true';
-        var filterPayment = urlParams.get('filter_payment') === 'true';
-
         var startDate = urlParams.get('start_date');
         var endDate = urlParams.get('end_date');
 
@@ -151,16 +123,12 @@
                 url: "{{ route('suppliers.get-data') }}",
                 type: 'GET',
                 data: function (d) {
-                    d.filter_outstanding = filterOutstanding;
-                    d.filter_ageing = filterAgeing;
-                    d.filter_payment = filterPayment;
                     d.start_date = startDate;
                     d.end_date = endDate;
                     d.custom_date_range = customDateRange;
                 }
             },
             columns: [
-                // {data: 'id', name: 'id'},
                 {data: 'language_name', name: 'language_name',
                     render: function(data, type, row) {
                         var url = '{{ route("customers.show", ":guid") }}';
@@ -171,60 +139,32 @@
                 {data: 'party_gst_in', name: 'party_gst_in', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'purchase_last_30_days', name: 'purchase_last_30_days',
-                    searchPanes: {
-                        orthogonal: 'plain'
-                    }
-                },
-                {data: 'return30', name: 'return30',
-                    searchPanes: {
-                        orthogonal: 'plain'
-                    }
-                },
+                // {data: 'purchase', name: 'purchase',
+                //     searchPanes: {
+                //         orthogonal: 'plain'
+                //     }
+                // },
+                {data: 'purchase', name: 'purchase', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
                 {data: 'outstanding', name: 'outstanding', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'overdue', name: 'overdue', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'overdue_date', name: 'overdue_date', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'opening_balance', name: 'opening_balance', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
                 {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'payment_date', name: 'payment_date', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'credit_limit', name: 'credit_limit', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'bill_credit_period', name: 'bill_credit_period', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
             ],
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
                 var LastSaleToTotal = 2;
-                var ReturnToTotal = 3;
-                var OutstandingToTotal = 4;
-                var OverdueToTotal = 5;
-                var PmtToTotal = 8;
+                var OutstandingToTotal = 3;
+                var PmtToTotal = 4;
 
 
                 var LastSaletotal = api.column(LastSaleToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
-                var Returntotal = api.column(ReturnToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
                 var Outstandingtotal = api.column(OutstandingToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
-                var Overduetotal = api.column(OverdueToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
                 var Pmttotal = api.column(PmtToTotal).data().reduce(function (a, b) {
@@ -232,11 +172,9 @@
                 }, 0);
 
 
-                $(api.column(LastSaleToTotal).footer()).html(number_format(Math.abs(LastSaletotal), 2));
-                $(api.column(ReturnToTotal).footer()).html(number_format(Math.abs(Returntotal), 2));
-                $(api.column(OutstandingToTotal).footer()).html(number_format(Math.abs(Outstandingtotal), 2));
-                $(api.column(OverdueToTotal).footer()).html(number_format(Math.abs(Overduetotal), 2));
-                $(api.column(PmtToTotal).footer()).html(number_format(Math.abs(Pmttotal), 2));
+                $(api.column(LastSaleToTotal).footer()).html(jsIndianFormat(Math.abs(LastSaletotal)));
+                $(api.column(OutstandingToTotal).footer()).html(jsIndianFormat(Math.abs(Outstandingtotal)));
+                $(api.column(PmtToTotal).footer()).html(jsIndianFormat(Math.abs(Pmttotal)));
             },
             search: {
                 orthogonal: {
@@ -273,27 +211,6 @@
             var url = new URL(window.location.href);
             url.searchParams.set('custom_date_range', selectedRange);
             window.location.href = url.toString();
-        });
-
-        $('#filter-outstanding').on('click', function () {
-            filterOutstanding = !filterOutstanding;
-            var newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('filter_outstanding', filterOutstanding ? 'true' : 'false');
-            window.location.href = newUrl.href;
-        });
-
-        $('#filter-ageing').on('click', function () {
-            filterAgeing = !filterAgeing;
-            var newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('filter_ageing', filterAgeing ? 'true' : 'false');
-            window.location.href = newUrl.href;
-        });
-
-        $('#filter-payment').on('click', function () {
-            filterPayment = !filterPayment;
-            var newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('filter_payment', filterPayment ? 'true' : 'false');
-            window.location.href = newUrl.href;
         });
 
         function sanitizeNumber(value) {

@@ -253,7 +253,7 @@ class LedgerController extends Controller
                             'is_bill_wise_on' => $ledgerData['ISBILLWISEON'] ?? null,
                             'is_cost_centres_on' => $ledgerData['ISCOSTCENTRESON'] ?? null,
                             'alter_id' => $ledgerData['ALTERID'] ?? null,
-                            'opening_balance' => $ledgerData['OPENINGBALANCE'] ?? null,
+                            'opening_balance' => isset($ledgerData['OPENINGBALANCE']) ? preg_replace('/[^0-9.]/', '', $ledgerData['OPENINGBALANCE']) : null,
                             'language_name' => $languageName,
                             'alias' => $alias,
                             'language_id' => $ledgerData['LANGUAGENAME.LIST']['LANGUAGEID'] ?? null,
@@ -1141,7 +1141,6 @@ class LedgerController extends Controller
                             'actual_qty' => $batch['ACTUALQTY'] ?? null,
                             'billed_qty' => $batch['BILLEDQTY'] ?? null,
                             'order_no' => $batch['ORDERNO'] ?? null,
-                            'batch_physical_diff' => $batch['BATCHPHYSDIFF'] ?? null,
                             ]
                         );
                     }

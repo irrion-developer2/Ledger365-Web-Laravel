@@ -19,7 +19,11 @@
                                             <li class="active text-white" aria-current="page">Profit & Loss A/c</li>
                                         </div>
                                         <div class="col-lg-4 col-md-4 col-sm-4 text-center">
-                                            <li class="active text-white" aria-current="page">{{ $company->name }}</li>
+                                            @if($company)
+                                                <li class="active text-white" aria-current="page">{{ $company->name }}</li>
+                                            @else
+                                                <li class="active text-white" aria-current="page">Company not found</li>
+                                            @endif
                                         </div>
                                         <div class="col-lg-4 col-md-4 col-sm-4 text-end">
                                             <li class="active text-white" aria-current="page">

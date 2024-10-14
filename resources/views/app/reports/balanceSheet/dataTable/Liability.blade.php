@@ -12,7 +12,7 @@
         <tfoot>
             <tr>
                 <th>Difference in Opening Balances</th>
-                <th id="DiffOpeningBalance"></th>
+                <th id="DiffLiabilitieOpeningBalance"></th>
             </tr>
             <tr>
                 <th><a href="{{ route('reports.BalanceSheetProfitLoss') }}" style="color: #4c5258;">Profit & Loss A/c</a></th>

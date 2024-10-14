@@ -76,8 +76,8 @@ return new class extends Migration
             $table->string('vat_base_no')->nullable();
             $table->string('vat_trail_no')->nullable();
             $table->string('vat_actual_ratio', 8, 2)->nullable();
-            $table->string('opening_balance')->nullable();
-            $table->string('opening_value', 15, 2)->nullable();
+            $table->decimal('opening_balance', 15, 2)->nullable();
+            $table->decimal('opening_value', 15, 2)->nullable();
             $table->string('opening_rate')->nullable();
             $table->string('unit')->nullable();
             $table->string('igst_rate')->nullable();

@@ -18,12 +18,12 @@ return new class extends Migration
             $table->foreignId('head_id') // Define the head_id column and set it as a foreign key
             ->constrained('tally_voucher_heads')
             ->onDelete('cascade');
-            $table->string('bank_name')->nullable();
+            $table->string('bank_name',100)->nullable();
             $table->date('instrument_date')->nullable();
-            $table->string('instrument_number')->nullable();
-            $table->string('transaction_type')->nullable();
+            $table->string('instrument_number',100)->nullable();
+            $table->string('transaction_type',100)->nullable();
             $table->date('bank_date')->nullable();
-            $table->string('amount')->nullable();
+            $table->decimal('amount',15,3)->nullable();
             $table->timestamps();
         });
     }

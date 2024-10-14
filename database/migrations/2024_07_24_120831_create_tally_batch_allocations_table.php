@@ -18,14 +18,13 @@ return new class extends Migration
             $table->foreignId('item_id') // Define the head_id column and set it as a foreign key
             ->constrained('tally_voucher_items')
             ->onDelete('cascade');
-            $table->string('batch_name')->nullable();
-            $table->string('godown_name')->nullable();
-            $table->string('destination_godown_name')->nullable();
-            $table->string('amount')->nullable();
-            $table->string('actual_qty')->nullable();
-            $table->string('billed_qty')->nullable();
-            $table->string('order_no')->nullable();
-            $table->string('batch_physical_diff')->nullable();
+            $table->string('batch_name',100)->nullable();
+            $table->string('godown_name',100)->nullable();
+            $table->string('destination_godown_name',100)->nullable();
+            $table->decimal('amount',15,3)->nullable();
+            $table->decimal('actual_qty',15,3)->nullable();
+            $table->decimal('billed_qty',15,3)->nullable();
+            $table->string('order_no',100)->nullable();
             $table->timestamps();
         });
     }

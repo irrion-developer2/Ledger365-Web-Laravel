@@ -18,10 +18,10 @@ return new class extends Migration
             $table->foreignId('head_id') // Define the head_id column and set it as a foreign key
             ->constrained('tally_voucher_heads')
             ->onDelete('cascade');
-            $table->string('billtype')->nullable();
-            $table->string('billamount')->nullable();
-            $table->string('yearend')->nullable();
-            $table->string('name')->nullable();
+            $table->string('billtype',100)->nullable();
+            $table->decimal('billamount',15,3)->nullable();
+            $table->string('yearend',10)->nullable();
+            $table->string('name',100)->nullable();
             $table->timestamps();
         });
     }

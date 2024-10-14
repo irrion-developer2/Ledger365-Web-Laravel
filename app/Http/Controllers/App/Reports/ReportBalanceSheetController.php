@@ -36,57 +36,64 @@ class ReportBalanceSheetController extends Controller
 
         return view ('app.reports.balanceSheet.index', compact('company'));
     }
-
-    private function determineAccountType($name)
-    {
-        $name = strtolower($name);
-        
-        if (strpos($name, 'assets') !== false || strpos($name, 'asset') !== false || strpos($name, 'investments') !== false) {
-            return 'Asset';
-        } elseif (strpos($name, 'income') !== false || strpos($name, 'revenue') !== false || strpos($name, 'sales accounts') !== false) {
-            return 'Revenue';
-        } elseif (strpos($name, 'liabilities') !== false || strpos($name, 'liability') !== false || strpos($name, 'branch / divisions') !== false || strpos($name, 'suspense a/c') !== false || strpos($name, 'capital account') !== false) {
-            return 'Liability';
-        } elseif (strpos($name, 'expense') !== false || strpos($name, 'purchase') !== false) {
-            return 'Expense';
-        }
-        
-        return 'Other';
-    }
-
+    
     public function getData(Request $request)
     {
         $companyGuids = $this->reportService->companyData();
 
         if ($request->ajax()) {
+            $startTime = microtime(true);
 
-            $normalizedNames = $this->reportService->normalizedNames;
-            $normalizedNamesCase = 'CASE ';
-            foreach ($normalizedNames as $pattern => $normalized) {
-                $normalizedNamesCase .= "WHEN name LIKE '%$pattern%' THEN '$normalized' ";
-            }
-            $normalizedNamesCase .= 'ELSE name END as normalized_name'; 
             $accountTypeCases = '
                 CASE 
                     WHEN name LIKE "%liabilities%" THEN "Liability"
+                    WHEN name LIKE "%liability%" THEN "Liability"
+                    WHEN name LIKE "%branch / divisions%" THEN "Liability"
+                    WHEN name LIKE "%suspense a/c%" THEN "Liability"
+                    WHEN name LIKE "%capital account%" THEN "Liability"
+
                     WHEN name LIKE "%assets%" THEN "Asset"
+                    WHEN name LIKE "%asset%" THEN "Asset"
+                    WHEN name LIKE "%investments%" THEN "Asset"
+
+                    WHEN name LIKE "%income%" THEN "Revenue"
+                    WHEN name LIKE "%revenue%" THEN "Revenue"
+                    WHEN name LIKE "%sales accounts%" THEN "Revenue"
+
+                    WHEN name LIKE "%expense%" THEN "Expense"
+                    WHEN name LIKE "%purchase%" THEN "Expense"
+
                     ELSE "Other" 
                 END as account_type
             ';
 
-            $query = TallyGroup::where(function($query) {
+            $Balancequery = TallyGroup::where(function($query) {
                             $query->where('parent', '')->orWhereNull('parent');
                         })
                         ->whereIn('company_guid', $companyGuids)
-                        ->selectRaw("name, parent, company_guid, $normalizedNamesCase, $accountTypeCases");
+                        ->selectRaw("guid, name, parent, company_guid, $accountTypeCases");
     
-            \Log::info($query->toSql());
-            \Log::info($query->getBindings());
+            Log::info("BalanceSheet Query");        
+            Log::info($this->reportService->getFinalQuery($Balancequery));
     
-            return DataTables::of($query)
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for ReportBalanceSheetController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+    
+            $dataTable = DataTables::of($Balancequery)
                 ->addIndexColumn()
                 ->editColumn('amount', function ($data) use ($companyGuids) {
-                    $groupLedgerIdsQuery = TallyGroup::where('parent', $data->name)->whereIn('company_guid', $companyGuids);
+
+                    $name = $data->name;
+
+                    foreach ($this->reportService->normalizedNames as $pattern => $normalized) {
+                        if (strpos($name, $pattern) !== false) {
+                            $name = $normalized;
+                            break;
+                        }
+                    }
+
+                    $groupLedgerIdsQuery = TallyGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
                     $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
     
                     if ($groupLedgerIds->isNotEmpty()) {
@@ -94,7 +101,7 @@ class ReportBalanceSheetController extends Controller
                                 ->whereIn('company_guid', $companyGuids)
                                 ->pluck('guid');
                     } else {
-                        $ledgerIds = TallyLedger::where('parent', $data->name)
+                        $ledgerIds = TallyLedger::where('parent', $name)
                                 ->whereIn('company_guid', $companyGuids)
                                 ->pluck('guid');
                     }
@@ -105,35 +112,17 @@ class ReportBalanceSheetController extends Controller
                         return '-';
                     }
     
-                    $totalDebit = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
+                    $totalAmount = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
-                                                    ->where('tally_voucher_heads.entry_type', 'debit')
                                                     ->whereNot('tally_vouchers.is_cancelled', 'Yes')
                                                     ->whereNot('tally_vouchers.is_optional', 'Yes')
-                                                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
                                                     ->sum('tally_voucher_heads.amount');
-    
-                    $totalCredit = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-                                                    ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
-                                                    ->where('tally_voucher_heads.entry_type', 'credit')
-                                                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                                                    ->whereNot('tally_vouchers.is_optional', 'Yes')
-                                                    ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                                                    ->sum('tally_voucher_heads.amount');
-    
-                    $openingBalance = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
-                        ->where('entry_type', 'opening')
-                        ->sum('amount');
-    
-                    $total = $totalDebit + $totalCredit;
-    
-                    $closingBalance = $openingBalance + $total;
-    
-                    if ($closingBalance == 0) {
+
+                    if ($totalAmount == 0) {
                         return '-';
                     }
     
-                    return number_format(abs($closingBalance), 3);
+                    return number_format(abs($totalAmount), 3);
                 })
                 ->filter(function ($query) {
                     $query->get()->filter(function ($item) {
@@ -149,85 +138,12 @@ class ReportBalanceSheetController extends Controller
                 })
 
                 ->make(true);
-        }
-    }
-
-    public function getAssetData(Request $request)
-    {
-        $companyGuids = $this->reportService->companyData();
-
-        if ($request->ajax()) {
-
-            $query = TallyGroup::select('parent')
-            ->whereIn('parent', ['Current Assets'])
-            ->whereIn('company_guid', $companyGuids)
-            ->groupBy('parent');
-
-
-            return DataTables::of($query)
-                ->addIndexColumn()
-                ->editColumn('amount', function ($data) use ($companyGuids){
-                    $name = $data->name;
-
-                    foreach ($this->reportService->normalizedNames as $pattern => $normalized) {
-                        if (strpos($name, $pattern) !== false) {
-                            $name = $normalized;
-                            break;
-                        }
-                    }
-
-                    $groupLedgerIdsQuery = TallyGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
-                    $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-
-                    if ($groupLedgerIds->isNotEmpty()) {
-                        $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
-                                ->whereIn('company_guid', $companyGuids)
-                                ->pluck('guid');
-                    } else {
-                        $ledgerIds = TallyLedger::where('parent', $name)
-                                ->whereIn('company_guid', $companyGuids)
-                                ->pluck('guid');
-                    }
-
-                    $allLedgerIds = $ledgerIds->unique();
-
-                    if ($allLedgerIds->isEmpty()) {
-                        return '-';
-                    }
-
-                    $totalDebit = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-                                                        ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
-                                                        ->where('tally_voucher_heads.entry_type', 'debit')
-                                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
-                                                        ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                                                        ->sum('tally_voucher_heads.amount');
-
-
-                    $totalCredit = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-                                        ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
-                                        ->where('tally_voucher_heads.entry_type', 'credit')
-                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
-                                        ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                                        ->sum('tally_voucher_heads.amount');
-
-
-                    $openingBalance = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
-                        ->where('entry_type', 'opening')
-                        ->sum('amount');
-
-                    $total = $totalDebit + $totalCredit;
-
-                    $closingBalance = $openingBalance + $total;
-
-                    if ($closingBalance == 0) {
-                        return '-';
-                    }
-
-                    return number_format(abs($closingBalance), 3);
-                })
-                ->make(true);
+            
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for ReportBalanceSheetController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+    
+            return $dataTable;
         }
     }
 

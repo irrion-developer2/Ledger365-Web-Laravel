@@ -20,7 +20,11 @@
                                     <li class="active text-white" aria-current="page">Balance Sheet</li>
                                 </div>
                                 <div class="col-lg-4 col-md-4 col-sm-4 text-center">
+                                    @if($company)
                                         <li class="active text-white" aria-current="page">{{ $company->name }}</li>
+                                    @else
+                                        <li class="active text-white" aria-current="page">Company not found</li>
+                                    @endif
                                 </div>                                
                                 <div class="col-lg-4 col-md-4 col-sm-4 text-end">
                                     <li class="active text-white" aria-current="page"><a href="javascript:;" class="text-white" onclick="history.back();"><i class='fadeIn animated bx bx-x'></i></a></li>
@@ -69,6 +73,10 @@
                                         <tr>
                                             <th>Asset + Stock Items</th>
                                             <th id="AssetStockItem"></th>
+                                        </tr>
+                                        <tr>
+                                            <th>Difference in Opening Balances</th>
+                                            <th id="DiffAssetOpeningBalance"></th>
                                         </tr>
                                         <tr>
                                             <th><a href="{{ route('reports.BalanceSheetProfitLoss') }}" style="color: #4c5258;">Profit & Loss A/c</a></th>

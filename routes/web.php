@@ -151,7 +151,7 @@ Route::middleware([
         Route::get('/reports/BalanceAssetSheetItem/get-data', [ReportBalanceSheetController::class, 'getAssetItemData'])->name('reports.BalanceAssetSheetItem.get-data');
 
         Route::get('reports/BalanceSheetProfitLoss', [ReportBalanceSheetProfitLossController::class, 'index'])->name('reports.BalanceSheetProfitLoss');
-        Route::get('/reports/BalanceSheetProfitLoss/get-data', [ReportBalanceSheetProfitLossController::class, 'getData'])->name('reports.BalanceSheetProfitLoss.get-data');
+        Route::get('/reports/BalanceSheetProfitLoss/get-data', [ReportBalanceSheetProfitLossController::class, 'OpeningGetData'])->name('reports.BalanceSheetProfitLoss.get-data');
         Route::get('/reports/BalanceSheetProfitLossExpense/get-data', [ReportBalanceSheetProfitLossController::class, 'getExpenseData'])->name('reports.BalanceSheetProfitLossExpense.get-data');
         Route::get('/reports/BalanceSheetProfitLossClosingStock/get-data', [ReportBalanceSheetProfitLossController::class, 'getClosingStockData'])->name('reports.BalanceSheetProfitLossClosingStock.get-data');
 

@@ -17,6 +17,8 @@ use Illuminate\Http\Request;
 use App\Services\ReportService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
 
 class ReportBalanceSheetProfitLossController extends Controller
 {
@@ -36,7 +38,7 @@ class ReportBalanceSheetProfitLossController extends Controller
         return view ('app.reports.balanceSheet.profitLoss.index', compact('company'));
     }
 
-    public function getData(Request $request)
+    public function OpeningGetData(Request $request)
     {
         $companyGuids = $this->reportService->companyData();
 
@@ -52,33 +54,52 @@ class ReportBalanceSheetProfitLossController extends Controller
         }
     }
 
-    public function getExpenseData(Request $request)
+    public function getExpenseData(Request $request) 
     {
         $companyGuids = $this->reportService->companyData();
-
+    
         if ($request->ajax()) {
-            
-            $query = TallyGroup::where(function($query) {
-                $query->where('parent', '')
-                      ->orWhereNull('parent');
-            })->whereIn('company_guid', $companyGuids);
-            
-            return DataTables::of($query)
+            $startTime = microtime(true);
+    
+            $accountTypeCases = '
+                CASE 
+                    WHEN name LIKE "%liabilities%" THEN "Liability"
+                    WHEN name LIKE "%liability%" THEN "Liability"
+                    WHEN name LIKE "%branch / divisions%" THEN "Liability"
+                    WHEN name LIKE "%suspense a/c%" THEN "Liability"
+                    WHEN name LIKE "%capital account%" THEN "Liability"
+
+                    WHEN name LIKE "%assets%" THEN "Asset"
+                    WHEN name LIKE "%asset%" THEN "Asset"
+                    WHEN name LIKE "%investments%" THEN "Asset"
+
+                    WHEN name LIKE "%income%" THEN "Revenue"
+                    WHEN name LIKE "%revenue%" THEN "Revenue"
+                    WHEN name LIKE "%sales accounts%" THEN "Revenue"
+
+                    WHEN name LIKE "%expense%" THEN "Expense"
+                    WHEN name LIKE "%purchase%" THEN "Expense"
+                    ELSE "Other" 
+                END as account_type
+            ';
+    
+            $Balancequery = TallyGroup::where(function($query) {
+                                $query->where('parent', '')->orWhereNull('parent');
+                            })
+                            ->whereIn('company_guid', $companyGuids)
+                            ->selectRaw("guid, name, parent, company_guid, $accountTypeCases");
+    
+            Log::info("BalanceSheet Query");
+            Log::info($this->reportService->getFinalQuery($Balancequery));
+    
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for ReportBalanceSheetProfitLossController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+    
+            $dataTable = DataTables::of($Balancequery)
                 ->addIndexColumn()
-                ->editColumn('account_type', function ($data) {
-                    $name = strtolower($data->name);
-                    if (strpos($name, 'assets') !== false || strpos($name, 'asset') !== false || strpos($name, 'investments') !== false) {
-                        return 'Asset';
-                    } elseif (strpos($name, 'income') !== false || strpos($name, 'revenue') !== false || strpos($name, 'sales accounts') !== false) {
-                        return 'Revenue';
-                    } elseif (strpos($name, 'liabilities') !== false || strpos($name, 'liability') !== false || strpos($name, 'branch / divisions') !== false || strpos($name, 'suspense a/c') !== false || strpos($name, 'capital account') !== false) {
-                        return 'Liability';
-                    } elseif (strpos($name, 'expense') !== false || strpos($name, 'purchase') !== false) {
-                        return 'Expense';
-                    }
-                    return $data->account_type;
-                })
-                ->editColumn('amount', function ($data) use ($companyGuids){
+                ->editColumn('amount', function ($data) use ($companyGuids) {
+
                     $name = $data->name;
 
                     foreach ($this->reportService->normalizedNames as $pattern => $normalized) {
@@ -90,7 +111,7 @@ class ReportBalanceSheetProfitLossController extends Controller
 
                     $groupLedgerIdsQuery = TallyGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
                     $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-
+    
                     if ($groupLedgerIds->isNotEmpty()) {
                         $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
                                 ->whereIn('company_guid', $companyGuids)
@@ -100,44 +121,24 @@ class ReportBalanceSheetProfitLossController extends Controller
                                 ->whereIn('company_guid', $companyGuids)
                                 ->pluck('guid');
                     }
-
+    
                     $allLedgerIds = $ledgerIds->unique();
-
+    
                     if ($allLedgerIds->isEmpty()) {
                         return '-';
-                                        }
-
-                    $totalDebit = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-                                                        ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
-                                                        ->where('tally_voucher_heads.entry_type', 'debit')
-                                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
-                                                        ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                                                        ->sum('tally_voucher_heads.amount');
-
-
-                    $totalCredit = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-                                        ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds) // Specify table name to avoid ambiguity
-                                        ->where('tally_voucher_heads.entry_type', 'credit')
-                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
-                                        ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                                        ->sum('tally_voucher_heads.amount');
-
-
-                    $openingBalance = TallyVoucherHead::whereIn('ledger_guid', $allLedgerIds)
-                        ->where('entry_type','opening')
-                        ->sum('amount');
-
-                    $total = $totalDebit + $totalCredit;
-
-                    $closingBalance = $openingBalance + $total;
-
-                        if ($closingBalance == 0) {
-                        return '                    -';
                     }
+    
+                    $totalAmount = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
+                                                    ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
+                                                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+                                                    ->whereNot('tally_vouchers.is_optional', 'Yes')
+                                                    ->sum('tally_voucher_heads.amount');
 
-                    return number_format(abs($closingBalance), 3);
+                    if ($totalAmount == 0) {
+                        return '-';
+                    }
+    
+                    return number_format(abs($totalAmount), 3);
                 })
                 ->filter(function ($query) {
                     $query->get()->filter(function ($item) {
@@ -151,62 +152,251 @@ class ReportBalanceSheetProfitLossController extends Controller
                         return strpos($name, 'income') !== false || strpos($name, 'revenue') !== false;
                     });
                 })
-
                 ->make(true);
+    
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for ReportBalanceSheetProfitLossController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+    
+            return $dataTable;
         }
     }
 
     public function getClosingStockData(Request $request)
     {
+        $startTime = microtime(true);
+
         $companyGuids = $this->reportService->companyData();
 
         if ($request->ajax()) {
-            $tallyItems = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids)->get();
-            $closingValueSum = 0;
+            // Fetch Tally Items and key by GUID
+            $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)
+                ->select('id', 'guid', 'name', 'opening_balance', 'opening_value', 'company_guid')
+                ->get()
+                ->keyBy('guid');
 
+            $itemGuids = $tallyItems->keys();
 
-            foreach ($tallyItems as $entry) {
-                $stockOnHandBalance = 0;
-                $openingBalance = 0;
-                $stockOnHandValue = 0;
-            
+            // Fetch sums per item
+            $sums = TallyVoucherItem::whereIn('stock_item_guid', $itemGuids)
+                ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
+                ->whereIn('tally_vouchers.voucher_type', ['Sales', 'Debit Note', 'Purchase', 'Credit Note'])
+                ->select(
+                    'tally_voucher_items.stock_item_guid',
+                    DB::raw("SUM(CASE WHEN tally_vouchers.voucher_type = 'Sales' THEN billed_qty ELSE 0 END) as total_sales_qty"),
+                    DB::raw("SUM(CASE WHEN tally_vouchers.voucher_type = 'Debit Note' THEN billed_qty ELSE 0 END) as total_debit_note_qty"),
+                    DB::raw("SUM(CASE WHEN tally_vouchers.voucher_type = 'Purchase' THEN billed_qty ELSE 0 END) as total_purchase_qty"),
+                    DB::raw("SUM(CASE WHEN tally_vouchers.voucher_type = 'Credit Note' THEN billed_qty ELSE 0 END) as total_credit_note_qty"),
+                    DB::raw("SUM(CASE WHEN tally_vouchers.voucher_type = 'Purchase' THEN amount ELSE 0 END) as total_purchase_amount"),
+                    DB::raw("SUM(CASE WHEN tally_vouchers.voucher_type = 'Debit Note' THEN amount ELSE 0 END) as total_debit_note_amount")
+                )
+                ->groupBy('tally_voucher_items.stock_item_guid')
+                ->get()
+                ->keyBy('stock_item_guid');
+
+            $stock_value = 0; // Initialize stock_value
+
+            foreach ($tallyItems as $guid => $entry) {
+                // Assuming opening_balance and opening_value are now decimals
+                // $openingBalance = $entry->opening_balance ?? 0;
+                // $openingValue = $entry->opening_value ?? 0;
+
                 $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
                 $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-            
-                $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
-                $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-                $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
-                $stockItemVoucherHandBalance = $stockItemData['balance'];
-            
-                $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
-                $stockItemVoucherPurchaseAmount = $stockAmountData['purchase_amt'];
-                $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
-            
-                $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
+                        
+                // Get sums for this stock item
+                $sumsEntry = $sums->get($guid);
+
+                // Initialize sums if not found
+                $stockItemVoucherSaleBalance = $sumsEntry->total_sales_qty ?? 0;
+                $stockItemVoucherDebitNoteBalance = $sumsEntry->total_debit_note_qty ?? 0;
+                $stockItemVoucherPurchaseBalance = $sumsEntry->total_purchase_qty ?? 0;
+                $stockItemVoucherCreditNoteBalance = $sumsEntry->total_credit_note_qty ?? 0;
+                $stockItemVoucherPurchaseAmount = $sumsEntry->total_purchase_amount ?? 0;
+                $stockItemVoucherDebitNoteAmount = $sumsEntry->total_debit_note_amount ?? 0;
+
+                // Calculate the balance of stock on hand
+                $stockItemVoucherBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance)
+                                        - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
+
+                $openingAmount = ($stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount);
+
                 $finalOpeningValue = $openingValue - $openingAmount;
                 $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
-            
+
                 if ($finalOpeningBalance != 0) {
                     $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
                     $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
-                } else {
-                    // Handle division by zero here, e.g., set a default value or skip this item
-                    $stockItemVoucherSaleValue = 0;  // or any other default value
+
+                    // Use the correct variable for the stock on hand balance
+                    $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
+                    $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
+
+                    // Accumulate the stock value
+                    $stock_value += $stockOnHandValue;
                 }
-            
-                $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-                $closingValueSum += $stockOnHandValue;
             }
-            
+
+            // Return the response with calculated stock value
             $data = [
                 [
                     'name' => 'Closing Stock',
-                    'closing_value' => $this->reportService->calculateStockValue()
+                    'closing_value' => number_format($stock_value, 3)
                 ]
-             ];
+            ];
+
+            $endTime = microtime(true);
+
+            \Log::info('getClosingStockData execution time: ' . ($endTime - $startTime) . ' seconds.');
 
             return response()->json(['data' => $data]);
         }
     }
+
+
+    // public function getClosingStockData(Request $request)
+    // {
+    //     $startTime = microtime(true);
+    
+    //     $companyGuids = $this->reportService->companyData();
+    
+    //     if ($request->ajax()) {
+    //         $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)
+    //                     ->select('id', 'guid', 'name', 'opening_balance', 'opening_value', 'company_guid') 
+    //                     ->get(); 
+    
+    //         $stock_value = 0; // Initialize stock_value
+    //         $closingValueSum = 0;
+    
+    //         foreach ($tallyItems as $entry) {
+    //             $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
+    //             $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
+    
+    //             // Calculate the stock item voucher balances
+    //             $stockItemVoucherSaleBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Sales');
+    //                 })->sum('billed_qty');
+    
+    //             $stockItemVoucherDebitNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Debit Note');
+    //                 })->sum('billed_qty');
+    
+    //             $stockItemVoucherPurchaseBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Purchase');
+    //                 })->sum('billed_qty');
+    
+    //             $stockItemVoucherCreditNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Credit Note');
+    //                 })->sum('billed_qty');
+    
+    //             // Calculate the balance of stock on hand
+    //             $stockItemVoucherBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) 
+    //                                      - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
+    
+    //             // Calculate amounts
+    //             $stockItemVoucherPurchaseAmount = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Purchase');
+    //                 })->sum('amount');
+    
+    //             $stockItemVoucherDebitNoteAmount = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Debit Note');
+    //                 })->sum('amount');
+    
+    //             $openingAmount = ($stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount);
+    
+    //             $finalOpeningValue = $openingValue - $openingAmount;
+    //             $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
+    
+    //             if ($finalOpeningBalance != 0) {
+    //                 $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
+    //                 $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
+                    
+    //                 // Use the correct variable for the stock on hand balance
+    //                 $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
+    //                 $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
+    
+    //                 // Accumulate the stock value
+    //                 $stock_value += $stockOnHandValue;
+    //             }
+    //         }
+    
+    //         // Return the response with calculated stock value
+    //         $data = [
+    //             [
+    //                 'name' => 'Closing Stock',
+    //                 'closing_value' => number_format($stock_value, 3)
+    //             ]
+    //         ];
+    
+    //         $endTime = microtime(true);
+    
+    //         \Log::info('getClosingStockData execution time: ' . ($endTime - $startTime) . ' seconds.');
+    
+    //         return response()->json(['data' => $data]);
+    //     }
+    // }
+    
+    
+
+    
+    // public function getClosingStockData(Request $request)
+    // {
+    //     $companyGuids = $this->reportService->companyData();
+
+    //     if ($request->ajax()) {
+    //         $tallyItems = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids)->get();
+    //         $closingValueSum = 0;
+
+
+    //         foreach ($tallyItems as $entry) {
+    //             $stockOnHandBalance = 0;
+    //             $openingBalance = 0;
+    //             $stockOnHandValue = 0;
+            
+    //             $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
+    //             $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
+            
+    //             $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
+    //             $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
+    //             $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
+    //             $stockItemVoucherHandBalance = $stockItemData['balance'];
+            
+    //             $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
+    //             $stockItemVoucherPurchaseAmount = $stockAmountData['purchase_amt'];
+    //             $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
+            
+    //             $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
+    //             $finalOpeningValue = $openingValue - $openingAmount;
+    //             $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
+            
+    //             if ($finalOpeningBalance != 0) {
+    //                 $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
+    //                 $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
+    //             } else {
+    //                 // Handle division by zero here, e.g., set a default value or skip this item
+    //                 $stockItemVoucherSaleValue = 0;  // or any other default value
+    //             }
+            
+    //             $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
+    //             $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
+    //             $closingValueSum += $stockOnHandValue;
+    //         }
+            
+    //         $data = [
+    //             [
+    //                 'name' => 'Closing Stock',
+    //                 'closing_value' => $this->reportService->calculateStockValue()
+    //             ]
+    //          ];
+
+    //         return response()->json(['data' => $data]);
+    //     }
+    // }
+
 }

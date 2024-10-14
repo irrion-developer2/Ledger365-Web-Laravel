@@ -320,6 +320,8 @@
                 
                 var DiffOpeningBalance = overallAssetTotal - totalLiabilityAmount;
                 
+                console.log('DiffOpeningBalance', DiffOpeningBalance);
+                
 
                 if (nettLoss >= 0) { 
                     var overallLiabilityTotal = totalLiabilityAmount + DiffOpeningBalance;
@@ -331,9 +333,9 @@
 
                 // $('#DiffOpeningBalance').text(DiffOpeningBalance.toFixed(3));
                 if (nettLoss >= 0) { 
-                    $('#DiffOpeningBalance').text(DiffOpeningBalance.toFixed(3));
+                    $('#DiffLiabilitieOpeningBalance').text(DiffOpeningBalance.toFixed(3));
                 } else {
-                    $('#DiffOpeningBalance').text(''); 
+                    $('#DiffLiabilitieOpeningBalance').text(''); 
                 }
 
 

@@ -22,7 +22,7 @@
                 <thead>
                     <tr>
                         <th>Voucher Date</th>
-                        {{-- <th>Account</th> --}}
+                        <th>Particulars</th>
                         <th>Voucher Number</th>
                         <th>Voucher Type</th>
                         <th>Debit</th>
@@ -36,7 +36,7 @@
                 <tfoot>
                     <tr>
                         <th>Total</th>
-                        {{-- <th>Account</th> --}}
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th id="totalDebit"></th>

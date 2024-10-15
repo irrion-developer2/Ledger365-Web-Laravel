@@ -127,6 +127,7 @@
             order: [],
             columns: [
                 { data: 'voucher_date', name: 'voucher_date',orderable: false },
+                { data: 'ledger_name', name: 'ledger_name',orderable: false },
                 { data: 'voucher_number', name: 'voucher_number', orderable: false,
                     render: function(data, type, row) {
                         return '<a href="{{ url('reports/VoucherItem') }}/' + row.tally_voucher_id + '">' + data + '</a>';
@@ -160,14 +161,14 @@
                 }
 
                 // Calculate total debit
-                var totalDebit = api.column(3).data().reduce(function(a, b) {
+                var totalDebit = api.column(4).data().reduce(function(a, b) {
                     a = parseAmount(a);
                     b = parseAmount(b);
                     return a + b;
                 }, 0);
 
                 // Calculate total credit
-                var totalCredit = api.column(4).data().reduce(function(a, b) {
+                var totalCredit = api.column(5).data().reduce(function(a, b) {
                     a = parseAmount(a);
                     b = parseAmount(b);
                     return a + b;
@@ -186,8 +187,8 @@
                 totalRunningBalance = runningBalance;
 
                 // Update footer
-                $(api.column(3).footer()).html(jsIndianFormat(totalDebit));
-                $(api.column(4).footer()).html(jsIndianFormat(totalCredit));
+                $(api.column(4).footer()).html(jsIndianFormat(totalDebit));
+                $(api.column(5).footer()).html(jsIndianFormat(totalCredit));
                 $('#totalDebit').text(jsIndianFormat(totalDebit));
                 $('#totalCredit').text(jsIndianFormat(totalCredit));
 

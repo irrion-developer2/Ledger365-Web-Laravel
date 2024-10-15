@@ -638,7 +638,6 @@ class LedgerController extends Controller
                                                 ->where('company_guid', $companyGuid)
                                                 ->value('guid');
 
-                    // Find existing Tally Voucher
                     $existingVoucher = TallyVoucher::where('guid', $voucherData['GUID'])
                                     ->where('company_guid', $companyGuid)
                                     ->first();
@@ -1138,8 +1137,8 @@ class LedgerController extends Controller
                             'godown_name' => $batch['GODOWNNAME'] ?? null,
                             'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
                             'amount' => $batch['AMOUNT'],
-                            'actual_qty' => $batch['ACTUALQTY'] ?? null,
-                            'billed_qty' => $batch['BILLEDQTY'] ?? null,
+                            'actual_qty' => isset($batch['ACTUALQTY']) ? preg_replace('/[^0-9.]/', '', $ledgerData['ACTUALQTY']) : null,
+                            'billed_qty' => isset($batch['BILLEDQTY']) ? preg_replace('/[^0-9.]/', '', $ledgerData['BILLEDQTY']) : null,                           
                             'order_no' => $batch['ORDERNO'] ?? null,
                             ]
                         );

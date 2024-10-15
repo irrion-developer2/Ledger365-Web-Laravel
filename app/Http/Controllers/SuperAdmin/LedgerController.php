@@ -958,7 +958,7 @@ class LedgerController extends Controller
     {
         $inventoryEntriesWithId = [];
         $voucherHeadIndex = 0;
-
+        if (is_array($entries) || is_object($entries)) {
         foreach ($entries as $item) {
             
             $StockItemGuid = TallyItem::where('name', $item['stock_item_name'])
@@ -999,7 +999,7 @@ class LedgerController extends Controller
                 'stock_item_name' => $item['stock_item_name'],
             ];
         }
-
+        }
         Log::info('Processed inventory entries: ', $inventoryEntriesWithId);
         return $inventoryEntriesWithId;
     }

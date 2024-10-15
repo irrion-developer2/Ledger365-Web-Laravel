@@ -1137,8 +1137,8 @@ class LedgerController extends Controller
                             'godown_name' => $batch['GODOWNNAME'] ?? null,
                             'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
                             'amount' => $batch['AMOUNT'],
-                            'actual_qty' => isset($batch['ACTUALQTY']) ? preg_replace('/[^0-9.]/', '', $ledgerData['ACTUALQTY']) : null,
-                            'billed_qty' => isset($batch['BILLEDQTY']) ? preg_replace('/[^0-9.]/', '', $ledgerData['BILLEDQTY']) : null,                           
+                            'actual_qty' => isset($batch['ACTUALQTY']) ? preg_replace('/[^0-9.]/', '', $batch['ACTUALQTY']) : null,
+                            'billed_qty' => isset($batch['BILLEDQTY']) ? preg_replace('/[^0-9.]/', '', $batch['BILLEDQTY']) : null,                           
                             'order_no' => $batch['ORDERNO'] ?? null,
                             ]
                         );

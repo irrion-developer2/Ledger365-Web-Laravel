@@ -32,7 +32,7 @@ class StockItemController extends Controller
     {
         return View ('app.stock-items.index');
     }
-
+    
     public function getData(Request $request)
     {
 
@@ -40,8 +40,10 @@ class StockItemController extends Controller
 
         if ($request->ajax()) {
             $startTime = microtime(true);
-            $stockItems = TallyItem::with('tallyVoucherItems')
-                                    ->whereIn('company_guid', $companyGuids);
+      
+
+            $stockItems = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids)
+                ->select('id', 'guid', 'name', 'opening_balance', 'opening_value', 'company_guid');
 
                                 // dd($stockItems);
             $endTime1 = microtime(true);
@@ -69,8 +71,27 @@ class StockItemController extends Controller
                     $unit = $entry->unit ?? $entry->pluck('unit')->filter()->first();
 
 
-                    $stockItemData = $this->calculateStockItemVoucherBalance($entry->name);
-                    $stockItemVoucherBalance = $stockItemData['balance'];
+                    $stockItemVoucherSaleBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                    ->whereHas('tallyVoucher', function ($query) {
+                        $query->where('voucher_type', 'Sales');
+                    })->sum('billed_qty');
+        
+                    $stockItemVoucherPurchaseBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                        ->whereHas('tallyVoucher', function ($query) {
+                            $query->where('voucher_type', 'Purchase');
+                        })->sum('billed_qty');
+                    $stockItemVoucherCreditNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                        ->whereHas('tallyVoucher', function ($query) {
+                            $query->where('voucher_type', 'Credit Note');
+                        })->sum('billed_qty');
+            
+                    $stockItemVoucherDebitNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                        ->whereHas('tallyVoucher', function ($query) {
+                            $query->where('voucher_type', 'Debit Note');
+                        })->sum('billed_qty');
+
+                    $stockItemVoucherBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
+
 
                     $stockOnHandBalance = $openingBalanceValue - $stockItemVoucherBalance;
 
@@ -85,15 +106,37 @@ class StockItemController extends Controller
                     $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
                     $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
 
-                    // Calculate stock item voucher balances and amounts
-                    $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
-                    $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-                    $stockItemVoucherDebitNoteBalance = $stockItemData['debit_note_qty'];
-                    $stockItemVoucherHandBalance = $stockItemData['balance'];
+                    $stockItemVoucherSaleBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                    ->whereHas('tallyVoucher', function ($query) {
+                        $query->where('voucher_type', 'Sales');
+                    })->sum('billed_qty');
+        
+                    $stockItemVoucherPurchaseBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                        ->whereHas('tallyVoucher', function ($query) {
+                            $query->where('voucher_type', 'Purchase');
+                        })->sum('billed_qty');
+                    $stockItemVoucherCreditNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                        ->whereHas('tallyVoucher', function ($query) {
+                            $query->where('voucher_type', 'Credit Note');
+                        })->sum('billed_qty');
+            
+                    $stockItemVoucherDebitNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                        ->whereHas('tallyVoucher', function ($query) {
+                            $query->where('voucher_type', 'Debit Note');
+                        })->sum('billed_qty');
 
-                    $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
-                    $stockItemVoucherPurchaseAmount = $stockAmountData['purchase_amt'];
-                    $stockItemVoucherDebitNoteAmount = $stockAmountData['debit_note_amt'];
+                    $stockItemVoucherHandBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
+
+
+
+                    $stockItemVoucherPurchaseAmount = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                    ->whereHas('tallyVoucher', function ($query) {
+                        $query->where('voucher_type', 'Purchase');
+                    })->sum('amount');
+                    $stockItemVoucherDebitNoteAmount = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                    ->whereHas('tallyVoucher', function ($query) {
+                        $query->where('voucher_type', 'Debit Note');
+                    })->sum('amount');
 
                     // Calculate opening amount and balances
                     $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
@@ -114,46 +157,6 @@ class StockItemController extends Controller
                     $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
 
                     return number_format($stockOnHandValue, 2);
-                })
-                ->addColumn('avg_rate', function ($entry) {
-                    $stockOnHandBalance = 0;
-                    $openingBalance = 0;
-                    $stockOnHandValue = 0;
-
-                    $openingBalance = $this->extractNumericValue($entry->opening_balance);
-                    $openingValue = $this->extractNumericValue($entry->opening_value);
-
-                    $stockItemData = $this->calculateStockItemVoucherBalance($entry->name);
-                    $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-                    $stockItemVoucherHandBalance = $stockItemData['balance'];
-
-                    $stockAmountData = $this->calculateStockItemVoucherAmount($entry->name);
-                    $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
-
-                    $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
-                    $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
-
-                    if ($finalOpeningBalance == 0) {
-                        return number_format(0, 2);
-                    }
-
-                    $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                    $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
-                    $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-
-                    $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-                    return number_format($stockItemVoucherSaleValue, 2);
-                })
-                ->addColumn('voucher_date', function ($entry) {
-                    // Calculate the stock item voucher amount details
-                    $voucherAmountData = $this->calculateStockItemVoucherAmount($entry->name);
-
-                    // Retrieve purchase and debit note dates
-                    $purchaseDate = $voucherAmountData['purchase_date'] ? \Carbon\Carbon::parse($voucherAmountData['purchase_date'])->format('Y-m-d') : '-';
-                    $debitNoteDate = $voucherAmountData['debit_note_date'] ? \Carbon\Carbon::parse($voucherAmountData['debit_note_date'])->format('Y-m-d') : '-';
-
-                    // Return the concatenated dates (adjust as needed)
-                    return "Purchase Date: $purchaseDate, Debit Note Date: $debitNoteDate";
                 })
                 ->make(true);
 

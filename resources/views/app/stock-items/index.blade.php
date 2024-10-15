@@ -133,13 +133,17 @@
             ],
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
+                var StockHandBalanceToTotal = 5;
                 var StockHandValueToTotal = 7;
-                
+
+                var StockHandBalancetotal = api.column(StockHandBalanceToTotal).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
                 var StockHandValuetotal = api.column(StockHandValueToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
 
-
+                $(api.column(StockHandBalanceToTotal).footer()).html(number_format(Math.abs(StockHandBalancetotal), 2));
                 $(api.column(StockHandValueToTotal).footer()).html(number_format(Math.abs(StockHandValuetotal), 2));
             },
             search: {

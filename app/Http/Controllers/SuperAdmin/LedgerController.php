@@ -500,7 +500,7 @@ class LedgerController extends Controller
                             'vat_base_no' => $stockItemData['VATBASENO'] ?? null,
                             'vat_trail_no' => $stockItemData['VATTRAILNO'] ?? null,
                             'vat_actual_ratio' => $stockItemData['VATACTUALRATIO'] ?? null,
-                            'opening_balance' => isset($ledgerData['OPENINGBALANCE']) ? preg_replace('/[^0-9.]/', '', $ledgerData['OPENINGBALANCE']) : null,
+                            'opening_balance' => isset($stockItemData['OPENINGBALANCE']) ? preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGBALANCE']) : null,
                             'opening_value' => $stockItemData['OPENINGVALUE'] ?? null,
                             'opening_rate' => $stockItemData['OPENINGRATE'] ?? null,
                             'unit' => $unit,

@@ -16,12 +16,12 @@ return new class extends Migration
         Schema::create('bank_reconciliations', function (Blueprint $table) {
             $table->id();   
             $table->date('transaction_date')->nullable();
-            $table->text('narration')->nullable();
-            $table->string('chq_ref_no')->nullable();
-            $table->string('withdrawl')->nullable();
-            $table->string('deposit')->nullable();
-            $table->string('balance')->nullable(); 
-            $table->string('transaction_type')->nullable();
+            $table->string('narration')->nullable();
+            $table->string('chq_ref_no',100)->nullable();
+            $table->decimal('withdrawl',15,3)->nullable();
+            $table->decimal('deposit',15,3)->nullable();
+            $table->decimal('balance',15,3)->nullable(); 
+            $table->string('transaction_type',100)->nullable();
             $table->timestamps();
         });
     }

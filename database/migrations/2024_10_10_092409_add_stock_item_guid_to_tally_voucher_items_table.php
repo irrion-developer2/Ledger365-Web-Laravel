@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('tally_voucher_items', function (Blueprint $table) {
             
-            $table->string('stock_item_guid')->after('company_guid')->nullable();
+            $table->string('stock_item_guid',100)->after('company_guid')->nullable();
             $table->foreign('stock_item_guid')->references('guid')->on('tally_items')->onDelete('cascade');
 
         });

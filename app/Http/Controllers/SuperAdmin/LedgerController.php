@@ -695,8 +695,8 @@ class LedgerController extends Controller
                     ]);
 
                     if ($tallyVoucher) {
-                        $voucherHeadIds = $this->processLedgerEntriesForVoucher($tallyVoucher->id, $combinedLedgerEntries);
                         $voucherHeadIds = $this->processAccountingAllocationForVoucher($tallyVoucher->id, $accountingAllocations);
+                        $voucherHeadIds = $this->processLedgerEntriesForVoucher($tallyVoucher->id, $combinedLedgerEntries);
                         $ledgerGuid = $voucherHeadIds[0]['ledger_guid'] ?? [];
                         $inventoryEntriesWithId = $this->processInventoryEntriesForVoucher($tallyVoucher->id, $inventoryEntries, $companyGuid, $voucherHeadIds,  $ledgerGuid ?? []);
                         $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
@@ -965,8 +965,16 @@ class LedgerController extends Controller
             ->where('company_guid', $companyGuid)
             ->value('guid');
 
-            $voucherHeadId = $voucherHeadIds[$voucherHeadIndex]['id'] ?? null;
-            $voucherHeadIndex = ($voucherHeadIndex + 1) % count($voucherHeadIds);
+             // Check if $voucherHeadIds is not empty
+            if (!empty($voucherHeadIds)) {
+                $voucherHeadId = $voucherHeadIds[$voucherHeadIndex]['id'] ?? null;
+                $voucherHeadIndex = ($voucherHeadIndex + 1) % count($voucherHeadIds);
+            } else {
+                // Handle case where $voucherHeadIds is empty, if necessary
+                $voucherHeadId = null;
+                // Log or throw an error if needed
+                // Log::error('voucherHeadIds is empty.');
+            }
 
             $ledgerGuid = is_array($ledgerGuid) ? implode(',', $ledgerGuid) : $ledgerGuid;
 

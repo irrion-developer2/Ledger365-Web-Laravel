@@ -37,4 +37,9 @@ class TallyVoucher extends Model
     }
 
 
+    public function tallyVoucherHeadCustomer()
+    {
+        return $this->hasOne(TallyVoucherHead::class, 'tally_voucher_id', 'id');
+    }
+
 }

@@ -45,7 +45,26 @@ class StockItemController extends Controller
             $stockItems = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids)
                 ->select('id', 'guid', 'name', 'alias', 'parent', 'category','opening_balance', 'opening_value', 'company_guid');
 
-                                // dd($stockItems);
+            // $stockItems = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+            //     ->selectRaw("
+            //         SUM(CASE WHEN tally_voucher.voucher_type = 'Sales' THEN billed_qty ELSE 0 END) AS sales_qty,
+            //         SUM(CASE WHEN tally_voucher.voucher_type = 'Purchase' THEN billed_qty ELSE 0 END) AS purchase_qty,
+            //         SUM(CASE WHEN tally_voucher.voucher_type = 'Credit Note' THEN billed_qty ELSE 0 END) AS credit_note_qty,
+            //         SUM(CASE WHEN tally_voucher.voucher_type = 'Debit Note' THEN billed_qty ELSE 0 END) AS debit_note_qty,
+            //         (
+            //             (SUM(CASE WHEN tally_voucher.voucher_type = 'Sales' THEN billed_qty ELSE 0 END) - 
+            //             SUM(CASE WHEN tally_voucher.voucher_type = 'Credit Note' THEN billed_qty ELSE 0 END)) 
+            //             - 
+            //             (SUM(CASE WHEN tally_voucher.voucher_type = 'Purchase' THEN billed_qty ELSE 0 END) - 
+            //             SUM(CASE WHEN tally_voucher.voucher_type = 'Debit Note' THEN billed_qty ELSE 0 END))
+            //         ) AS stock_item_voucher_balance
+            //     ")
+            //     ->join('tally_voucher', 'tally_voucher.id', '=', 'tally_voucher_items.tally_voucher_id')
+            //     ->first();
+
+            Log::info("stockItems Query");        
+            Log::info($this->reportService->getFinalQuery($stockItems));
+
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
 
@@ -55,26 +74,12 @@ class StockItemController extends Controller
                 ->addIndexColumn()
 
                 ->addColumn('stockonhand_opening_balance', function ($entry) {
-                    $openingBalance = trim($entry->opening_balance);
-
-                    $numericPart = '';
-                    $unitPart = '';
-
-                    if (preg_match('/^([\d.,]+)\s*(.*)$/', $openingBalance, $matches)) {
-                        $numericPart = $matches[1];
-                        $unitPart = isset($matches[2]) ? $matches[2] : '';
-                    } else {
-                        // \Log::warning("Failed to match opening balance: $openingBalance");
-                    }
-                    $openingBalanceValue = (float) str_replace([',', ' '], '', $numericPart);
-
-                    $unit = $entry->unit ?? $entry->pluck('unit')->filter()->first();
-
+                    $openingBalance = $entry->opening_balance;
 
                     $stockItemVoucherSaleBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
-                    ->whereHas('tallyVoucher', function ($query) {
-                        $query->where('voucher_type', 'Sales');
-                    })->sum('billed_qty');
+                        ->whereHas('tallyVoucher', function ($query) {
+                            $query->where('voucher_type', 'Sales');
+                        })->sum('billed_qty');
         
                     $stockItemVoucherPurchaseBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
                         ->whereHas('tallyVoucher', function ($query) {
@@ -93,9 +98,9 @@ class StockItemController extends Controller
                     $stockItemVoucherBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
 
 
-                    $stockOnHandBalance = $openingBalanceValue - $stockItemVoucherBalance;
+                    $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
 
-                    return $stockOnHandBalance . ' ' . $unit;
+                    return $stockOnHandBalance;
                 })
                 ->addColumn('stockonhand_opening_value', function ($entry) {
                     $stockOnHandBalance = 0;
@@ -168,6 +173,132 @@ class StockItemController extends Controller
                 return $dataTable;
         }
     }
+
+    // public function getData(Request $request)
+    // {
+
+    //     $companyGuids = $this->reportService->companyData();
+
+    //     if ($request->ajax()) {
+    //         $startTime = microtime(true);
+      
+
+    //         $stockItems = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids)
+    //             ->select('id', 'guid', 'name', 'alias', 'parent', 'category','opening_balance', 'opening_value', 'company_guid');
+
+    //                             // dd($stockItems);
+
+    //         Log::info("stockItems Query");        
+    //         Log::info($this->reportService->getFinalQuery($stockItems));
+
+    //         $endTime1 = microtime(true);
+    //         $executionTime1 = $endTime1 - $startTime;
+
+    //         Log::info('Total first db request execution time for StockItemController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+
+    //         $dataTable = DataTables::of($stockItems)
+    //             ->addIndexColumn()
+
+    //             ->addColumn('stockonhand_opening_balance', function ($entry) {
+    //                 $openingBalance = $entry->opening_balance;
+
+    //                 $stockItemVoucherSaleBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Sales');
+    //                 })->sum('billed_qty');
+        
+    //                 $stockItemVoucherPurchaseBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                     ->whereHas('tallyVoucher', function ($query) {
+    //                         $query->where('voucher_type', 'Purchase');
+    //                     })->sum('billed_qty');
+    //                 $stockItemVoucherCreditNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                     ->whereHas('tallyVoucher', function ($query) {
+    //                         $query->where('voucher_type', 'Credit Note');
+    //                     })->sum('billed_qty');
+            
+    //                 $stockItemVoucherDebitNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                     ->whereHas('tallyVoucher', function ($query) {
+    //                         $query->where('voucher_type', 'Debit Note');
+    //                     })->sum('billed_qty');
+
+    //                 $stockItemVoucherBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
+
+
+    //                 $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
+
+    //                 return $stockOnHandBalance;
+    //             })
+    //             ->addColumn('stockonhand_opening_value', function ($entry) {
+    //                 $stockOnHandBalance = 0;
+    //                 $openingBalance = 0;
+    //                 $stockOnHandValue = 0;
+
+    //                 // Extract the opening balance and value
+    //                 $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
+    //                 $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
+
+    //                 $stockItemVoucherSaleBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Sales');
+    //                 })->sum('billed_qty');
+        
+    //                 $stockItemVoucherPurchaseBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                     ->whereHas('tallyVoucher', function ($query) {
+    //                         $query->where('voucher_type', 'Purchase');
+    //                     })->sum('billed_qty');
+    //                 $stockItemVoucherCreditNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                     ->whereHas('tallyVoucher', function ($query) {
+    //                         $query->where('voucher_type', 'Credit Note');
+    //                     })->sum('billed_qty');
+            
+    //                 $stockItemVoucherDebitNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                     ->whereHas('tallyVoucher', function ($query) {
+    //                         $query->where('voucher_type', 'Debit Note');
+    //                     })->sum('billed_qty');
+
+    //                 $stockItemVoucherHandBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
+
+
+
+    //                 $stockItemVoucherPurchaseAmount = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Purchase');
+    //                 })->sum('amount');
+    //                 $stockItemVoucherDebitNoteAmount = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+    //                 ->whereHas('tallyVoucher', function ($query) {
+    //                     $query->where('voucher_type', 'Debit Note');
+    //                 })->sum('amount');
+
+    //                 // Calculate opening amount and balances
+    //                 $openingAmount = $stockItemVoucherPurchaseAmount + $stockItemVoucherDebitNoteAmount;
+    //                 $finalOpeningValue = $openingValue - $openingAmount;
+    //                 $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance;
+
+    //                 if ($finalOpeningBalance == 0) {
+    //                     // Prevent division by zero by assigning a default value (e.g., 0 or a calculated fallback)
+    //                     $stockItemVoucherSaleValue = 0;
+    //                     $stockOnHandBalance = 0;
+    //                 } else {
+    //                     $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
+    //                     $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
+    //                     $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
+    //                 }
+
+    //                 // Calculate stock on hand value
+    //                 $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
+
+    //                 return number_format($stockOnHandValue, 2);
+    //             })
+    //             ->make(true);
+
+    //             $endTime = microtime(true);
+    //             $executionTime = $endTime - $startTime;
+
+    //             Log::info('Total end execution time for StockItemController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+
+    //             return $dataTable;
+    //     }
+    // }
 
     private function calculateStockItemVoucherBalance($stockItemName)
     {

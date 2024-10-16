@@ -250,16 +250,37 @@ class CustomerController extends Controller
         $ledger = TallyLedger::where('guid', $customer)
             ->whereIn('company_guid', $companyGuids)
             ->firstOrFail();
-        
     
         $voucherHeads = TallyVoucherHead::where('ledger_guid', $ledger->guid)
-            ->whereHas('voucherHead', function ($query) {
+            ->whereHas('tallyVoucher', function ($query) {
                 $query->where('is_cancelled', '!=', 'Yes')
                     ->where('is_optional', '!=', 'Yes')
                     ->orderBy('voucher_date', 'asc');
             })
-            ->with('voucherHead')
+            ->with('tallyVoucher')
             ->get();
+
+
+        // Fetch the voucher heads using the same logic as in SQL
+        // $voucherHeads = TallyVoucherHead::select('tvh1.tally_voucher_id AS voucher_id', 'tl.language_name AS ledger_name')
+        //     ->from('tally_voucher_heads as tvh1') // Alias for the first table
+        //     ->join('tally_voucher_heads as tvh2', 'tvh1.tally_voucher_id', '=', 'tvh2.tally_voucher_id') // Inner join on voucher heads
+        //     ->join('tally_ledgers as tl', 'tvh2.ledger_guid', '=', 'tl.guid') // Inner join on ledgers
+        //     ->join('tally_vouchers as tv', 'tvh2.tally_voucher_id', '=', 'tv.id') // Inner join on vouchers
+        //     ->where('tvh1.ledger_guid', $ledger->guid) // Filtering based on the ledger guid
+        //     ->whereIn('tl.parent', ['Sales Accounts', 'Purchase Accounts']) // Filtering for specific accounts
+        //     ->where('tv.is_cancelled', '!=', 'Yes') // Voucher is not canceled
+        //     ->where('tv.is_optional', '!=', 'Yes') // Voucher is not optional
+        //     ->orderBy('tv.voucher_date', 'asc') // Order by voucher date
+        //     ->get();
+
+        // $voucherHeads = TallyVoucher::where('ledger_guid', $ledger->guid)
+        //                 ->where('is_cancelled', '!=', 'Yes')
+        //                 ->where('is_optional', '!=', 'Yes')
+        //                 ->orderBy('voucher_date', 'asc')
+        //                 ->with('tallyVoucherHeadCustomer') 
+        //                 ->get();
+
 
         // dd($voucherHeads);
     
@@ -338,5 +359,6 @@ class CustomerController extends Controller
         
         return $dataTableResponse;
     }
+
     
 }

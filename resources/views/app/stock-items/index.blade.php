@@ -103,7 +103,7 @@
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
-                {data: 'alias', name: 'alias', render: function(data, type, row) {
+                {data: 'alias1', name: 'alias1', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'parent', name: 'parent', render: function(data, type, row) {

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('super_admin_user_id')->nullable();
             $table->foreign('super_admin_user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('license_number',100)->nullable();
-            $table->enum('status', ['Active', 'Inactive'])->default('Active'); //chnages to code
+            $table->enum('status', ['Active', 'Inactive'])->default('Active');
             $table->timestamps();
         });
     }

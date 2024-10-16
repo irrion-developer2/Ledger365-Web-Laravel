@@ -57,7 +57,7 @@ class LedgerController extends Controller
         if (!$license) {
             Log::info('License not found for license number: ' . $licenseNumber);
             throw new \Exception('License not found');
-        } elseif ($license->status != 1) {
+        } elseif ($license->status != 'Active') {
             Log::info('License not active for license number: ' . $licenseNumber);
             throw new \Exception('License not active');
         }
@@ -223,13 +223,20 @@ class LedgerController extends Controller
                     $companyGuid = substr($guid, 0, 36);
 
                     $nameField = $ledgerData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? [];
+                    $aliases = [];
                     if (is_array($nameField)) {
                         $languageName = $nameField[0] ?? null;
-                        $alias = $nameField[1] ?? null;
+                        for ($i = 1; $i < count($nameField); $i++) {
+                            $aliases[] = $nameField[$i] ?? null;
+                        }
                     } else {
                         $languageName = $nameField;
-                        $alias = null;
                     }
+            
+                    $alias1 = $aliases[0] ?? null;
+                    $alias2 = $aliases[1] ?? null;
+                    $alias3 = $aliases[2] ?? null;
+            
 
                     $tallyLedger = TallyLedger::updateOrCreate(
                         ['guid' => $guid],
@@ -241,7 +248,6 @@ class LedgerController extends Controller
                             'bill_credit_period' => $ledgerData['BILLCREDITPERIOD'] ?? null,
                             'credit_limit' => $ledgerData['CREDITLIMIT'] ?? null,
                             'gst_type' => html_entity_decode($ledgerData['GSTTYPE'] ?? null),
-                            'appropriate_for' => html_entity_decode($ledgerData['APPROPRIATEFOR'] ?? null),
                             'party_gst_in' => $ledgerData['PARTYGSTIN'] ?? null,
                             'gst_duty_head' => $ledgerData['GSTDUTYHEAD'] ?? null,
                             'service_category' => html_entity_decode($ledgerData['SERVICECATEGORY'] ?? null),
@@ -249,14 +255,14 @@ class LedgerController extends Controller
                             'excise_ledger_classification' => html_entity_decode($ledgerData['EXCISELEDGERCLASSIFICATION'] ?? null),
                             'excise_duty_type' => html_entity_decode($ledgerData['EXCISEDUTYTYPE'] ?? null),
                             'excise_nature_of_purchase' => html_entity_decode($ledgerData['EXCISENATUREOFPURCHASE'] ?? null),
-                            'ledger_fbt_category' => html_entity_decode($ledgerData['LEDGERFBTCATEGORY'] ?? null),
                             'is_bill_wise_on' => $ledgerData['ISBILLWISEON'] ?? null,
                             'is_cost_centres_on' => $ledgerData['ISCOSTCENTRESON'] ?? null,
                             'alter_id' => $ledgerData['ALTERID'] ?? null,
                             'opening_balance' => $ledgerData['OPENINGBALANCE'] ?? null,
                             'language_name' => $languageName,
-                            'alias' => $alias,
-                            'language_id' => $ledgerData['LANGUAGENAME.LIST']['LANGUAGEID'] ?? null,
+                            'alias1' => $alias1,
+                            'alias2' => $alias2,
+                            'alias3' => $alias3,
                             'applicable_from' => $applicableFrom,
                             'ledger_gst_registration_type' => $ledgerData['LEDGSTREGDETAILS.LIST']['GSTREGISTRATIONTYPE'] ?? null,
                             'gst_in' => $ledgerData['LEDGSTREGDETAILS.LIST']['GSTIN'] ?? null,
@@ -338,10 +344,7 @@ class LedgerController extends Controller
                         ['guid' => $unitData['GUID'] ?? null],
                         [
                             'name' => $name,
-                            'is_updating_target_id' => $unitData['ISUPDATINGTARGETID'] ?? null,
                             'is_deleted' => $unitData['ISDELETED'] ?? null,
-                            'is_security_on_when_entered' => $unitData['ISSECURITYONWHENENTERED'] ?? null,
-                            'as_original' => $unitData['ASORIGINAL'] ?? null,
                             'is_gst_excluded' => $unitData['ISGSTEXCLUDED'] ?? null,
                             'is_simple_unit' => $unitData['ISSIMPLEUNIT'] ?? null,
                             'alter_id' => $unitData['ALTERID'] ?? null,
@@ -370,26 +373,9 @@ class LedgerController extends Controller
                         ['guid' => $godownData['GUID'] ?? null],
                         [
                             'parent' => $godownData['PARENT'] ?? null,
-                            'job_name' => $godownData['JOBNAME'] ?? null,
-                            'are1_serial_master' => $godownData['ARE1SERIALMASTER'] ?? null,
-                            'are2_serial_master' => $godownData['ARE2SERIALMASTER'] ?? null,
-                            'are3_serial_master' => $godownData['ARE3SERIALMASTER'] ?? null,
-                            'tax_unit_name' => $godownData['TAXUNITNAME'] ?? null,
-                            'is_updating_target_id' => $godownData['ISUPDATINGTARGETID'] ?? null,
                             'is_deleted' => $godownData['ISDELETED'] ?? null,
-                            'is_security_on_when_entered' => $godownData['ISSECURITYONWHENENTERED'] ?? null,
-                            'as_original' => $godownData['ASORIGINAL'] ?? null,
-                            'has_no_space' => $godownData['HASNOSPACE'] ?? null,
-                            'has_no_stock' => $godownData['HASNOSTOCK'] ?? null,
-                            'is_external' => $godownData['ISEXTERNAL'] ?? null,
-                            'is_internal' => $godownData['ISINTERNAL'] ?? null,
-                            'enable_export' => $godownData['ENABLEEXPORT'] ?? null,
-                            'is_primary_excise_unit' => $godownData['ISPRIMARYEXCISEUNIT'] ?? null,
-                            'allow_export_rebate' => $godownData['ALLOWEXPORTREBATE'] ?? null,
-                            'is_trader_rg_number_on' => $godownData['ISTRADERRGNUMBERON'] ?? null,
                             'alter_id' => $godownData['ALTERID'] ?? null,
                             'language_name' => $nameField,
-                            'language_id' => $godownData['LANGUAGENAME.LIST']['LANGUAGEID'] ?? null,
                         ]
                     );
 
@@ -405,13 +391,18 @@ class LedgerController extends Controller
                     Log::info('Stock Item Data:', ['stockItemData' => $stockItemData]);
 
                     $nameField = $stockItemData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? [];
+                    $aliases = [];
                     if (is_array($nameField)) {
                         $languageName = $nameField[0] ?? null;
-                        $alias = $nameField[1] ?? null;
+                        for ($i = 1; $i < count($nameField); $i++) {
+                            $aliases[] = $nameField[$i] ?? null;
+                        }
                     } else {
                         $languageName = $nameField;
-                        $alias = null;
                     }
+                    $alias1 = $aliases[0] ?? null;
+                    $alias2 = $aliases[1] ?? null;
+                    $alias3 = $aliases[2] ?? null;
 
                     $igstRate = null;
                     if (isset($stockItemData['GSTDETAILS.LIST']['STATEWISEDETAILS.LIST']['RATEDETAILS.LIST'])) {
@@ -502,15 +493,16 @@ class LedgerController extends Controller
                             'vat_actual_ratio' => $stockItemData['VATACTUALRATIO'] ?? null,
                             'opening_balance' => isset($stockItemData['OPENINGBALANCE']) ? preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGBALANCE']) : null,
                             'opening_value' => $stockItemData['OPENINGVALUE'] ?? null,
-                            'opening_rate' => $stockItemData['OPENINGRATE'] ?? null,
+                            'opening_rate' => isset($stockItemData['OPENINGRATE']) ? preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGRATE']) : null,
                             'unit' => $unit,
                             'igst_rate' => $igstRate,
                             'hsn_code' => $stockItemData['HSNDETAILS.LIST']['HSNCODE'] ?? null,
                             'gst_details' => json_encode($stockItemData['GSTDETAILS.LIST'] ?? []),
                             'hsn_details' => json_encode($stockItemData['HSNDETAILS.LIST'] ?? []),
                             'language_name' => $languageName,
-                            'alias' => $alias,
-                            'language_id' => $stockItemData['LANGUAGENAME.LIST']['LANGUAGEID'] ?? null,
+                            'alias1' => $alias1,
+                            'alias2' => $alias2,
+                            'alias3' => $alias3,
                             'batch_allocations' => json_encode($stockItemData['BATCHALLOCATIONS.LIST'] ?? []),
                         ]
                     );
@@ -674,7 +666,6 @@ class LedgerController extends Controller
                         'bill_lading_no' => $voucherData['BILLOFLADINGNO'] ?? null,
                         'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
                         'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
-                        // 'terms' => $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null,
                         'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null) 
                                     ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS']) 
                                     : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
@@ -1027,9 +1018,9 @@ class LedgerController extends Controller
                                         'name' => $bill['NAME'],
                                     ],
                                     [
-                                        'billamount' => $bill['AMOUNT'],
-                                        'yearend' => $bill['YEAREND'] ?? null, // Use null if YEAREND is not present
-                                        'billtype' => $bill['BILLTYPE'] ?? null, // Use null if BILLTYPE is not present
+                                        'bill_amount' => $bill['AMOUNT'],
+                                        'year_end' => $bill['YEAREND'] ?? null,
+                                        'bill_type' => $bill['BILLTYPE'] ?? null,
                                     ]
                                 );
                                 Log::info('Successfully processed bill allocation', ['ledger_name' => $ledgerName, 'bill' => $bill]);

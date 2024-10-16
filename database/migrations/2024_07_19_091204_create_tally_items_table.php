@@ -87,7 +87,6 @@ return new class extends Migration
             $table->string('alias1',100)->nullable();
             $table->string('alias2',100)->nullable();
             $table->string('alias3',100)->nullable();
-            // $table->string('language_id')->nullable();
             $table->json('batch_allocations')->nullable();
             $table->timestamps();
         });

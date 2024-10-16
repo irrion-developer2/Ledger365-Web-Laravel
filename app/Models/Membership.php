@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Trait\TenantOrCentalConnection;
 use Laravel\Jetstream\Membership as JetstreamMembership;
 
 class Membership extends JetstreamMembership
@@ -12,6 +11,5 @@ class Membership extends JetstreamMembership
      *
      * @var bool
      */
-    use TenantOrCentalConnection;
     public $incrementing = true;
 }

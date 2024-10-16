@@ -35,7 +35,7 @@ return new class extends Migration
             $table->string('hsn_item_source',100)->nullable();
             $table->string('gst_rate_infer_applicability',100)->nullable();
             $table->string('gst_hsn_infer_applicability',100)->nullable();
-
+            
             $table->decimal('rate', 15, 3)->nullable(); 
             $table->string('unit',50)->nullable();
             $table->decimal('billed_qty', 15, 3)->nullable(); 

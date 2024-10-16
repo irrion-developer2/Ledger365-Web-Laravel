@@ -43,7 +43,7 @@ class StockItemController extends Controller
       
 
             $stockItems = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids)
-                ->select('id', 'guid', 'name', 'alias', 'parent', 'category','opening_balance', 'opening_value', 'company_guid');
+                ->select('id', 'guid', 'name', 'alias1', 'parent', 'category','opening_balance', 'opening_value', 'company_guid');
 
             // $stockItems = TallyVoucherItem::where('stock_item_guid', $entry->guid)
             //     ->selectRaw("

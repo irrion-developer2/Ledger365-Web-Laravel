@@ -275,7 +275,7 @@ class StockItemDataTable extends DataTable
             // Column::make('parent')->title(__('Last Sale (Date)')),
             // Column::make('parent')->title(__('GST Rate')),
             Column::make('category')->title(__('Stock Category')),
-            Column::make('alias')->title(__('Alias')),
+            Column::make('alias1')->title(__('Alias')),
             // Column::make('parent')->title(__('Supplier Item No.')),
         ];
     }

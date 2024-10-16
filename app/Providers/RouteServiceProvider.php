@@ -30,21 +30,6 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapApiRoutes();
         $this->mapWebRoutes();
-        // $this->routes(function () {
-
-        //     // Route::middleware('api')
-        //     //     ->prefix('api')
-        //     //     ->group(base_path('routes/api.php'));
-
-        //     // Route::middleware('web')
-        //     //     ->group(base_path('routes/web.php'));
-
-        //     // Route::namespace($this->namespace)
-        //     //     ->group(base_path('routes/jetstream.php'));
-
-
-        //     // $this->mapJetStreamCentralRoutes();
-        // });
     }
 
     /**
@@ -59,40 +44,32 @@ class RouteServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * Define the "web" routes for the application.
+     *
+     * These routes all receive session state, CSRF protection, etc.
+     *
+     * @return void
+     */
     protected function mapWebRoutes()
     {
-        foreach ($this->centralDomains() as $domain) {
-            Route::middleware('web')
-                ->domain($domain)
-                ->namespace($this->namespace)
-                ->group(base_path('routes/web.php'));
-        }
+        Route::middleware('web')
+            ->namespace($this->namespace)
+            ->group(base_path('routes/web.php'));
     }
 
+    /**
+     * Define the "api" routes for the application.
+     *
+     * Typically stateless.
+     *
+     * @return void
+     */
     protected function mapApiRoutes()
     {
-        foreach ($this->centralDomains() as $domain) {
-            Route::prefix('api')
-                ->domain($domain)
-                ->middleware('api')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/api.php'));
-        }
-    }
-
-    public function mapJetStreamCentralRoutes()
-    {
-
-        foreach ($this->centralDomains() as $domain) {
-            Route::prefix('auth')
-                ->domain($domain)
-                ->namespace($this->namespace)
-                ->group(base_path('routes/auth.php'));
-        }
-    }
-
-    protected function centralDomains(): array
-    {
-        return config('tenancy.central_domains');
+        Route::prefix('api')
+            ->middleware('api')
+            ->namespace($this->namespace)
+            ->group(base_path('routes/api.php'));
     }
 }

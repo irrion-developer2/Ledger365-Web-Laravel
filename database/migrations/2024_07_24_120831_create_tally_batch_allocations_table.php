@@ -15,9 +15,7 @@ return new class extends Migration
     {
         Schema::create('tally_batch_allocations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('item_id') // Define the head_id column and set it as a foreign key
-            ->constrained('tally_voucher_items')
-            ->onDelete('cascade');
+            $table->foreignId('item_id')->constrained('tally_voucher_items')->onDelete('cascade');
             $table->string('batch_name',100)->nullable();
             $table->string('godown_name',100)->nullable();
             $table->string('destination_godown_name',100)->nullable();

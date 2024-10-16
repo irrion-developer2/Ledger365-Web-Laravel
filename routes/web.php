@@ -63,6 +63,7 @@ Route::middleware([
             'company_id' => 'required|integer',
             'company_name' => 'required|string',
         ]);
+        
     
         session(['selected_company_id' => $request->company_id]);
         session(['selected_company_name' => $request->company_name]);
@@ -75,7 +76,7 @@ Route::middleware([
 
     Route::get('/get-filtered-data', [HomeController::class, 'getFilteredData']);
 
-    Route::get('/dashboard', [HomeController::class, 'index']);
+    Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
 
     Route::group(['middleware' => 'checkUserRoleAndStatus'], function () {
 

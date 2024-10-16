@@ -90,7 +90,7 @@ return [
     |
     */
 
-    'middleware' => ['web','universal',InitializeTenancyByDomain::class ],
+       'middleware' => ['web', 'universal'],
 
     /*
     |--------------------------------------------------------------------------

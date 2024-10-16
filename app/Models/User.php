@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Trait\TenantOrCentalConnection;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,7 +10,6 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Jetstream\HasTeams;
 use Laravel\Sanctum\HasApiTokens;
-use Stancl\Tenancy\Database\Concerns\HasDomains;
 
 class User extends Authenticatable
 {
@@ -21,17 +19,20 @@ class User extends Authenticatable
     use HasTeams;
     use Notifiable;
     use TwoFactorAuthenticatable;
-    use HasDomains;
-    use TenantOrCentalConnection;
-    
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var string<int, string>
+     * @var array<int, string>
      */
     protected $fillable = [
-        'name', 'email', 'phone', 'password','remember_token','tally_connector_id','role',
+        'name',
+        'email',
+        'phone',
+        'password',
+        'remember_token',
+        'tally_connector_id',
+        'role',
     ];
 
     /**
@@ -64,9 +65,5 @@ class User extends Authenticatable
         'profile_photo_url',
     ];
 
-    public function getConnectionName()
-    {
-        return is_null(tenant('id')) ? config('tenancy.database.central_connection')  : 'tenant';
-    }
-
+    // Optionally, you can add more methods or logic specific to user functionality here.
 }

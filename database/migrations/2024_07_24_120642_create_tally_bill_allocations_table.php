@@ -15,12 +15,10 @@ return new class extends Migration
     {
         Schema::create('tally_bill_allocations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('head_id') // Define the head_id column and set it as a foreign key
-            ->constrained('tally_voucher_heads')
-            ->onDelete('cascade');
-            $table->string('billtype',100)->nullable();
-            $table->decimal('billamount',15,3)->nullable();
-            $table->string('yearend',10)->nullable();
+            $table->foreignId('head_id')->constrained('tally_voucher_heads')->onDelete('cascade');
+            $table->string('bill_type',100)->nullable();
+            $table->decimal('bill_amount',15,3)->nullable();
+            $table->string('year_end',10)->nullable();
             $table->string('name',100)->nullable();
             $table->timestamps();
         });

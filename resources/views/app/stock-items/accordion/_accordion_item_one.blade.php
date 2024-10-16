@@ -79,7 +79,7 @@
                             </div>
                             <div class="col-lg-3 pb-5">
                                 Alias
-                                <p class="mb-0 font-16 pt-2"><strong>{{ $stockItem->alias ?? '-' }}</strong></p>
+                                <p class="mb-0 font-16 pt-2"><strong>{{ $stockItem->alias1 ?? '-' }}</strong></p>
                             </div>
                         </div>
 

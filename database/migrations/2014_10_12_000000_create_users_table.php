@@ -13,19 +13,19 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('phone')->unique()->nullable();
+            $table->string('name',100);
+            $table->string('email',100)->unique();
+            $table->string('phone',20)->unique()->nullable();
             $table->boolean('is_phone_verified')->default(false);
-            $table->string('otp')->nullable();
+            $table->string('otp',50)->nullable();
             $table->timestamp('otp_expires_at')->nullable();
             $table->string('sub_id')->nullable();
-            $table->string('role')->nullable();
+            $table->string('role',100)->nullable();
             $table->foreignId('owner_employee_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('tally_connector_id')->nullable();
             $table->enum('status', ['1', '0'])->default('1');
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password')->nullable();
+            $table->string('password',100)->nullable();
             $table->rememberToken();
             $table->foreignId('current_team_id')->nullable();
             $table->string('profile_photo_path', 2048)->nullable();

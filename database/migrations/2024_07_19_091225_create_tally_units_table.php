@@ -15,17 +15,17 @@ return new class extends Migration
     {
         Schema::create('tally_units', function (Blueprint $table) {
             $table->id();
-            $table->string('guid')->unique();
-            $table->string('name')->nullable();
-            $table->string('is_updating_target_id')->nullable();
-            $table->string('is_deleted')->nullable();
-            $table->string('is_security_on_when_entered')->nullable();
-            $table->string('as_original')->nullable();
-            $table->string('is_gst_excluded')->nullable();
-            $table->string('is_simple_unit')->nullable();
-            $table->string('alter_id')->nullable();
+            $table->string('guid',100)->unique();
+            $table->string('name',100)->nullable();
+            // $table->string('is_updating_target_id')->nullable();
+            $table->enum('is_deleted', ['Yes', 'No'])->default('No'); 
+            // $table->string('is_security_on_when_entered')->nullable();
+            // $table->string('as_original')->nullable();
+            $table->enum('is_gst_excluded', ['Yes', 'No'])->default('No'); 
+            $table->enum('is_simple_unit', ['Yes', 'No'])->default('No');
+            $table->integer('alter_id')->nullable();
             $table->date('applicable_from')->nullable();
-            $table->string('reporting_uqc_name')->nullable();
+            $table->string('reporting_uqc_name',100)->nullable();
             $table->timestamps();
         });
     }

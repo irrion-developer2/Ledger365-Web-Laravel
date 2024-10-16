@@ -17,11 +17,11 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('tally_voucher_id')->nullable();
             $table->foreign('tally_voucher_id')->references('id')->on('tally_vouchers')->onDelete('cascade');
-            $table->string('ledger_name')->nullable();
-            $table->string('ledger_guid')->nullable()->index();
-            $table->decimal('amount', 15, 2)->nullable(); 
-            $table->string('entry_type')->nullable();
-            $table->string('isdeemedpositive')->nullable();
+            $table->string('ledger_name',100)->nullable();
+            $table->string('ledger_guid',100)->nullable()->index();
+            $table->decimal('amount', 15, 3)->nullable(); 
+            $table->string('entry_type',10)->nullable();
+            $table->enum('isdeemedpositive', ['Yes', 'No'])->default('No');
             $table->timestamps();
         });
     }

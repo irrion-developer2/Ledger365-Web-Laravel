@@ -251,7 +251,6 @@ class CustomerController extends Controller
             ->whereIn('company_guid', $companyGuids)
             ->firstOrFail();
         
-        \Log::info('Query 1: ', \DB::getQueryLog());
     
         $voucherHeads = TallyVoucherHead::where('ledger_guid', $ledger->guid)
             ->whereHas('voucherHead', function ($query) {
@@ -261,6 +260,8 @@ class CustomerController extends Controller
             })
             ->with('voucherHead')
             ->get();
+
+        // dd($voucherHeads);
     
         \Log::info('Query 2: ', \DB::getQueryLog());
     

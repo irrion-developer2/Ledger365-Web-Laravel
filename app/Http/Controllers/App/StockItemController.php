@@ -43,7 +43,7 @@ class StockItemController extends Controller
       
 
             $stockItems = TallyItem::with('tallyVoucherItems')->whereIn('company_guid', $companyGuids)
-                ->select('id', 'guid', 'name', 'opening_balance', 'opening_value', 'company_guid');
+                ->select('id', 'guid', 'name', 'alias', 'parent', 'category','opening_balance', 'opening_value', 'company_guid');
 
                                 // dd($stockItems);
             $endTime1 = microtime(true);

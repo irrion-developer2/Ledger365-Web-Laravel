@@ -240,125 +240,416 @@ class CustomerController extends Controller
         return view('app.customers._customers-view', compact('ledger'));
     }
 
+    // public function getVoucherEntries($customer, Request $request)
+    // {
+    //     $startTime = microtime(true);
+        
+    //     \DB::enableQueryLog();
+    //     $companyGuids = $this->reportService->companyData();
+        
+    //     $ledger = TallyLedger::where('guid', $customer)
+    //         ->whereIn('company_guid', $companyGuids)
+    //         ->firstOrFail();
+    
+    //     $voucherHeads = TallyVoucherHead::where('ledger_guid', $ledger->guid)
+    //         ->whereHas('tallyVoucher', function ($query) {
+    //             $query->where('is_cancelled', '!=', 'Yes')
+    //                 ->where('is_optional', '!=', 'Yes')
+    //                 ->orderBy('voucher_date', 'asc');
+    //         })
+    //         ->with('tallyVoucher')
+    //         ->get();
+
+
+    //     // Fetch the voucher heads using the same logic as in SQL
+    //     // $voucherHeads = TallyVoucherHead::select('tvh1.tally_voucher_id AS voucher_id', 'tl.language_name AS ledger_name')
+    //     //     ->from('tally_voucher_heads as tvh1') // Alias for the first table
+    //     //     ->join('tally_voucher_heads as tvh2', 'tvh1.tally_voucher_id', '=', 'tvh2.tally_voucher_id') // Inner join on voucher heads
+    //     //     ->join('tally_ledgers as tl', 'tvh2.ledger_guid', '=', 'tl.guid') // Inner join on ledgers
+    //     //     ->join('tally_vouchers as tv', 'tvh2.tally_voucher_id', '=', 'tv.id') // Inner join on vouchers
+    //     //     ->where('tvh1.ledger_guid', $ledger->guid) // Filtering based on the ledger guid
+    //     //     ->whereIn('tl.parent', ['Sales Accounts', 'Purchase Accounts']) // Filtering for specific accounts
+    //     //     ->where('tv.is_cancelled', '!=', 'Yes') // Voucher is not canceled
+    //     //     ->where('tv.is_optional', '!=', 'Yes') // Voucher is not optional
+    //     //     ->orderBy('tv.voucher_date', 'asc') // Order by voucher date
+    //     //     ->get();
+
+    //     // $voucherHeads = TallyVoucher::where('ledger_guid', $ledger->guid)
+    //     //                 ->where('is_cancelled', '!=', 'Yes')
+    //     //                 ->where('is_optional', '!=', 'Yes')
+    //     //                 ->orderBy('voucher_date', 'asc')
+    //     //                 ->with('tallyVoucherHeadCustomer') 
+    //     //                 ->get();
+
+
+    //     // dd($voucherHeads);
+    
+    //     \Log::info('Query 2: ', \DB::getQueryLog());
+    
+    //     \Log::info('Query 3: ', \DB::getQueryLog());
+    
+    //     $runningBalance = 0;
+    //     $openingBalanceAdded = false;
+
+    //     $voucherHeads = $voucherHeads->map(function ($entry) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
+    //         $Amount = floatval($entry->amount ?? 0);
+    //         $openingBalance = floatval($ledger->opening_balance ?? 0);
+
+    //         if (!$openingBalanceAdded) {
+    //             $runningBalance += $openingBalance;
+    //             $openingBalanceAdded = true; 
+    //         }
+
+    //         $runningBalance += $Amount;
+    //         $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance);
+
+    //         return $entry;
+    //     });
+
+    
+    //     $startDate = $request->get('start_date');
+    //     $endDate = $request->get('end_date');
+    //     if ($startDate && $endDate) {
+    //         $voucherHeads = $voucherHeads->filter(function ($entry) use ($startDate, $endDate) {
+    //             $voucherDate = \Carbon\Carbon::parse($entry->voucherHead->voucher_date);
+    //             return $voucherDate->between($startDate, $endDate);
+    //         });
+    //     }
+
+    //     $firstVoucherDate = $voucherHeads->min('voucherHead.voucher_date');
+    //     $lastVoucherDate = $voucherHeads->max('voucherHead.voucher_date');
+    
+    //     \Log::info('Combined Entries: ', $voucherHeads->toArray());
+    
+    //     $dataTableResponse = datatables()->of($voucherHeads)
+    //         ->addColumn('credit', function ($entry) {
+    //             return $entry->entry_type == 'credit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
+    //         })
+    //         ->addColumn('debit', function ($entry) {
+    //             return $entry->entry_type == 'debit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
+    //         })
+    //         ->addColumn('running_balance', function ($entry) use ($ledger) {
+    //             return $entry->running_balance ? $entry->running_balance : "";
+    //         })
+    //         ->addColumn('voucher_number', function ($entry) {
+    //             return $entry->voucherHead ? $entry->voucherHead->voucher_number : '';
+    //         })
+    //         ->addColumn('opening_balance', function () use ($ledger) {
+    //             return $ledger->opening_balance;
+    //         })
+    //         ->addColumn('voucher_type', function ($entry) {
+    //             return $entry->voucherHead ? $entry->voucherHead->voucher_type : '';
+    //         })
+    //         ->addColumn('voucher_date', function ($entry) {
+    //             if ($entry->voucherHead && $entry->voucherHead->voucher_date) {
+    //                 return \Carbon\Carbon::parse($entry->voucherHead->voucher_date)->format('d-M-Y'); // Format: 02-Aug-2024
+    //             }
+    //             return '';
+    //         })
+    //         ->with([
+    //             'first_voucher_date' => $firstVoucherDate,
+    //             'last_voucher_date' => $lastVoucherDate
+    //         ])
+    //         ->toJson();
+    
+    //     $endTime = microtime(true);
+    //     $executionTime = $endTime - $startTime;
+    
+    //     \Log::info('Total execution time for CustomerController.getVoucherEntries:', ['time_taken' => $executionTime . ' seconds']);
+        
+    //     return $dataTableResponse;
+    // }
+
+    // public function getVoucherEntries($customer, Request $request)
+    // {
+    //     $startTime = microtime(true);
+        
+    //     \DB::enableQueryLog();
+    //     $companyGuids = $this->reportService->companyData();
+        
+    //     $ledger = TallyLedger::where('guid', $customer)
+    //         ->whereIn('company_guid', $companyGuids)
+    //         ->firstOrFail();
+
+    //     $voucherHeads = TallyVoucher::where('tally_vouchers.ledger_guid', $ledger->guid)
+    //                     ->where('tally_vouchers.is_cancelled', '!=', 'Yes')
+    //                     ->where('tally_vouchers.is_optional', '!=', 'Yes')
+    //                     ->join('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
+    //                     ->join('tally_ledgers', 'tally_voucher_heads.ledger_guid', '=', 'tally_ledgers.guid')
+    //                     ->whereNotIn('tally_ledgers.parent', ['Sundry Debtors'])
+    //                     ->orderBy('tally_vouchers.voucher_date', 'asc')
+    //                     ->select('tally_vouchers.*', 'tally_voucher_heads.*', 'tally_ledgers.*')
+    //                     ->get();
+
+    
+    //     \Log::info('Query 2: ', \DB::getQueryLog());
+    
+    //     \Log::info('Query 3: ', \DB::getQueryLog());
+    
+    //     $runningBalance = 0;
+    //     $openingBalanceAdded = false;
+
+    //     $voucherHeads = $voucherHeads->map(function ($entry) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
+    //         $Amount = floatval($entry->amount ?? 0);
+    //         $openingBalance = floatval($ledger->opening_balance ?? 0);
+    //         if (!$openingBalanceAdded) {
+    //             $runningBalance += $openingBalance;
+    //             $openingBalanceAdded = true; 
+    //         }
+    //         $runningBalance += $Amount;
+    //         $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance);
+
+    //         return $entry;
+    //     });
+
+    
+    //     $startDate = $request->get('start_date');
+    //     $endDate = $request->get('end_date');
+    //     if ($startDate && $endDate) {
+    //         $voucherHeads = $voucherHeads->filter(function ($entry) use ($startDate, $endDate) {
+    //             $voucherDate = \Carbon\Carbon::parse($entry->voucherHead->voucher_date);
+    //             return $voucherDate->between($startDate, $endDate);
+    //         });
+    //     }
+
+    //     $firstVoucherDate = $voucherHeads->min('voucherHead.voucher_date');
+    //     $lastVoucherDate = $voucherHeads->max('voucherHead.voucher_date');
+    
+    //     \Log::info('Combined Entries: ', $voucherHeads->toArray());
+    
+    //     $dataTableResponse = datatables()->of($voucherHeads)
+    //         ->addColumn('credit', function ($entry) {
+    //             return $entry->entry_type == 'credit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
+    //         })
+    //         ->addColumn('debit', function ($entry) {
+    //             return $entry->entry_type == 'debit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
+    //         })
+    //         ->addColumn('running_balance', function ($entry) use ($ledger) {
+    //             return $entry->running_balance ? $entry->running_balance : "";
+    //         })
+    //         ->addColumn('voucher_number', function ($entry) {
+    //             return $entry->voucher_number;
+    //         })
+    //         ->addColumn('opening_balance', function () use ($ledger) {
+    //             return $ledger->opening_balance;
+    //         })
+    //         ->addColumn('voucher_type', function ($entry) {
+    //             return $entry->voucher_type;
+    //         })
+    //         ->addColumn('voucher_date', function ($entry) {
+    //             if ($entry->voucher_date) {
+    //                 return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
+    //             }
+    //             return '';
+    //         })
+    //         ->with([
+    //             'first_voucher_date' => $firstVoucherDate,
+    //             'last_voucher_date' => $lastVoucherDate
+    //         ])
+    //         ->toJson();
+    
+    //     $endTime = microtime(true);
+    //     $executionTime = $endTime - $startTime;
+    
+    //     \Log::info('Total execution time for CustomerController.getVoucherEntries:', ['time_taken' => $executionTime . ' seconds']);
+        
+    //     return $dataTableResponse;
+    // }
+
+    // public function getVoucherEntries($customer, Request $request)
+    // {
+    //     $startTime = microtime(true);
+        
+    //     \DB::enableQueryLog();
+    //     $companyGuids = $this->reportService->companyData();
+        
+    //     $ledger = TallyLedger::where('guid', $customer)
+    //         ->whereIn('company_guid', $companyGuids)
+    //         ->firstOrFail();
+
+    //     $voucherHeads = TallyVoucher::where('tally_vouchers.ledger_guid', $ledger->guid)
+    //         ->where('tally_vouchers.is_cancelled', '!=', 'Yes')
+    //         ->where('tally_vouchers.is_optional', '!=', 'Yes')
+    //         ->join('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
+    //         ->join('tally_ledgers', 'tally_voucher_heads.ledger_guid', '=', 'tally_ledgers.guid')
+    //         ->whereNotIn('tally_ledgers.parent', ['Sundry Debtors'])
+    //         ->orderBy('tally_vouchers.voucher_date', 'asc')
+    //         ->select('tally_vouchers.*', 'tally_voucher_heads.*', 'tally_ledgers.*')
+    //         ->get();
+
+    //     \Log::info('Query 2: ', \DB::getQueryLog());
+        
+    //     \Log::info('Query 3: ', \DB::getQueryLog());
+
+    //     $runningBalance = 0;
+    //     $openingBalanceAdded = false;
+
+    //     // Process and calculate running balance
+    //     $voucherHeads = $voucherHeads->map(function ($entry) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
+    //         $Amount = floatval($entry->amount ?? 0);
+    //         $openingBalance = floatval($ledger->opening_balance ?? 0);
+    //         if (!$openingBalanceAdded) {
+    //             $runningBalance += $openingBalance;
+    //             $openingBalanceAdded = true; 
+    //         }
+    //         $runningBalance += $Amount;
+    //         $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance);
+
+    //         return $entry;
+    //     });
+
+    //     $startDate = $request->get('start_date');
+    //     $endDate = $request->get('end_date');
+    //     if ($startDate && $endDate) {
+    //         $voucherHeads = $voucherHeads->filter(function ($entry) use ($startDate, $endDate) {
+    //             $voucherDate = \Carbon\Carbon::parse($entry->voucher_date);
+    //             return $voucherDate->between($startDate, $endDate);
+    //         });
+    //     }
+
+    //     $firstVoucherDate = $voucherHeads->min('voucher_date');
+    //     $lastVoucherDate = $voucherHeads->max('voucher_date');
+
+    //     \Log::info('Combined Entries: ', $voucherHeads->toArray());
+
+    //     $dataTableResponse = datatables()->of($voucherHeads)
+    //         ->addColumn('credit', function ($entry) {
+    //             return $entry->amount > 0 ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
+    //         })
+    //         ->addColumn('debit', function ($entry) {
+    //             return $entry->amount < 0 ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
+    //         })
+    //         ->addColumn('running_balance', function ($entry) use ($ledger) {
+    //             return $entry->running_balance ? $entry->running_balance : "";
+    //         })
+    //         ->addColumn('voucher_number', function ($entry) {
+    //             return $entry->voucher_number;
+    //         })
+    //         ->addColumn('opening_balance', function () use ($ledger) {
+    //             return $ledger->opening_balance;
+    //         })
+    //         ->addColumn('voucher_type', function ($entry) {
+    //             return $entry->voucher_type;
+    //         })
+    //         ->addColumn('voucher_date', function ($entry) {
+    //             if ($entry->voucher_date) {
+    //                 return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
+    //             }
+    //             return '';
+    //         })
+    //         ->addColumn('ledger_name', function ($entry) {
+    //             return in_array($entry->parent, ['Sales Accounts', 'Bank Accounts']) ? $entry->ledger_name : '';
+    //         })
+    //         ->with([
+    //             'first_voucher_date' => $firstVoucherDate,
+    //             'last_voucher_date' => $lastVoucherDate
+    //         ])
+    //         ->toJson();
+
+    //     $endTime = microtime(true);
+    //     $executionTime = $endTime - $startTime;
+
+    //     \Log::info('Total execution time for CustomerController.getVoucherEntries:', ['time_taken' => $executionTime . ' seconds']);
+        
+    //     return $dataTableResponse;
+    // }
+
+
     public function getVoucherEntries($customer, Request $request)
-    {
-        $startTime = microtime(true);
-        
-        \DB::enableQueryLog();
-        $companyGuids = $this->reportService->companyData();
-        
-        $ledger = TallyLedger::where('guid', $customer)
-            ->whereIn('company_guid', $companyGuids)
-            ->firstOrFail();
+{
+    $startTime = microtime(true);
     
-        $voucherHeads = TallyVoucherHead::where('ledger_guid', $ledger->guid)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('is_cancelled', '!=', 'Yes')
-                    ->where('is_optional', '!=', 'Yes')
-                    ->orderBy('voucher_date', 'asc');
-            })
-            ->with('tallyVoucher')
-            ->get();
-
-
-        // Fetch the voucher heads using the same logic as in SQL
-        // $voucherHeads = TallyVoucherHead::select('tvh1.tally_voucher_id AS voucher_id', 'tl.language_name AS ledger_name')
-        //     ->from('tally_voucher_heads as tvh1') // Alias for the first table
-        //     ->join('tally_voucher_heads as tvh2', 'tvh1.tally_voucher_id', '=', 'tvh2.tally_voucher_id') // Inner join on voucher heads
-        //     ->join('tally_ledgers as tl', 'tvh2.ledger_guid', '=', 'tl.guid') // Inner join on ledgers
-        //     ->join('tally_vouchers as tv', 'tvh2.tally_voucher_id', '=', 'tv.id') // Inner join on vouchers
-        //     ->where('tvh1.ledger_guid', $ledger->guid) // Filtering based on the ledger guid
-        //     ->whereIn('tl.parent', ['Sales Accounts', 'Purchase Accounts']) // Filtering for specific accounts
-        //     ->where('tv.is_cancelled', '!=', 'Yes') // Voucher is not canceled
-        //     ->where('tv.is_optional', '!=', 'Yes') // Voucher is not optional
-        //     ->orderBy('tv.voucher_date', 'asc') // Order by voucher date
-        //     ->get();
-
-        // $voucherHeads = TallyVoucher::where('ledger_guid', $ledger->guid)
-        //                 ->where('is_cancelled', '!=', 'Yes')
-        //                 ->where('is_optional', '!=', 'Yes')
-        //                 ->orderBy('voucher_date', 'asc')
-        //                 ->with('tallyVoucherHeadCustomer') 
-        //                 ->get();
-
-
-        // dd($voucherHeads);
+    \DB::enableQueryLog();
+    $companyGuids = $this->reportService->companyData();
     
-        \Log::info('Query 2: ', \DB::getQueryLog());
+    $ledger = TallyLedger::where('guid', $customer)
+        ->whereIn('company_guid', $companyGuids)
+        ->firstOrFail();
+
+    $voucherHeads = TallyVoucher::where('tally_vouchers.ledger_guid', $ledger->guid)
+        ->where('tally_vouchers.is_cancelled', '!=', 'Yes')
+        ->where('tally_vouchers.is_optional', '!=', 'Yes')
+        ->join('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
+        ->join('tally_ledgers', 'tally_voucher_heads.ledger_guid', '=', 'tally_ledgers.guid')
+        ->whereNotIn('tally_ledgers.parent', ['Sundry Debtors'])
+        ->orderBy('tally_vouchers.voucher_date', 'asc')
+        ->select('tally_vouchers.*', 'tally_voucher_heads.*', 'tally_ledgers.*')
+        ->get();
+
+    \Log::info('Query 2: ', \DB::getQueryLog());
     
-        \Log::info('Query 3: ', \DB::getQueryLog());
-    
-        $runningBalance = 0;
-        $openingBalanceAdded = false;
+    \Log::info('Query 3: ', \DB::getQueryLog());
 
-        $voucherHeads = $voucherHeads->map(function ($entry) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
-            $Amount = floatval($entry->amount ?? 0);
-            $openingBalance = floatval($ledger->opening_balance ?? 0);
+    $runningBalance = 0;
+    $openingBalanceAdded = false;
 
-            if (!$openingBalanceAdded) {
-                $runningBalance += $openingBalance;
-                $openingBalanceAdded = true; 
-            }
+    $groupedVouchers = $voucherHeads->groupBy('voucher_number')->map(function ($entries) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
+        $totalAmount = $entries->sum('amount');
 
-            $runningBalance += $Amount;
-            $entry->running_balance = ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance);
-
-            return $entry;
-        });
-
-    
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        if ($startDate && $endDate) {
-            $voucherHeads = $voucherHeads->filter(function ($entry) use ($startDate, $endDate) {
-                $voucherDate = \Carbon\Carbon::parse($entry->voucherHead->voucher_date);
-                return $voucherDate->between($startDate, $endDate);
-            });
+        $openingBalance = floatval($ledger->opening_balance ?? 0);
+        if (!$openingBalanceAdded) {
+            $runningBalance += $openingBalance;
+            $openingBalanceAdded = true; 
         }
+        $runningBalance += $totalAmount;
 
-        $firstVoucherDate = $voucherHeads->min('voucherHead.voucher_date');
-        $lastVoucherDate = $voucherHeads->max('voucherHead.voucher_date');
-    
-        \Log::info('Combined Entries: ', $voucherHeads->toArray());
-    
-        $dataTableResponse = datatables()->of($voucherHeads)
-            ->addColumn('credit', function ($entry) {
-                return $entry->entry_type == 'credit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
-            })
-            ->addColumn('debit', function ($entry) {
-                return $entry->entry_type == 'debit' ? indian_format(abs($entry->amount), 2, '.', ',') : '0.00';
-            })
-            ->addColumn('running_balance', function ($entry) use ($ledger) {
-                return $entry->running_balance ? $entry->running_balance : "";
-            })
-            ->addColumn('voucher_number', function ($entry) {
-                return $entry->voucherHead ? $entry->voucherHead->voucher_number : '';
-            })
-            ->addColumn('opening_balance', function () use ($ledger) {
-                return $ledger->opening_balance;
-            })
-            ->addColumn('voucher_type', function ($entry) {
-                return $entry->voucherHead ? $entry->voucherHead->voucher_type : '';
-            })
-            ->addColumn('voucher_date', function ($entry) {
-                if ($entry->voucherHead && $entry->voucherHead->voucher_date) {
-                    return \Carbon\Carbon::parse($entry->voucherHead->voucher_date)->format('d-M-Y'); // Format: 02-Aug-2024
-                }
-                return '';
-            })
-            ->with([
-                'first_voucher_date' => $firstVoucherDate,
-                'last_voucher_date' => $lastVoucherDate
-            ])
-            ->toJson();
-    
-        $endTime = microtime(true);
-        $executionTime = $endTime - $startTime;
-    
-        \Log::info('Total execution time for CustomerController.getVoucherEntries:', ['time_taken' => $executionTime . ' seconds']);
-        
-        return $dataTableResponse;
+        return [
+            'voucher_number' => $entries->first()->voucher_number,
+            'amount' => $totalAmount,
+            'running_balance' => ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance),
+            'voucher_date' => $entries->first()->voucher_date,
+            'voucher_type' => $entries->first()->voucher_type,
+            'ledger_name' => in_array($entries->first()->parent, ['Sales Accounts', 'Bank Accounts']) ? $entries->first()->ledger_name : '',
+        ];
+    })->values();
+
+    // Apply date filters
+    $startDate = $request->get('start_date');
+    $endDate = $request->get('end_date');
+    if ($startDate && $endDate) {
+        $groupedVouchers = $groupedVouchers->filter(function ($entry) use ($startDate, $endDate) {
+            $voucherDate = \Carbon\Carbon::parse($entry['voucher_date']);
+            return $voucherDate->between($startDate, $endDate);
+        });
     }
+
+    $firstVoucherDate = $groupedVouchers->min('voucher_date');
+    $lastVoucherDate = $groupedVouchers->max('voucher_date');
+
+    \Log::info('Combined Entries: ', $groupedVouchers->toArray());
+
+    $dataTableResponse = datatables()->of($groupedVouchers)
+        ->addColumn('credit', function ($entry) {
+            return $entry['amount'] < 0 ? indian_format(abs($entry['amount'])) : '0.00';
+        })
+        ->addColumn('debit', function ($entry) {
+            return $entry['amount'] > 0 ? indian_format(abs($entry['amount'])) : '0.00';
+        })
+        ->addColumn('running_balance', function ($entry) {
+            return $entry['running_balance'] ?? "";
+        })
+        ->addColumn('voucher_type', function ($entry) {
+            return $entry['voucher_type'];
+        })
+        ->addColumn('voucher_date', function ($entry) {
+            return \Carbon\Carbon::parse($entry['voucher_date'])->format('d-M-Y');
+        })
+        ->addColumn('ledger_name', function ($entry) {
+            return $entry['ledger_name'];
+        })
+        ->with([
+            'first_voucher_date' => $firstVoucherDate,
+            'last_voucher_date' => $lastVoucherDate
+        ])
+        ->toJson();
+
+    $endTime = microtime(true);
+    $executionTime = $endTime - $startTime;
+
+    \Log::info('Total execution time for CustomerController.getVoucherEntries:', ['time_taken' => $executionTime . ' seconds']);
+    
+    return $dataTableResponse;
+}
 
     
 }

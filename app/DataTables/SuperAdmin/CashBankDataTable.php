@@ -3,7 +3,7 @@
 namespace App\DataTables\SuperAdmin;
 
 use Carbon\Carbon;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyCompany;
@@ -64,7 +64,7 @@ class CashBankDataTable extends DataTable
                     $name = $normalizedNames[$name];
                 }
                 // Log::info('normalizedNames:', ['normalizedNames' => $normalizedNames]);
-                $groupCount = TallyGroup::where('parent', $name)->count();
+                $groupCount = TallyLedgerGroup::where('parent', $name)->count();
                 if ($groupCount == 0) {
                     return TallyLedger::where('parent', $name)->count();
                 }
@@ -83,7 +83,7 @@ class CashBankDataTable extends DataTable
                     }
                 }
 
-                $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
+                $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
 
                 if ($groupLedgerIds->isNotEmpty()) {
@@ -137,7 +137,7 @@ class CashBankDataTable extends DataTable
                     }
                 }
 
-                $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
+                $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
 
                 if ($groupLedgerIds->isNotEmpty()) {
@@ -190,7 +190,7 @@ class CashBankDataTable extends DataTable
                     }
                 }
 
-                $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
+                $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
 
                 if ($groupLedgerIds->isNotEmpty()) {
@@ -228,7 +228,7 @@ class CashBankDataTable extends DataTable
                     }
                 }
 
-                $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
+                $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
 
                 if ($groupLedgerIds->isNotEmpty()) {
@@ -301,7 +301,7 @@ class CashBankDataTable extends DataTable
             ->rawColumns(['name']);
     }
 
-    public function query(TallyGroup $model)
+    public function query(TallyLedgerGroup $model)
     {
         $companyGuids = $this->reportService->companyData();
 

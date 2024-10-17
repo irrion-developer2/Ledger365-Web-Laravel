@@ -7,7 +7,6 @@ use Carbon\Carbon;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
-use App\Models\TallyGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucher;
 use App\Models\TallyCompany;

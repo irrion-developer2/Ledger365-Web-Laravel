@@ -5,7 +5,7 @@ namespace App\Http\Controllers\App\Reports;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Models\TallyLedger;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherItem;
@@ -45,7 +45,7 @@ class ReportBalanceSheetAssetStockController extends Controller
             $data = [
                 [
                     'name' => 'Opening Stock',
-                    'opening_value' => number_format(abs($openingValueSum), 3)
+                    'opening_value' => indian_format(abs($openingValueSum))
                 ]
             ];
             return response()->json(['data' => $data]);

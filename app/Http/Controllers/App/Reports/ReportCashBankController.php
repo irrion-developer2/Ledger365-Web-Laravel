@@ -5,7 +5,7 @@ namespace App\Http\Controllers\App\Reports;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Yajra\DataTables\DataTables;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyCompany;
 use Illuminate\Support\Facades\Http;
@@ -44,11 +44,11 @@ class ReportCashBankController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $cashBank = TallyGroup::whereIn('company_guid', $companyGuids)
+        $cashBank = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                                 ->findOrFail($cashBankId);
 
         $names = ['Bank Accounts', 'Bank OD A/c, Bank OCC A/c', 'Cash-in-Hand'];
-        $menuItems = TallyGroup::whereIn('name', $names)->whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyLedgerGroup::whereIn('name', $names)->whereIn('company_guid', $companyGuids)->get();
         // dd($menuItems);
 
         return view('app.reports.cashBank._cash_bank_details', [
@@ -62,7 +62,7 @@ class ReportCashBankController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $cashBank = TallyGroup::whereIn('company_guid', $companyGuids)
+        $cashBank = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                                 ->findOrFail($cashBankId);
         $cashBankName = $cashBank->name;
 

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('role',100)->nullable();
             $table->foreignId('owner_employee_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('tally_connector_id')->nullable();
-            $table->enum('status', ['1', '0'])->default('1');
+            $table->enum('status', ['Active', 'Inactive'])->default('Active');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password',100)->nullable();
             $table->rememberToken();

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use App\Models\TallyLicense;
 use App\Models\TallyCompany;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyItem;
 use App\Models\TallyUnit;
@@ -182,19 +182,19 @@ class LedgerController extends Controller
                         $nameField = implode(', ', $nameField);
                     }
 
-                    $tallyGroup = TallyGroup::updateOrCreate(
+                    $tallyLedgerGroup = TallyLedgerGroup::updateOrCreate(
                         ['guid' => $guid],
                         [
                             'company_guid' => $companyGuid,
                             'parent' => $groupData['PARENT'] ?? null,
-                            'affects_stock' => $groupData['AFFECTSSTOCK'] ?? null,
+                            'affects_stock' => isset($groupData['AFFECTSSTOCK']) && $groupData['AFFECTSSTOCK'] === 'Yes',
                             'alter_id' => $groupData['ALTERID'] ?? null,
                             'name' => $nameField,
                         ]
                     );
 
-                    if (!$tallyGroup) {
-                        throw new \Exception('Failed to create or update tally group record.');
+                    if (!$tallyLedgerGroup) {
+                        throw new \Exception('Failed to create or update tally ledger group record.');
                     }
                 }
             }
@@ -255,8 +255,8 @@ class LedgerController extends Controller
                             'excise_ledger_classification' => html_entity_decode($ledgerData['EXCISELEDGERCLASSIFICATION'] ?? null),
                             'excise_duty_type' => html_entity_decode($ledgerData['EXCISEDUTYTYPE'] ?? null),
                             'excise_nature_of_purchase' => html_entity_decode($ledgerData['EXCISENATUREOFPURCHASE'] ?? null),
-                            'is_bill_wise_on' => $ledgerData['ISBILLWISEON'] ?? null,
-                            'is_cost_centres_on' => $ledgerData['ISCOSTCENTRESON'] ?? null,
+                            'is_bill_wise_on' => isset($ledgerData['ISBILLWISEON']) && $ledgerData['ISBILLWISEON'] === 'Yes',
+                            'is_cost_centres_on' => isset($ledgerData['ISCOSTCENTRESON']) && $ledgerData['ISCOSTCENTRESON'] === 'Yes',
                             'alter_id' => $ledgerData['ALTERID'] ?? null,
                             'opening_balance' => $ledgerData['OPENINGBALANCE'] ?? null,
                             'language_name' => $languageName,
@@ -344,9 +344,8 @@ class LedgerController extends Controller
                         ['guid' => $unitData['GUID'] ?? null],
                         [
                             'name' => $name,
-                            'is_deleted' => $unitData['ISDELETED'] ?? null,
-                            'is_gst_excluded' => $unitData['ISGSTEXCLUDED'] ?? null,
-                            'is_simple_unit' => $unitData['ISSIMPLEUNIT'] ?? null,
+                            'is_gst_excluded' => ($unitData['ISGSTEXCLUDED'] ?? null) === 'Yes' ? true : false,
+                            'is_simple_unit' => ($unitData['ISSIMPLEUNIT'] ?? null) === 'Yes' ? true : false,
                             'alter_id' => $unitData['ALTERID'] ?? null,
                             'reporting_uqc_name' => $reportingUQCName,
                             'applicable_from' => $applicableFrom,
@@ -373,7 +372,6 @@ class LedgerController extends Controller
                         ['guid' => $godownData['GUID'] ?? null],
                         [
                             'parent' => $godownData['PARENT'] ?? null,
-                            'is_deleted' => $godownData['ISDELETED'] ?? null,
                             'alter_id' => $godownData['ALTERID'] ?? null,
                             'language_name' => $nameField,
                         ]
@@ -449,41 +447,40 @@ class LedgerController extends Controller
                             'additional_units' => $stockItemData['ADDITIONALUNITS'] ?? null,
                             'excise_item_classification' => $stockItemData['EXCISEITEMCLASSIFICATION'] ?? null,
                             'vat_base_unit' => $stockItemData['VATBASEUNIT'] ?? null,
-                            'is_cost_centres_on' => $stockItemData['ISCOSTCENTRESON'] ?? null,
-                            'is_batch_wise_on' => $stockItemData['ISBATCHWISEON'] ?? null,
-                            'is_perishable_on' => $stockItemData['ISPERISHABLEON'] ?? null,
-                            'is_entry_tax_applicable' => $stockItemData['ISENTRYTAXAPPLICABLE'] ?? null,
-                            'is_cost_tracking_on' => $stockItemData['ISCOSTTRACKINGON'] ?? null,
-                            'is_updating_target_id' => $stockItemData['ISUPDATINGTARGETID'] ?? null,
-                            'is_deleted' => $stockItemData['ISDELETED'] ?? null,
-                            'is_security_on_when_entered' => $stockItemData['ISSECURITYONWHENENTERED'] ?? null,
+                            'is_cost_centres_on' => isset($stockItemData['ISCOSTCENTRESON']) && $stockItemData['ISCOSTCENTRESON'] === 'Yes',
+                            'is_batch_wise_on' => isset($stockItemData['ISBATCHWISEON']) && $stockItemData['ISBATCHWISEON'] === 'Yes',
+                            'is_perishable_on' => isset($stockItemData['ISPERISHABLEON']) && $stockItemData['ISPERISHABLEON'] === 'Yes',
+                            'is_entry_tax_applicable' => isset($stockItemData['ISENTRYTAXAPPLICABLE']) && $stockItemData['ISENTRYTAXAPPLICABLE'] === 'Yes',
+                            'is_cost_tracking_on' => isset($stockItemData['ISCOSTTRACKINGON']) && $stockItemData['ISCOSTTRACKINGON'] === 'Yes',
+                            'is_updating_target_id' => isset($stockItemData['ISUPDATINGTARGETID']) && $stockItemData['ISUPDATINGTARGETID'] === 'Yes',
+                            'is_security_on_when_entered' => isset($stockItemData['ISSECURITYONWHENENTERED']) && $stockItemData['ISSECURITYONWHENENTERED'] === 'Yes',
                             'as_original' => $stockItemData['ASORIGINAL'] ?? null,
-                            'is_rate_inclusive_vat' => $stockItemData['ISRATEINCLUSIVEVAT'] ?? null,
-                            'ignore_physical_difference' => $stockItemData['IGNOREPHYSICALDIFFERENCE'] ?? null,
-                            'ignore_negative_stock' => $stockItemData['IGNORENEGATIVESTOCK'] ?? null,
-                            'treat_sales_as_manufactured' => $stockItemData['TREATSALESASMANUFACTURED'] ?? null,
-                            'treat_purchases_as_consumed' => $stockItemData['TREATPURCHASESASCONSUMED'] ?? null,
-                            'treat_rejects_as_scrap' => $stockItemData['TREATREJECTSASSCRAP'] ?? null,
-                            'has_mfg_date' => $stockItemData['HASMFGDATE'] ?? null,
-                            'allow_use_of_expired_items' => $stockItemData['ALLOWUSEOFEXPIREDITEMS'] ?? null,
-                            'ignore_batches' => $stockItemData['IGNOREBATCHES'] ?? null,
-                            'ignore_godowns' => $stockItemData['IGNOREGODOWNS'] ?? null,
-                            'adj_diff_in_first_sale_ledger' => $stockItemData['ADJDIFFINFIRSTSALELEDGER'] ?? null,
-                            'adj_diff_in_first_purc_ledger' => $stockItemData['ADJDIFFINFIRSTPURCLEDGER'] ?? null,
-                            'cal_con_mrp' => $stockItemData['CALCONMRP'] ?? null,
-                            'exclude_jrnl_for_valuation' => $stockItemData['EXCLUDEJRNLFORVALUATION'] ?? null,
-                            'is_mrp_incl_of_tax' => $stockItemData['ISMRPINCLOFTAX'] ?? null,
-                            'is_addl_tax_exempt' => $stockItemData['ISADDLTAXEXEMPT'] ?? null,
-                            'is_supplementry_duty_on' => $stockItemData['ISSUPPLEMENTRYDUTYON'] ?? null,
-                            'gvat_is_excise_appl' => $stockItemData['GVATISEXCISEAPPL'] ?? null,
-                            'is_additional_tax' => $stockItemData['ISADDITIONALTAX'] ?? null,
-                            'is_cess_exempted' => $stockItemData['ISCESSEXEMPTED'] ?? null,
-                            'reorder_as_higher' => $stockItemData['REORDERASHIGHER'] ?? null,
-                            'min_order_as_higher' => $stockItemData['MINORDERASHIGHER'] ?? null,
-                            'is_excise_calculate_on_mrp' => $stockItemData['ISEXCISECALCULATEONMRP'] ?? null,
-                            'inclusive_tax' => $stockItemData['INCLUSIVETAX'] ?? null,
-                            'gst_calc_slab_on_mrp' => $stockItemData['GSTCALCSLABONMRP'] ?? null,
-                            'modify_mrp_rate' => $stockItemData['MODIFYMRPRATE'] ?? null,
+                            'is_rate_inclusive_vat' => isset($stockItemData['ISRATEINCLUSIVEVAT']) && $stockItemData['ISRATEINCLUSIVEVAT'] === 'Yes',
+                            'ignore_physical_difference' => isset($stockItemData['IGNOREPHYSICALDIFFERENCE']) && $stockItemData['IGNOREPHYSICALDIFFERENCE'] === 'Yes',
+                            'ignore_negative_stock' => isset($stockItemData['IGNORENEGATIVESTOCK']) && $stockItemData['IGNORENEGATIVESTOCK'] === 'Yes',
+                            'treat_sales_as_manufactured' => isset($stockItemData['TREATSALESASMANUFACTURED']) && $stockItemData['TREATSALESASMANUFACTURED'] === 'Yes',
+                            'treat_purchases_as_consumed' => isset($stockItemData['TREATPURCHASESASCONSUMED']) && $stockItemData['TREATPURCHASESASCONSUMED'] === 'Yes',
+                            'treat_rejects_as_scrap' => isset($stockItemData['TREATREJECTSASSCRAP']) && $stockItemData['TREATREJECTSASSCRAP'] === 'Yes',
+                            'has_mfg_date' => isset($stockItemData['HASMFGDATE']) && $stockItemData['HASMFGDATE'] === 'Yes',
+                            'allow_use_of_expired_items' => isset($stockItemData['ALLOWUSEOFEXPIREDITEMS']) && $stockItemData['ALLOWUSEOFEXPIREDITEMS'] === 'Yes',
+                            'ignore_batches' => isset($stockItemData['IGNOREBATCHES']) && $stockItemData['IGNOREBATCHES'] === 'Yes',
+                            'ignore_godowns' => isset($stockItemData['IGNOREGODOWNS']) && $stockItemData['IGNOREGODOWNS'] === 'Yes',
+                            'adj_diff_in_first_sale_ledger' => isset($stockItemData['ADJDIFFINFIRSTSALELEDGER']) && $stockItemData['ADJDIFFINFIRSTSALELEDGER'] === 'Yes',
+                            'adj_diff_in_first_purc_ledger' => isset($stockItemData['ADJDIFFINFIRSTPURCLEDGER']) && $stockItemData['ADJDIFFINFIRSTPURCLEDGER'] === 'Yes',
+                            'cal_con_mrp' => isset($stockItemData['CALCONMRP']) && $stockItemData['CALCONMRP'] === 'Yes',
+                            'exclude_jrnl_for_valuation' => isset($stockItemData['EXCLUDEJRNLFORVALUATION']) && $stockItemData['EXCLUDEJRNLFORVALUATION'] === 'Yes',
+                            'is_mrp_incl_of_tax' => isset($stockItemData['ISMRPINCLOFTAX']) && $stockItemData['ISMRPINCLOFTAX'] === 'Yes',
+                            'is_addl_tax_exempt' => isset($stockItemData['ISADDLTAXEXEMPT']) && $stockItemData['ISADDLTAXEXEMPT'] === 'Yes',
+                            'is_supplementry_duty_on' => isset($stockItemData['ISSUPPLEMENTRYDUTYON']) && $stockItemData['ISSUPPLEMENTRYDUTYON'] === 'Yes',
+                            'gvat_is_excise_appl' => isset($stockItemData['GVATISEXCISEAPPL']) && $stockItemData['GVATISEXCISEAPPL'] === 'Yes',
+                            'is_additional_tax' => isset($stockItemData['ISADDITIONALTAX']) && $stockItemData['ISADDITIONALTAX'] === 'Yes',
+                            'is_cess_exempted' => isset($stockItemData['ISCESSEXEMPTED']) && $stockItemData['ISCESSEXEMPTED'] === 'Yes',
+                            'reorder_as_higher' => isset($stockItemData['REORDERASHIGHER']) && $stockItemData['REORDERASHIGHER'] === 'Yes',
+                            'min_order_as_higher' => isset($stockItemData['MINORDERASHIGHER']) && $stockItemData['MINORDERASHIGHER'] === 'Yes',
+                            'is_excise_calculate_on_mrp' => isset($stockItemData['ISEXCISECALCULATEONMRP']) && $stockItemData['ISEXCISECALCULATEONMRP'] === 'Yes',
+                            'inclusive_tax' => isset($stockItemData['INCLUSIVETAX']) && $stockItemData['INCLUSIVETAX'] === 'Yes',
+                            'gst_calc_slab_on_mrp' => isset($stockItemData['GSTCALCSLABONMRP']) && $stockItemData['GSTCALCSLABONMRP'] === 'Yes',
+                            'modify_mrp_rate' => isset($stockItemData['MODIFYMRPRATE']) && $stockItemData['MODIFYMRPRATE'] === 'Yes',
                             'alter_id' => $stockItemData['ALTERID'] ?? null,
                             'denominator' => $stockItemData['DENOMINATOR'] ?? null,
                             'basic_rate_of_excise' => $stockItemData['BASICRATEOFEXCISE'] ?? null,
@@ -645,10 +642,11 @@ class LedgerController extends Controller
                         'guid' => $voucherData['GUID'],
                         'company_guid' => substr($voucherData['GUID'], 0, 36),
                         'voucher_type' => $voucherData['VOUCHERTYPENAME'] ?? null,
-                        'is_cancelled' => $voucherData['ISCANCELLED'] ?? null,
+                        'is_cancelled' => isset($voucherData['ISCANCELLED']) && $voucherData['ISCANCELLED'] === 'Yes',
+                        'is_optional' => isset($voucherData['ISOPTIONAL']) && $voucherData['ISOPTIONAL'] === 'Yes',
                         'alter_id' => $voucherData['ALTERID'] ?? null,
                         'party_ledger_name' => $partyLedgerName,
-                        'ledger_guid' => $ledgerGuid,
+                        'party_ledger_guid' => $ledgerGuid,
                         'voucher_number' => $voucherData['VOUCHERNUMBER'] ?? null,
                         'voucher_date' => $voucherData['DATE'] ?? null,
                         'reference_date' => !empty($voucherData['REFERENCEDATE']) ? $voucherData['REFERENCEDATE'] : null,
@@ -682,7 +680,6 @@ class LedgerController extends Controller
                         'order_ref' => $voucherData['BASICORDERREF'] ?? null,
                         'cost_center_name' => $voucherData['COSTCENTRENAME'] ?? null,
                         'cost_center_amount' => $voucherData['COSTCENTREAMOUNT'] ?? null,
-                        'is_optional' => $voucherData['ISOPTIONAL'] ?? null,
                     ]);
 
                     if ($tallyVoucher) {
@@ -760,7 +757,7 @@ class LedgerController extends Controller
                             'amount' => $amount,
                             'entry_type' => $entryType,
                             'ledger_guid' => $ledgerGuid,
-                            'isdeemedpositive' => $entry['ISDEEMEDPOSITIVE'],
+                            'isdeemedpositive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
                         ];
                     } else {
                         // Log mismatch or handle the case
@@ -791,7 +788,8 @@ class LedgerController extends Controller
                     'amount' => $entry['amount'],
                     'entry_type' => $entry['entry_type'],
                     'ledger_guid' => $entry['ledger_guid'],
-                    'isdeemedpositive' => $entry['isdeemedpositive'],
+                    'isdeemedpositive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+        
                 ]
             );
             $voucherHeadIds[] = [
@@ -833,7 +831,8 @@ class LedgerController extends Controller
                                 'amount' => $amount,
                                 'entry_type' => $entryType,
                                 'ledger_guid' => $ledgerGuid,
-                                'isdeemedpositive' => $entry['ISDEEMEDPOSITIVE'],
+                                'isdeemedpositive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+        
                             ];
                         }
                     } else {
@@ -865,7 +864,8 @@ class LedgerController extends Controller
                 'amount' => $entry['amount'],
                 'entry_type' => $entry['entry_type'],
                 'ledger_guid' => $entry['ledger_guid'],
-                'isdeemedpositive' => $entry['isdeemedpositive'],
+                'isdeemedpositive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+        
             ]);
 
             $voucherHeadIds[] = [
@@ -909,14 +909,21 @@ class LedgerController extends Controller
             $billed_qty = null;
 
             if ($billedQtyString) {
-                // Use a regular expression to extract the numeric part
                 if (preg_match('/\d+/', $billedQtyString, $matches)) {
-                    $billed_qty = $matches[0]; // $matches[0] contains the numeric part
+                    $billed_qty = $matches[0]; 
                 }
             }
-
-            // Convert $billed_qty to a float or integer if needed
             $billed_qty = is_numeric($billed_qty) ? (float) $billed_qty : null;
+
+            $actualQtyString = $entry['ACTUALQTY'] ?? null;
+            $actual_qty = null;
+
+            if ($billedQtyString) {
+                if (preg_match('/\d+/', $billedQtyString, $matches)) {
+                    $actual_qty = $matches[0]; 
+                }
+            }
+            $actual_qty = is_numeric($actual_qty) ? (float) $actual_qty : null;
 
 
 
@@ -933,6 +940,7 @@ class LedgerController extends Controller
                 'rate' => $rate,
                 'unit' => $unit,
                 'billed_qty' => $billed_qty,
+                'actual_qty' => $actual_qty,
                 'amount' => $entry['AMOUNT'] ?? null,
                 'gst_hsn_name' => $entry['GSTHSNNAME'] ?? null,
                 'discount' => $entry['DISCOUNT'] ?? null,
@@ -973,6 +981,7 @@ class LedgerController extends Controller
                 'tally_voucher_id' => $voucherId,
                 'stock_item_name' => $item['stock_item_name'],
                 'billed_qty' => $item['billed_qty'],
+                'actual_qty' => $item['actual_qty'],
                 'rate' => $item['rate'],
                 'unit' => $item['unit'],
                 'amount' => $item['amount'],
@@ -1173,7 +1182,7 @@ class LedgerController extends Controller
             if (!$license) {
                 Log::info('License not found for license number: ' . $licenseNumber);
                 return response()->json(['error' => 'License not found'], 404);
-            } elseif ($license->status != 1) {
+            } elseif ($license->status != 'Active') {
                 Log::info('License not active for license number: ' . $licenseNumber);
                 return response()->json(['error' => 'License not active'], 403);
             }

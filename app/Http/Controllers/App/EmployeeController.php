@@ -169,7 +169,7 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Company not found'], 404);
         }
 
-        TallyGroup::where('company_guid', $company->guid)->delete();
+        TallyLedgerGroup::where('company_guid', $company->guid)->delete();
         TallyItem::where('company_guid', $company->guid)->delete();
         TallyLedger::where('company_guid', $company->guid)->delete();
         TallyVoucher::where('company_guid', $company->guid)->delete();

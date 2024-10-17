@@ -41,7 +41,7 @@ class SupplierController extends Controller
                 ->where('parent', 'Sundry Creditors')
                 ->whereIn('tally_ledgers.company_guid', $companyGuids)
                 ->leftJoin('tally_vouchers', function ($join) {
-                    $join->on('tally_ledgers.guid', '=', 'tally_vouchers.ledger_guid')
+                    $join->on('tally_ledgers.guid', '=', 'tally_vouchers.party_ledger_guid')
                         ->where('tally_vouchers.is_cancelled', 'No')
                         ->where('tally_vouchers.is_optional', 'No');
                 })

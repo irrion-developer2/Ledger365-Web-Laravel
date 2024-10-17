@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('stock_item_guid',100)->after('company_guid')->nullable();
             $table->foreign('stock_item_guid')->references('guid')->on('tally_items')->onDelete('cascade');
 
+            
+            $table->index(['tally_voucher_id', 'stock_item_guid']);
         });
     }
 

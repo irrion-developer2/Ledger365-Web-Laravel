@@ -3,7 +3,7 @@
 namespace App\DataTables\SuperAdmin;
 
 use Carbon\Carbon;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherHead;
@@ -62,14 +62,14 @@ class CustomerGroupDataTable extends DataTable
     private function calculateCustomerAmount($entry)
     {
         $salesAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($entry) {
-            $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+            $query->join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                   ->where('tally_ledgers.parent', $entry->name)
                   ->where('tally_vouchers.voucher_type', 'sales');
         })->where('entry_type', 'debit')
         ->sum('amount');
 
         $creditAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($entry) {
-            $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+            $query->join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                   ->where('tally_ledgers.parent', $entry->name)
                   ->where('tally_vouchers.voucher_type', 'credit note');
         })
@@ -78,12 +78,12 @@ class CustomerGroupDataTable extends DataTable
 
         $Amt = $salesAmt + $creditAmt;
 
-        $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+        $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
         ->where('tally_ledgers.parent', $entry->name) // Adjust 'name' as needed based on your data
         ->where('tally_vouchers.voucher_type', 'sales')
         ->count();
 
-        $creditCountCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+        $creditCountCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
             ->where('tally_ledgers.parent', $entry->name) // Adjust 'name' as needed based on your data
             ->where('tally_vouchers.voucher_type', 'credit note')
             ->count();
@@ -98,7 +98,7 @@ class CustomerGroupDataTable extends DataTable
     }
 
 
-    public function query(TallyGroup $model)
+    public function query(TallyLedgerGroup $model)
     {
         return $model->newQuery()->where('name', 'Sundry Debtors');
     }

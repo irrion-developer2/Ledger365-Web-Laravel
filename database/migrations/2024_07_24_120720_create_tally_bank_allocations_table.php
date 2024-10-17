@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('bank_name',100)->nullable();
             $table->date('instrument_date')->nullable();
             $table->string('instrument_number',100)->nullable();
-            $table->string('transaction_type',100)->nullable();
+            $table->string('transaction_type',50)->nullable();
             $table->date('bank_date')->nullable();
             $table->decimal('amount',15,3)->nullable();
             $table->timestamps();

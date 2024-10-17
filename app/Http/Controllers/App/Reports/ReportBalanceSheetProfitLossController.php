@@ -5,7 +5,7 @@ namespace App\Http\Controllers\App\Reports;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Models\TallyLedger;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherItem;
@@ -47,7 +47,7 @@ class ReportBalanceSheetProfitLossController extends Controller
             $data = [
                 [
                     'name' => 'Opening Stock',
-                    'opening_value' => number_format(abs($openingValueSum), 3)
+                    'opening_value' => indian_format(abs($openingValueSum))
                 ]
             ];
             return response()->json(['data' => $data]);
@@ -83,7 +83,7 @@ class ReportBalanceSheetProfitLossController extends Controller
                 END as account_type
             ';
     
-            $Balancequery = TallyGroup::where(function($query) {
+            $Balancequery = TallyLedgerGroup::where(function($query) {
                                 $query->where('parent', '')->orWhereNull('parent');
                             })
                             ->whereIn('company_guid', $companyGuids)
@@ -109,7 +109,7 @@ class ReportBalanceSheetProfitLossController extends Controller
                         }
                     }
 
-                    $groupLedgerIdsQuery = TallyGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
+                    $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
                     $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
     
                     if ($groupLedgerIds->isNotEmpty()) {
@@ -138,7 +138,7 @@ class ReportBalanceSheetProfitLossController extends Controller
                         return '-';
                     }
     
-                    return number_format(abs($totalAmount), 3);
+                    return indian_format(abs($totalAmount));
                 })
                 ->filter(function ($query) {
                     $query->get()->filter(function ($item) {
@@ -197,9 +197,6 @@ class ReportBalanceSheetProfitLossController extends Controller
             $stock_value = 0; // Initialize stock_value
 
             foreach ($tallyItems as $guid => $entry) {
-                // Assuming opening_balance and opening_value are now decimals
-                // $openingBalance = $entry->opening_balance ?? 0;
-                // $openingValue = $entry->opening_value ?? 0;
 
                 $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
                 $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
@@ -226,22 +223,20 @@ class ReportBalanceSheetProfitLossController extends Controller
 
                 if ($finalOpeningBalance != 0) {
                     $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                    $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
+                    $stockItemVoucherSaleValue = indian_format($stockItemVoucherSaleValue);
 
                     // Use the correct variable for the stock on hand balance
                     $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
                     $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
 
-                    // Accumulate the stock value
                     $stock_value += $stockOnHandValue;
                 }
             }
 
-            // Return the response with calculated stock value
             $data = [
                 [
                     'name' => 'Closing Stock',
-                    'closing_value' => number_format($stock_value, 3)
+                    'closing_value' => indian_format($stock_value)
                 ]
             ];
 
@@ -341,9 +336,6 @@ class ReportBalanceSheetProfitLossController extends Controller
     //         return response()->json(['data' => $data]);
     //     }
     // }
-    
-    
-
     
     // public function getClosingStockData(Request $request)
     // {

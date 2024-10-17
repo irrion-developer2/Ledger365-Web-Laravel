@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('tally_groups', function (Blueprint $table) {
+        Schema::create('tally_ledger_groups', function (Blueprint $table) {
             $table->id();
             $table->string('guid',100)->unique();
 
@@ -22,7 +22,7 @@ return new class extends Migration
             
             $table->string('name',100)->nullable()->index(); 
             $table->string('parent',100)->nullable();
-            $table->enum('affects_stock', ['Yes', 'No'])->default('No');
+            $table->boolean('affects_stock')->default('false')->change();
 
             $table->integer('alter_id');
             $table->timestamps();
@@ -36,6 +36,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('tally_groups');
+        Schema::dropIfExists('tally_ledger_groups');
     }
 };

@@ -1,4 +1,5 @@
 {{-- Profit & Loss A/c --}}
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
     <script>
         $(document).ready(function() {
             var openingStockTable = $('#balanceStockSheet-datatable').DataTable({
@@ -271,29 +272,29 @@
                     overallDiffRevenueTotal += nettLoss;
                 }
 
-                $('#Expense').text(overallExpenseTotal.toFixed(3));
-                $('#Revenue').text(overallRevenueTotal.toFixed(3));
+                $('#Expense').text(jsIndianFormat(overallExpenseTotal));
+                $('#Revenue').text(jsIndianFormat(overallRevenueTotal));
                 // $('#NettLoss').text(nettLoss.toFixed(3));
                 // $('#NettProfit').text(nettLoss.toFixed(3));
                 if (nettLoss < 0) {
                     $('#NettLoss').text('0.00');
-                    $('#NettProfit').text(nettLoss.toFixed(3));
+                    $('#NettProfit').text(jsIndianFormat(nettLoss));
                 } else {
-                    $('#NettLoss').text(nettLoss.toFixed(3));
+                    $('#NettLoss').text(jsIndianFormat(nettLoss));
                     $('#NettProfit').text('0.00');
                 }
 
                 if (nettLoss < 0) {
                     $('#ProfitLossAccAsset').text('0.00');
-                    $('#ProfitLossAccLia').text(nettLoss.toFixed(3));
+                    $('#ProfitLossAccLia').text(jsIndianFormat(nettLoss));
                 } else {
-                    $('#ProfitLossAccAsset').text(nettLoss.toFixed(3));
+                    $('#ProfitLossAccAsset').text(jsIndianFormat(nettLoss));
                     $('#ProfitLossAccLia').text('0.00');
                 }
 
                 
-                $('#diffRevenue').text(overallDiffRevenueTotal.toFixed(3));
-                $('#diffExpense').text(overallDiffExpenseTotal.toFixed(3));
+                $('#diffRevenue').text(jsIndianFormat(overallDiffRevenueTotal));
+                $('#diffExpense').text(jsIndianFormat(overallDiffExpenseTotal));
 
                 // var ProfitLossAcc = overallExpenseTotal - overallRevenueTotal;
                 var overallAssetStockItemTotal = totalAssetAmount + totalClosingValue;
@@ -320,7 +321,7 @@
                 
                 var DiffOpeningBalance = overallAssetTotal - totalLiabilityAmount;
                 
-                console.log('DiffOpeningBalance', DiffOpeningBalance);
+                // console.log('DiffOpeningBalance', DiffOpeningBalance);
                 
 
                 if (nettLoss >= 0) { 
@@ -329,18 +330,18 @@
                     var overallLiabilityTotal = totalLiabilityAmount - nettLoss;
                 }
                 
-                $('#AssetStockItem').text(overallAssetStockItemTotal.toFixed(3));
+                $('#AssetStockItem').text(jsIndianFormat(overallAssetStockItemTotal));
 
                 // $('#DiffOpeningBalance').text(DiffOpeningBalance.toFixed(3));
                 if (nettLoss >= 0) { 
-                    $('#DiffLiabilitieOpeningBalance').text(DiffOpeningBalance.toFixed(3));
+                    $('#DiffLiabilitieOpeningBalance').text(jsIndianFormat(DiffOpeningBalance));
                 } else {
                     $('#DiffLiabilitieOpeningBalance').text(''); 
                 }
 
 
-                $('#Asset').text(Math.abs(overallAssetTotal).toFixed(3));
-                $('#Liability').text(Math.abs(overallLiabilityTotal).toFixed(3));
+                $('#Asset').text(jsIndianFormat(Math.abs(overallAssetTotal)));
+                $('#Liability').text(jsIndianFormat(Math.abs(overallLiabilityTotal)));
             }
 
         });

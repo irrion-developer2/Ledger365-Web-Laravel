@@ -16,10 +16,9 @@ return new class extends Migration
         Schema::create('tally_units', function (Blueprint $table) {
             $table->id();
             $table->string('guid',100)->unique();
-            $table->string('name',100)->nullable();
-            $table->enum('is_deleted', ['Yes', 'No'])->default('No'); 
-            $table->enum('is_gst_excluded', ['Yes', 'No'])->default('No'); 
-            $table->enum('is_simple_unit', ['Yes', 'No'])->default('No');
+            $table->string('name',100);
+            $table->boolean('is_gst_excluded')->default(false);
+            $table->boolean('is_simple_unit')->default(false);
             $table->integer('alter_id')->nullable();
             $table->date('applicable_from')->nullable();
             $table->string('reporting_uqc_name',100)->nullable();

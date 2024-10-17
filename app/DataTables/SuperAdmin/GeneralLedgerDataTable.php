@@ -3,7 +3,7 @@
 namespace App\DataTables\SuperAdmin;
 
 use Carbon\Carbon;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyCompany;
@@ -63,7 +63,7 @@ class GeneralLedgerDataTable extends DataTable
                     $name = $normalizedNames[$name];
                 }
                 // Log::info('normalizedNames:', ['normalizedNames' => $normalizedNames]);
-                $groupCount = TallyGroup::where('parent', $name)->count();
+                $groupCount = TallyLedgerGroup::where('parent', $name)->count();
                 if ($groupCount == 0) {
                     return TallyLedger::where('parent', $name)->count();
                 }
@@ -84,7 +84,7 @@ class GeneralLedgerDataTable extends DataTable
                     }
                 }
 
-                $groupLedgerIdsQuery = TallyGroup::whereIn('company_guid', $companyGuids)->where('parent', $name);
+                $groupLedgerIdsQuery = TallyLedgerGroup::whereIn('company_guid', $companyGuids)->where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
 
                 if ($groupLedgerIds->isNotEmpty()) {
@@ -138,7 +138,7 @@ class GeneralLedgerDataTable extends DataTable
                     }
                 }
 
-                $groupLedgerIdsQuery = TallyGroup::whereIn('company_guid', $companyGuids)
+                $groupLedgerIdsQuery = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                                         ->where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
 
@@ -180,7 +180,7 @@ class GeneralLedgerDataTable extends DataTable
                     }
                 }
 
-                $groupLedgerIdsQuery = TallyGroup::where('parent', $name);
+                $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
 
                 if ($groupLedgerIds->isNotEmpty()) {
@@ -219,7 +219,7 @@ class GeneralLedgerDataTable extends DataTable
                     }
                 }
 
-                $groupLedgerIdsQuery = TallyGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
+                $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
 
                 if ($groupLedgerIds->isNotEmpty()) {
@@ -283,7 +283,7 @@ class GeneralLedgerDataTable extends DataTable
             ->rawColumns(['name']);
     }
 
-    public function query(TallyGroup $model)
+    public function query(TallyLedgerGroup $model)
     {
         $companyGuids = $this->reportService->companyData();
         $query = $model->newQuery()->where(function($query) {

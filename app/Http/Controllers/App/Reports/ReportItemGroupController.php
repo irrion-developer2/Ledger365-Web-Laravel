@@ -5,7 +5,6 @@ namespace App\Http\Controllers\App\Reports;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Yajra\DataTables\DataTables;
-use App\Models\TallyGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherItem;

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\App\Reports;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Yajra\DataTables\DataTables;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyItem;
@@ -36,10 +36,10 @@ class ReportGeneralLedgerController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $generalLedger = TallyGroup::whereIn('company_guid', $companyGuids)
+        $generalLedger = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($generalLedgerId);
 
-        $menuItems = TallyGroup::where('parent', '')->orWhereNull('parent')->whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyLedgerGroup::where('parent', '')->orWhereNull('parent')->whereIn('company_guid', $companyGuids)->get();
 
         return view('app.reports.generalLedger._general_ledger_details', [
             'generalLedger' => $generalLedger,
@@ -60,14 +60,14 @@ class ReportGeneralLedgerController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $generalLedger = TallyGroup::find($generalLedgerId);
+        $generalLedger = TallyLedgerGroup::find($generalLedgerId);
 
         $data = collect();
 
         if ($generalLedger) {
-            $query = TallyGroup::select(
-                'tally_groups.id',
-                'tally_groups.name',
+            $query = TallyLedgerGroup::select(
+                'tally_ledger_groups.id',
+                'tally_ledger_groups.name',
                 \DB::raw('COUNT(tally_ledgers.id) as ledgers_count'),
                 \DB::raw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as total_debit'),
                 \DB::raw('SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END) as total_credit'),
@@ -76,15 +76,15 @@ class ReportGeneralLedgerController extends Controller
                             SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) +
                             SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END)) as closing_balance')
             )
-            ->leftJoin('tally_ledgers', 'tally_groups.name', '=', 'tally_ledgers.parent')
+            ->leftJoin('tally_ledgers', 'tally_ledger_groups.name', '=', 'tally_ledgers.parent')
             ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
             ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-            ->where('tally_groups.parent', $generalLedger->name)                        
+            ->where('tally_ledger_groups.parent', $generalLedger->name)                        
             ->whereNot('tally_vouchers.is_cancelled', 'Yes')
             ->whereNot('tally_vouchers.is_optional', 'Yes')
-            ->whereIn('tally_groups.company_guid', $companyGuids)
+            ->whereIn('tally_ledger_groups.company_guid', $companyGuids)
             ->whereIn('tally_vouchers.company_guid', $companyGuids)
-            ->groupBy('tally_groups.id', 'tally_groups.name', 'tally_ledgers.opening_balance')
+            ->groupBy('tally_ledger_groups.id', 'tally_ledger_groups.name', 'tally_ledgers.opening_balance')
             ->get();
 
 
@@ -135,9 +135,9 @@ class ReportGeneralLedgerController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $generalLedger = TallyGroup::whereIn('company_guid', $companyGuids)->findOrFail($generalLedgerId);
+        $generalLedger = TallyLedgerGroup::whereIn('company_guid', $companyGuids)->findOrFail($generalLedgerId);
 
-        $menuItems = TallyGroup::where('parent', $generalLedger->parent)->whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyLedgerGroup::where('parent', $generalLedger->parent)->whereIn('company_guid', $companyGuids)->get();
 
         return view('app.reports.generalLedger._general_group_ledger_details', [
             'generalLedger' => $generalLedger,
@@ -150,7 +150,7 @@ class ReportGeneralLedgerController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $generalLedger = TallyGroup::whereIn('company_guid', $companyGuids)
+        $generalLedger = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                                     ->find($generalLedgerId);
 
         if (!$generalLedger) {

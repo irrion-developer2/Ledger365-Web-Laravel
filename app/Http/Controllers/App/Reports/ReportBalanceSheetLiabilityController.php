@@ -5,7 +5,7 @@ namespace App\Http\Controllers\App\Reports;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Models\TallyLedger;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherItem;
@@ -33,7 +33,7 @@ class ReportBalanceSheetLiabilityController extends Controller
 
         $company = TallyCompany::where('guid', $companyGuids)->first();
 
-        $liability = TallyGroup::where('guid', $liabilityId)
+        $liability = TallyLedgerGroup::where('guid', $liabilityId)
                                 ->whereIn('company_guid', $companyGuids)
                                 ->firstOrFail();
 
@@ -48,16 +48,16 @@ class ReportBalanceSheetLiabilityController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $generalLedger = TallyGroup::where('guid', $liabilityId)
+        $generalLedger = TallyLedgerGroup::where('guid', $liabilityId)
                                     ->whereIn('company_guid', $companyGuids)
                                     ->firstOrFail();
     
         $data = collect();
     
         if ($generalLedger) {
-            $query = TallyGroup::select(
-                'tally_groups.id',
-                'tally_groups.name',
+            $query = TallyLedgerGroup::select(
+                'tally_ledger_groups.id',
+                'tally_ledger_groups.name',
                 \DB::raw('COUNT(tally_ledgers.id) as ledgers_count'),
                 \DB::raw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as total_debit'),
                 \DB::raw('SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END) as total_credit'),
@@ -66,15 +66,15 @@ class ReportBalanceSheetLiabilityController extends Controller
                             SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) + 
                             SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END)) as closing_balance')
             )
-            ->leftJoin('tally_ledgers', 'tally_groups.name', '=', 'tally_ledgers.parent')
+            ->leftJoin('tally_ledgers', 'tally_ledger_groups.name', '=', 'tally_ledgers.parent')
             ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
             ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-            ->where('tally_groups.parent', $generalLedger->name)
-            ->whereIn('tally_groups.company_guid', $companyGuids)
+            ->where('tally_ledger_groups.parent', $generalLedger->name)
+            ->whereIn('tally_ledger_groups.company_guid', $companyGuids)
             ->whereNot('tally_vouchers.is_cancelled', 'Yes')
             ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('tally_vouchers.company_guid', $companyGuids)
-            ->groupBy('tally_groups.id', 'tally_groups.name', 'tally_ledgers.opening_balance')
+            ->groupBy('tally_ledger_groups.id', 'tally_ledger_groups.name', 'tally_ledgers.opening_balance')
             ->get();
     
             if (!$query->isEmpty()) {

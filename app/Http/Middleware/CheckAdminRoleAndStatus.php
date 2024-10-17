@@ -21,7 +21,7 @@ class CheckAdminRoleAndStatus
             $user = auth()->user();
 
             // Check user status and role
-            if ($user->status == 1 && $user->role == 'Administrative') {
+            if ($user->status == 'Active' && $user->role == 'Administrative') {
                 return $next($request);
             }
         }

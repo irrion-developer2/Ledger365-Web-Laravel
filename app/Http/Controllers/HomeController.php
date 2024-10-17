@@ -6,7 +6,7 @@ use DateTime;
 use App\Models\User;
 use App\Models\TallyItem;
 use App\Models\TallyVoucher;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use Yajra\DataTables\DataTables;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
@@ -32,7 +32,7 @@ class HomeController extends Controller
         $role = auth()->user()->role;
 
         /* cashBankAmount */
-        $cashBank = TallyGroup::whereIn('company_guid', $companyGuids)
+        $cashBank = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                     ->where('name', 'Bank Accounts')
                     ->first();
 
@@ -75,7 +75,7 @@ class HomeController extends Controller
         /* pie chart */
 
         /* Cash Amount */
-        $cashGroup = TallyGroup::where('name', 'Cash-in-Hand')->whereIn('company_guid', $companyGuids)->first();
+        $cashGroup = TallyLedgerGroup::where('name', 'Cash-in-Hand')->whereIn('company_guid', $companyGuids)->first();
         $cashName = $cashGroup ? $cashGroup->name : 'Cash-in-Hand';
 
         $cashAmount = TallyVoucherHead::whereIn('ledger_guid', function($query) use ($cashName, $companyGuids) {
@@ -142,12 +142,12 @@ class HomeController extends Controller
 
     private function calculatePayableCreditNote($companyGuids)
     {
-        $CreditAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+        $CreditAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
                 ->where('tally_vouchers.voucher_type', 'credit note')
                 ->whereIn('tally_vouchers.company_guid', $companyGuids)
                 ->sum('tally_voucher_heads.amount');
 
-        $DebitAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+        $DebitAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
                 ->where('tally_vouchers.voucher_type', 'debit note')
                 ->whereIn('tally_vouchers.company_guid', $companyGuids)
                 ->sum('tally_voucher_heads.amount');
@@ -213,7 +213,7 @@ class HomeController extends Controller
             \Log::info("Querying data for month: $monthName, Company GUIDs: " . json_encode($companyGuids));
 
             $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
-                    $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+                    $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
                          ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
                 })
                 ->where('tally_vouchers.voucher_type', 'Sales')
@@ -225,7 +225,7 @@ class HomeController extends Controller
             \Log::info("Total Sales for $monthName: $totalSales");
 
             $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
-                    $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+                    $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
                          ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
                 })
                 ->where('tally_vouchers.voucher_type', 'Receipt')

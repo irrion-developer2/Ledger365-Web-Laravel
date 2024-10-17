@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\TallyCompany;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyItem;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucher;
@@ -84,7 +84,7 @@ class UserController extends Controller
             return response()->json(['error' => 'Company not found'], 404);
         }
 
-        TallyGroup::where('company_guid', $company->guid)->delete();
+        TallyLedgerGroup::where('company_guid', $company->guid)->delete();
         TallyItem::where('company_guid', $company->guid)->delete();
         TallyLedger::where('company_guid', $company->guid)->delete();
         TallyVoucher::where('company_guid', $company->guid)->delete();

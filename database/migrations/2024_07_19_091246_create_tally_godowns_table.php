@@ -17,7 +17,6 @@ return new class extends Migration
             $table->id();
             $table->string('guid',100)->unique();
             $table->string('parent',100)->nullable();
-            $table->enum('is_deleted', ['Yes', 'No'])->default('No');
             $table->integer('alter_id')->nullable();
             $table->string('language_name',100)->nullable();
             $table->timestamps();

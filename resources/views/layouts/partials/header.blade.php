@@ -594,7 +594,7 @@
                                     </form>
                                 </a>
                             </li>
-                            @if(auth()->check() && auth()->user()->status == 1 && auth()->user()->role == 'Owner')
+                            @if(auth()->check() && auth()->user()->status == 'Active' && auth()->user()->role == 'Owner')
                             <li>
                                 <div class="dropdown-divider mb-0"></div>
                             </li>

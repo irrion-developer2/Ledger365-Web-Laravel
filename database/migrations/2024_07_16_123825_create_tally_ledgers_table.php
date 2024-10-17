@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('tally_ledgers', function (Blueprint $table) {
             $table->id();
             $table->string('guid',100)->unique();
-            $table->string('company_guid',100)->nullable();
+            $table->string('company_guid',100);
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             $table->string('language_name',100)->nullable();
             $table->string('parent',100)->nullable()->index();
@@ -32,10 +32,10 @@ return new class extends Migration
             $table->string('excise_ledger_classification',20)->nullable();
             $table->string('excise_duty_type',20)->nullable();
             $table->string('excise_nature_of_purchase',20)->nullable();
-            $table->enum('is_bill_wise_on', ['Yes', 'No'])->default('No');
-            $table->enum('is_cost_centres_on', ['Yes', 'No'])->default('No');
+            $table->boolean('is_bill_wise_on')->default(false);
+            $table->boolean('is_cost_centres_on')->default(false);
             $table->integer('alter_id')->nullable();
-            $table->string('opening_balance')->nullable();
+            $table->decimal('opening_balance',15,3)->nullable();
             $table->string('alias1',100)->nullable();
             $table->string('alias2',100)->nullable();
             $table->string('alias3',100)->nullable();

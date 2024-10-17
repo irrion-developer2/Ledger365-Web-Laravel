@@ -23,7 +23,6 @@ use App\Http\Controllers\App\StockItemController;
 use App\Http\Controllers\App\SalesController;
 use App\Http\Controllers\App\ColumnarController;
 use App\Http\Controllers\App\EmployeeController;
-use App\Http\Controllers\App\BankReconciliationController;
 use App\Http\Controllers\App\Reports\ReportController;
 use App\Http\Controllers\App\Reports\ReportCashBankController;
 use App\Http\Controllers\App\Reports\ReportGeneralLedgerController;
@@ -175,12 +174,6 @@ Route::middleware([
 
         Route::get('/columnar', [ColumnarController::class, 'index'])->name('columnar.index');
         Route::get('/columnar/get-data', [ColumnarController::class, 'getData'])->name('columnar.get-data');
-
-        Route::get('/BankReconciliation', [BankReconciliationController::class, 'index'])->name('BankReconciliation.index');
-        Route::post('/BankReconciliation/import', [BankReconciliationController::class, 'import'])->name('BankReconciliation.import');
-        Route::get('/BankReconciliation/get-data', [BankReconciliationController::class, 'getData'])->name('BankReconciliation.get-data');
-
-        Route::post('/upload-pdf', [BankReconciliationController::class, 'uploadPdf']);
 
 
         Route::resource('/settings', SettingController::class);

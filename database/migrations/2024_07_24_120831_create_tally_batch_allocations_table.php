@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('amount',15,3)->nullable();
             $table->decimal('actual_qty',15,3)->nullable();
             $table->decimal('billed_qty',15,3)->nullable();
-            $table->string('order_no',100)->nullable();
+            $table->string('order_no',50)->nullable();
             $table->timestamps();
         });
     }

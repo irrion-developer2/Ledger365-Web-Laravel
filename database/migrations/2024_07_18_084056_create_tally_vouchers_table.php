@@ -16,16 +16,16 @@ return new class extends Migration
         Schema::create('tally_vouchers', function (Blueprint $table) {
             $table->id();
             $table->string('guid',100)->unique();
-            $table->string('company_guid',100)->nullable();
+            $table->string('company_guid',100);
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
-            $table->string('voucher_type',100)->nullable()->index();
-            $table->enum('is_cancelled', ['Yes', 'No'])->default('No');
-            $table->enum('is_optional', ['Yes', 'No'])->default('No');
+            $table->string('voucher_type',100)->index();
+            $table->boolean('is_cancelled')->default(false);
+            $table->boolean('is_optional')->default(false);
             $table->integer('alter_id')->nullable();
             $table->string('party_ledger_name',100)->nullable();
-            $table->string('ledger_guid',100)->nullable()->index();
+            $table->string('party_ledger_guid',100)->index();
             $table->string('voucher_number',100)->nullable();
-            $table->date('voucher_date')->nullable();
+            $table->date('voucher_date')->index();
             $table->string('reference_no',100)->nullable();
             $table->date('reference_date')->nullable();
             $table->string('place_of_supply',100)->nullable();

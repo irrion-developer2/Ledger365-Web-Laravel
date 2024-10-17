@@ -21,7 +21,10 @@ return new class extends Migration
             $table->string('ledger_guid',100)->nullable()->index();
             $table->decimal('amount', 15, 3)->nullable(); 
             $table->string('entry_type',10)->nullable();
-            $table->enum('isdeemedpositive', ['Yes', 'No'])->default('No');
+            $table->boolean('isdeemedpositive')->default(false);
+
+
+            $table->index(['tally_voucher_id', 'ledger_guid']);
             $table->timestamps();
         });
     }

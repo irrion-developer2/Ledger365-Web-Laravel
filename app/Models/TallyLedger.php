@@ -25,7 +25,7 @@ class TallyLedger extends Model
 
     public function parentGroup()
     {
-        return $this->belongsTo(TallyGroup::class, 'parent', 'name');
+        return $this->belongsTo(TallyLedgerGroup::class, 'parent', 'name');
     }
 
     public function tallyVouchers()

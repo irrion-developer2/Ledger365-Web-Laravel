@@ -5,7 +5,7 @@ namespace App\Http\Controllers\App\Reports;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Yajra\DataTables\DataTables;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherHead;
@@ -37,14 +37,14 @@ class ReportCustomerGroupController extends Controller
         $companyGuids = $this->reportService->companyData();
 
         if ($request->ajax()) {
-            $query = TallyGroup::whereIn('company_guid', $companyGuids)->where('name', 'Sundry Debtors');
+            $query = TallyLedgerGroup::whereIn('company_guid', $companyGuids)->where('name', 'Sundry Debtors');
 
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('total_sales', function ($data) use ($companyGuids) {
 
                     $salesAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
-                        $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+                        $query->join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                             ->where('tally_ledgers.parent', $data->name)
                             ->whereNot('tally_vouchers.is_cancelled', 'Yes')
                             ->whereNot('tally_vouchers.is_optional', 'Yes')
@@ -55,7 +55,7 @@ class ReportCustomerGroupController extends Controller
 
                     
                     $creditAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
-                        $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+                        $query->join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                             ->where('tally_ledgers.parent', $data->name)
                             ->whereNot('tally_vouchers.is_cancelled', 'Yes')
                             ->whereNot('tally_vouchers.is_optional', 'Yes')
@@ -70,7 +70,7 @@ class ReportCustomerGroupController extends Controller
                     return number_format(abs($Amt), 2); 
                 })
                 ->addColumn('transaction', function ($data) use ($companyGuids) {
-                    $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+                    $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                         ->where('tally_ledgers.parent', $data->name)
                         ->where('tally_vouchers.voucher_type', 'sales')
                         ->whereNot('tally_vouchers.is_cancelled', 'Yes')
@@ -78,7 +78,7 @@ class ReportCustomerGroupController extends Controller
                         ->whereIn('tally_vouchers.company_guid', $companyGuids)
                         ->count();
 
-                    $creditCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+                    $creditCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                         ->where('tally_ledgers.parent', $data->name)
                         ->where('tally_vouchers.voucher_type', 'credit note')
                         ->whereNot('tally_vouchers.is_cancelled', 'Yes')
@@ -92,7 +92,7 @@ class ReportCustomerGroupController extends Controller
                 })
                 ->addColumn('avg_sales', function ($data) use ($companyGuids) {
                     $salesAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
-                        $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+                        $query->join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                             ->where('tally_ledgers.parent', $data->name)
                             ->whereNot('tally_vouchers.is_cancelled', 'Yes')
                             ->whereNot('tally_vouchers.is_optional', 'Yes')
@@ -102,7 +102,7 @@ class ReportCustomerGroupController extends Controller
                     ->sum('amount');
             
                     $creditAmt = TallyVoucherHead::whereHas('voucher', function ($query) use ($data, $companyGuids) {
-                        $query->join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+                        $query->join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                             ->where('tally_ledgers.parent', $data->name)
                             ->whereNot('tally_vouchers.is_cancelled', 'Yes')
                             ->whereNot('tally_vouchers.is_optional', 'Yes')
@@ -113,7 +113,7 @@ class ReportCustomerGroupController extends Controller
             
                     $totalAmount = $salesAmt + $creditAmt;
 
-                    $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.ledger_guid', '=', 'tally_ledgers.guid')
+                    $salesCount = TallyVoucher::join('tally_ledgers', 'tally_vouchers.party_ledger_guid', '=', 'tally_ledgers.guid')
                         ->where('tally_ledgers.parent', $data->name)
                         ->where('tally_vouchers.voucher_type', 'sales')
                         ->whereNot('tally_vouchers.is_cancelled', 'Yes')
@@ -133,10 +133,10 @@ class ReportCustomerGroupController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $customerGroupLedger = TallyGroup::whereIn('company_guid', $companyGuids)
+        $customerGroupLedger = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                                         ->findOrFail($customerGroupLedgerId);
 
-        $menuItems = TallyGroup::where('name', $customerGroupLedger->name)->whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyLedgerGroup::where('name', $customerGroupLedger->name)->whereIn('company_guid', $companyGuids)->get();
 
         return view('app.reports.customerGroup._customer_group_ledger', [
             'customerGroupLedger' => $customerGroupLedger,
@@ -149,7 +149,7 @@ class ReportCustomerGroupController extends Controller
     {
         $companyGuids = $this->reportService->companyData();
 
-        $generalLedger = TallyGroup::whereIn('company_guid', $companyGuids)
+        $generalLedger = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($customerGroupLedgerId);
         $generalLedgerName = $generalLedger->name;
     

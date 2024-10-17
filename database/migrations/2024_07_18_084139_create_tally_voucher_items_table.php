@@ -24,7 +24,10 @@ return new class extends Migration
             $table->string('company_guid',100)->nullable();
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
 
-            $table->string('head_ledger_guid',100)->nullable();
+
+            $table->unsignedBigInteger('head_ledger_guid')->nullable();
+            $table->foreign('head_ledger_guid')->references('id')->on('tally_ledgers')->onDelete('cascade');
+       
            
             $table->string('stock_item_name',100)->nullable();
             $table->string('gst_taxability',20)->nullable();
@@ -38,11 +41,13 @@ return new class extends Migration
             
             $table->decimal('rate', 15, 3)->nullable(); 
             $table->string('unit',50)->nullable();
+            $table->decimal('actual_qty', 15, 3)->nullable(); 
             $table->decimal('billed_qty', 15, 3)->nullable(); 
             $table->decimal('amount', 15, 3)->nullable(); 
             $table->decimal('discount', 15, 3)->nullable();
             $table->decimal('igst_rate', 15, 2)->nullable();
             $table->string('gst_hsn_name',100)->nullable();
+            
             $table->timestamps();
         });
     }

@@ -228,7 +228,7 @@ class AnalyticController extends Controller
             $monthName = DateTime::createFromFormat('!m', $month)->format('F');
 
             $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
-                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
                      ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
             })
             ->where('tally_vouchers.voucher_type', 'Sales')
@@ -237,7 +237,7 @@ class AnalyticController extends Controller
             ->sum('tally_voucher_heads.amount');
 
             $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
-                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.ledger_guid')
+                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
                      ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
             })
             ->where('tally_vouchers.voucher_type', 'Receipt')

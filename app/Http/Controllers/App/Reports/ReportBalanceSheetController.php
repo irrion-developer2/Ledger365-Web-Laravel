@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Services\ReportService;
 use App\Models\TallyLedger;
-use App\Models\TallyGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherItem;
@@ -67,7 +67,7 @@ class ReportBalanceSheetController extends Controller
                 END as account_type
             ';
 
-            $Balancequery = TallyGroup::where(function($query) {
+            $Balancequery = TallyLedgerGroup::where(function($query) {
                             $query->where('parent', '')->orWhereNull('parent');
                         })
                         ->whereIn('company_guid', $companyGuids)
@@ -93,7 +93,7 @@ class ReportBalanceSheetController extends Controller
                         }
                     }
 
-                    $groupLedgerIdsQuery = TallyGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
+                    $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
                     $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
     
                     if ($groupLedgerIds->isNotEmpty()) {
@@ -122,7 +122,9 @@ class ReportBalanceSheetController extends Controller
                         return '-';
                     }
     
-                    return number_format(abs($totalAmount), 3);
+
+                    // dd($totalAmount);
+                    return indian_format(abs($totalAmount));
                 })
                 ->filter(function ($query) {
                     $query->get()->filter(function ($item) {

@@ -195,15 +195,19 @@ class LedgerController extends Controller
                     $guid = $groupData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
     
-                    // Check if the company exists in the tally_companies table
-                    // $companyExists = \DB::table('tally_companies')->where('guid', $companyGuid)->exists();
-    
-                    // if (!$companyExists) {
-                    //     // Handle case when the company does not exist, log it or throw an exception
-                    //     Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                    //     throw new \Exception('Company GUID not found in tally_companies: ' . $companyGuid);
-                    // }
-    
+                    if (!$companyExists) {
+                        Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
+                        continue; // Skip this record
+                    }
+                    
+                    Log::info('Inserting into tally_ledger_groups', [
+                        'guid' => $guid,
+                        'company_guid' => $companyGuid,
+                        'parent' => $groupData['PARENT'] ?? null,
+                        'name' => $nameField,
+                    ]);
+
+                    
                     $tallyLedgerGroup = TallyLedgerGroup::updateOrCreate(
                         ['guid' => $guid],
                         [

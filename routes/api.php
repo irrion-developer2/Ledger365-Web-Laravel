@@ -26,6 +26,8 @@ Route::post('/ledgers/{token_id}/{company_id}', [JsonImportController::class, 'l
     ->middleware('tenant');
 
 
+Route::post('/license_check', [LedgerController::class, 'licenseCheckJsonImport'])->name('license.import');
+
 Route::post('/companies', [LedgerController::class, 'companyJsonImport'])->name('company.import');
 
 Route::post('/master', [LedgerController::class, 'masterJsonImport'])->name('master.import');

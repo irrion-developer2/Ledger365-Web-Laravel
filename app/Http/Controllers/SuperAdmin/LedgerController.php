@@ -64,6 +64,26 @@ class LedgerController extends Controller
         }
     }
 
+    private function licenseCheckJsonImport(Request $request)
+    {
+        $request->validate([
+            'license_number' => 'required|string',
+        ]);
+
+        $licenseNumber = $request->input('license_number');
+
+        $license = TallyLicense::where('license_number', $licenseNumber)->first();
+
+        if (!$license) {
+            return response()->json(['error' => 'License not found'], 404);
+        } elseif ($license->status != 'Active') {
+            return response()->json(['error' => 'License not active'], 403);
+        }
+
+        return response()->json(['message' => 'License is valid and active'], 200);
+    }
+
+
     public function companyJsonImport(Request $request)
     {
         try {
@@ -633,6 +653,10 @@ class LedgerController extends Controller
                     $ledgerGuid = TallyLedger::where('name', $partyLedgerName)
                                                 ->where('company_guid', $companyGuid)
                                                 ->value('guid');
+                                                
+                    Log::info('Party Ledger Name: ' . $partyLedgerName);
+                    Log::info('Party Ledger GUID: ' . $ledgerGuid);
+                    
 
                     $existingVoucher = TallyVoucher::where('guid', $voucherData['GUID'])
                                     ->where('company_guid', $companyGuid)

@@ -23,7 +23,10 @@ return new class extends Migration
             $table->boolean('is_optional')->default(false);
             $table->integer('alter_id')->nullable();
             $table->string('party_ledger_name',100)->nullable();
-            $table->string('party_ledger_guid',100)->index();
+
+            $table->string('party_ledger_guid',100);
+            $table->foreign('party_ledger_guid')->references('guid')->on('tally_ledgers')->onDelete('cascade');
+            
             $table->string('voucher_number',100)->nullable();
             $table->date('voucher_date')->index();
             $table->string('reference_no',100)->nullable();

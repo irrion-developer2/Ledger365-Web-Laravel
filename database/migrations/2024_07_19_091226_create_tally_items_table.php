@@ -77,8 +77,8 @@ return new class extends Migration
             $table->string('tally_unit_guid',100);
             $table->foreign('tally_unit_guid')->references('guid')->on('tally_units')->onDelete('cascade');
             $table->string('base_units',100)->nullable();
-            $table->decimal('opening_balance', 15, 2)->nullable();
-            $table->decimal('opening_value', 15, 2)->nullable();
+            $table->decimal('opening_balance', 15, 3)->nullable();
+            $table->decimal('opening_value', 15, 3)->nullable();
             $table->decimal('opening_rate',15,3)->nullable();
             $table->string('unit',100)->nullable();
             $table->decimal('igst_rate',5,2)->nullable();

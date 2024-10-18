@@ -37,9 +37,9 @@ class ReportController extends Controller
         $companyGuids = $this->reportService->companyData();
 
         $voucherHead = TallyLedger::whereIn('company_guid', $companyGuids)->where('guid', $voucherHeadId)->firstOrFail();
-        $voucherHeadName = $voucherHead->language_name;
+        $voucherHeadName = $voucherHead->name;
 
-        $menuItems = TallyLedger::where('language_name', $voucherHead->language_name)->whereIn('company_guid', $companyGuids)->get();
+        $menuItems = TallyLedger::where('name', $voucherHead->name)->whereIn('company_guid', $companyGuids)->get();
 
         return view('app.reports._voucher_heads', [
             'voucherHead' => $voucherHead,
@@ -132,7 +132,7 @@ class ReportController extends Controller
             $bankAcc = collect();
         }
 
-        $ledgerData = TallyLedger::where('language_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $ledgerData = TallyLedger::where('name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
             $ledgerItem = $ledgerData->first();
         } else {
@@ -234,7 +234,7 @@ class ReportController extends Controller
                                 ->whereIn('company_guid', $companyGuids)
                                 ->where('gst_duty_head', '!=', '')
                                 ->get()
-                                ->keyBy('language_name');
+                                ->keyBy('name');
 
         $gstVoucherHeads = $voucherHeads->filter(function ($voucherHead) use ($voucherItem, $tallyLedgers) {
             return $voucherHead->ledger_name !== $voucherItem->party_ledger_name &&
@@ -356,7 +356,7 @@ class ReportController extends Controller
             $voucherHeadsSaleReceipt = collect();
         }
 
-        $ledgerData = TallyLedger::where('language_name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $ledgerData = TallyLedger::where('name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
             $ledgerItem = $ledgerData->first();
         } else {
@@ -463,7 +463,7 @@ class ReportController extends Controller
             $voucherHeadsSaleReceipt = collect();
         }
 
-        $ledgerData = TallyLedger::where('language_name', $voucherItem->party_ledger_name)->get();
+        $ledgerData = TallyLedger::where('name', $voucherItem->party_ledger_name)->get();
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
             $ledgerItem = $ledgerData->first();
         } else {

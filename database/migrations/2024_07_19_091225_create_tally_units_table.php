@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::create('tally_units', function (Blueprint $table) {
             $table->id();
             $table->string('guid',100)->unique();
+            $table->string('company_guid',100);
+            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             $table->string('name',100);
             $table->boolean('is_gst_excluded')->default(false);
             $table->boolean('is_simple_unit')->default(false);

@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('guid',100)->unique();
             $table->string('company_guid',100);
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
-            $table->string('language_name',100)->nullable();
+            $table->string('name',100)->nullable();
+            $table->string('ledger_group_guid',100);
+            $table->foreign('ledger_group_guid')->references('guid')->on('tally_ledger_groups')->onDelete('cascade');
             $table->string('parent',100)->nullable()->index();
             $table->string('tax_classification_name',100)->nullable();
             $table->string('tax_type',20)->nullable();

@@ -37,7 +37,7 @@ class SupplierController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
       
-            $suppliersQuery = TallyLedger::select('tally_ledgers.company_guid', 'tally_ledgers.guid', 'tally_ledgers.language_name', 'tally_ledgers.party_gst_in')
+            $suppliersQuery = TallyLedger::select('tally_ledgers.company_guid', 'tally_ledgers.guid', 'tally_ledgers.name', 'tally_ledgers.party_gst_in')
                 ->where('parent', 'Sundry Creditors')
                 ->whereIn('tally_ledgers.company_guid', $companyGuids)
                 ->leftJoin('tally_vouchers', function ($join) {

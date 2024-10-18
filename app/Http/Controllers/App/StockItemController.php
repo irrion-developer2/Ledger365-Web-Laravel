@@ -578,12 +578,12 @@ class StockItemController extends Controller
                 ->pluck('party_ledger_name');
         })->unique()->toArray();
 
-        $tallyLedgers = TallyLedger::whereIn('language_name', $partyLedgerNames)->whereIn('company_guid', $companyGuids)->get();
+        $tallyLedgers = TallyLedger::whereIn('name', $partyLedgerNames)->whereIn('company_guid', $companyGuids)->get();
 
         $ledgerGuids = $tallyLedgers->pluck('guid');
 
         $query = TallyLedger::select(
-                'tally_ledgers.language_name',
+                'tally_ledgers.name',
                 'tally_ledgers.guid',
                 'tally_vouchers.voucher_number',
                 'tally_voucher_items.amount',
@@ -592,13 +592,13 @@ class StockItemController extends Controller
                 'tally_voucher_items.unit',
                 'tally_voucher_items.rate'
             )
-            ->leftJoin('tally_vouchers', 'tally_ledgers.language_name', '=', 'tally_vouchers.party_ledger_name')
+            ->leftJoin('tally_vouchers', 'tally_ledgers.name', '=', 'tally_vouchers.party_ledger_name')
             ->leftJoin('tally_voucher_items', 'tally_vouchers.id', '=', 'tally_voucher_items.tally_voucher_id')
             ->whereIn('tally_ledgers.guid', $ledgerGuids)
             ->where('tally_vouchers.voucher_type', 'Sales')
             ->where('tally_voucher_items.stock_item_name', $saleStockItemName)
             ->whereIn('tally_ledgers.company_guid', $companyGuids)
-            ->groupBy('tally_ledgers.language_name', 'tally_ledgers.guid', 'tally_vouchers.voucher_number', 'tally_voucher_items.amount', 'tally_voucher_items.stock_item_name', 'tally_voucher_items.billed_qty', 'tally_voucher_items.unit', 'tally_voucher_items.rate');
+            ->groupBy('tally_ledgers.name', 'tally_ledgers.guid', 'tally_vouchers.voucher_number', 'tally_voucher_items.amount', 'tally_voucher_items.stock_item_name', 'tally_voucher_items.billed_qty', 'tally_voucher_items.unit', 'tally_voucher_items.rate');
 
         return DataTables::of($query)
             ->addIndexColumn()

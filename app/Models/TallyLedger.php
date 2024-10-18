@@ -30,7 +30,7 @@ class TallyLedger extends Model
 
     public function tallyVouchers()
     {
-        return $this->hasMany(TallyVoucher::class, 'party_ledger_name', 'language_name');
+        return $this->hasMany(TallyVoucher::class, 'party_ledger_name', 'name');
     }
 
     public function vouchers(): HasMany

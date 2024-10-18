@@ -129,8 +129,8 @@
             ajax: '{{ route('reports.CashBank.data', $cashBankId) }}',
             columns: [
                 {
-                    data: 'language_name',
-                    name: 'language_name',
+                    data: 'name',
+                    name: 'name',
                     render: function(data, type, row) {
                         var url = '{{ route("reports.VoucherHead", ":guid") }}';
                         url = url.replace(':guid', row.guid);
@@ -159,8 +159,8 @@
         ajax: '{{ route('reports.CashBank.data', $cashBankId) }}',
         columns: [
             {
-                data: 'language_name',
-                name: 'language_name',
+                data: 'name',
+                name: 'name',
                 render: function(data, type, row) {
                     var url = '{{ route("reports.VoucherHead", ":guid") }}';
                     url = url.replace(':guid', row.guid);

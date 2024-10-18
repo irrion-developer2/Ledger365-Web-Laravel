@@ -81,7 +81,7 @@ class ReportCashBankController extends Controller
             ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
             ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
             ->select(
-                'tally_ledgers.language_name',
+                'tally_ledgers.name',
                 'tally_ledgers.guid',
                 'tally_ledgers.opening_balance',
                 DB::raw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as debit'),
@@ -94,7 +94,7 @@ class ReportCashBankController extends Controller
             ->whereNot('tally_vouchers.is_cancelled', 'Yes')
             ->whereNot('tally_vouchers.is_optional', 'Yes')
             ->whereIn('tally_vouchers.company_guid', $companyGuids) // Corrected here
-            ->groupBy('tally_ledgers.language_name', 'tally_ledgers.guid', 'tally_ledgers.opening_balance');
+            ->groupBy('tally_ledgers.name', 'tally_ledgers.guid', 'tally_ledgers.opening_balance');
 
         return DataTables::of($query)
             ->addIndexColumn()

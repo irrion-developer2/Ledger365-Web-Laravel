@@ -99,11 +99,11 @@ class HomeController extends Controller
     {
         $pieChartData = DB::table('tally_ledgers as tl')
             ->leftJoin('tally_voucher_heads as tvh', 'tl.guid', '=', 'tvh.ledger_guid')
-            ->select('tl.language_name', DB::raw('COALESCE(SUM(tvh.amount), 0) AS total_amount'))
+            ->select('tl.name', DB::raw('COALESCE(SUM(tvh.amount), 0) AS total_amount'))
             ->where('tl.parent', 'Sundry Debtors')
             ->whereIn('tl.company_guid', $companyGuids)
-            ->groupBy('tl.language_name')
-            ->pluck('total_amount', 'language_name');
+            ->groupBy('tl.name')
+            ->pluck('total_amount', 'name');
 
         $pieChartDataArray = $pieChartData->toArray();
 

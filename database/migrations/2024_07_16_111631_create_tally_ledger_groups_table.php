@@ -22,7 +22,7 @@ return new class extends Migration
             
             $table->string('name',100)->nullable()->index(); 
             $table->string('parent',100)->nullable();
-            $table->boolean('affects_stock')->default('false')->change();
+            $table->boolean('affects_stock')->default(false); 
 
             $table->integer('alter_id');
             $table->timestamps();

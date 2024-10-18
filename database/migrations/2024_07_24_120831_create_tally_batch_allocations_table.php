@@ -17,6 +17,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('item_id')->constrained('tally_voucher_items')->onDelete('cascade');
             $table->string('batch_name',100)->nullable();
+
+            $table->string('godown_guid',100);
+            $table->foreign('godown_guid')->references('guid')->on('tally_godowns')->onDelete('cascade');
+
             $table->string('godown_name',100)->nullable();
             $table->string('destination_godown_name',100)->nullable();
             $table->decimal('amount',15,3)->nullable();

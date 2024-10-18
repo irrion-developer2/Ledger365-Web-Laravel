@@ -147,7 +147,7 @@
                 type: 'GET'
             },
             columns: [
-                {data: 'language_name', name: 'language_name'},
+                {data: 'name', name: 'name'},
                 { data: 'debit', name: 'debit', className: 'text-end' },
                 { data: 'credit', name: 'credit', className: 'text-end' },
                 { data: 'closing_balance', name: 'closing_balance', className: 'text-end' }

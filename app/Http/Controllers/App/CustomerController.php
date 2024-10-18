@@ -39,7 +39,7 @@ class CustomerController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
       
-            $customersQuery = TallyLedger::select('tally_ledgers.company_guid', 'tally_ledgers.guid', 'tally_ledgers.language_name', 'tally_ledgers.party_gst_in')
+            $customersQuery = TallyLedger::select('tally_ledgers.company_guid', 'tally_ledgers.guid', 'tally_ledgers.name', 'tally_ledgers.party_gst_in')
                 ->where('parent', 'Sundry Debtors')
                 ->whereIn('tally_ledgers.company_guid', $companyGuids)
                 ->leftJoin('tally_vouchers', function ($join) {
@@ -140,7 +140,7 @@ class CustomerController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
       
-            $customersQuery = TallyLedger::select('tally_ledgers.company_guid', 'tally_ledgers.guid', 'tally_ledgers.language_name', 'tally_ledgers.party_gst_in')
+            $customersQuery = TallyLedger::select('tally_ledgers.company_guid', 'tally_ledgers.guid', 'tally_ledgers.name', 'tally_ledgers.party_gst_in')
                 ->whereNotIn('parent', ['Sundry Debtors', 'Sundry Creditors'])
                 ->whereIn('tally_ledgers.company_guid', $companyGuids)
                 ->leftJoin('tally_vouchers', function ($join) {

@@ -131,8 +131,8 @@
         ajax: '{{ route('stock-items.SaleStockItem.data', $saleStockItemId) }}',
         columns: [
             {
-                data: 'language_name',
-                name: 'language_name',
+                data: 'name',
+                name: 'name',
                 render: function(data, type, row) {
                     var url = '{{ route("reports.VoucherHead", ":guid") }}';
                     url = url.replace(':guid', row.guid);

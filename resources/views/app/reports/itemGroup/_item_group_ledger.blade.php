@@ -125,8 +125,8 @@
             ajax: '{{ route('reports.CustomerGroupLedger.data', $customerGroupLedgerId) }}',
             columns: [
                 {
-                    data: 'language_name',
-                    name: 'language_name',
+                    data: 'name',
+                    name: 'name',
                     render: function(data, type, row) {
                         var url = '{{ route("reports.VoucherHead", ":guid") }}';
                         url = url.replace(':guid', row.guid);
@@ -210,7 +210,7 @@
             },
             columns: [
                 // {data: 'id', name: 'id'},
-                {data: 'language_name', name: 'language_name',
+                {data: 'name', name: 'name',
                     render: function(data, type, row) {
                         var url = '{{ route("reports.VoucherHead", ":guid") }}';
                         url = url.replace(':guid', row.guid);

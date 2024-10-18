@@ -107,7 +107,7 @@ class SalesDataTable extends DataTable
                 $join->on('tally_vouchers.party_ledger_name', '=', 'tally_voucher_heads.ledger_name')
                     ->on('tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id');
             })
-            ->leftJoin('tally_ledgers', 'tally_vouchers.party_ledger_name', '=', 'tally_ledgers.language_name')
+            ->leftJoin('tally_ledgers', 'tally_vouchers.party_ledger_name', '=', 'tally_ledgers.name')
             ->leftJoin('tally_voucher_heads as related_heads', 'tally_voucher_heads.tally_voucher_id', '=', 'related_heads.tally_voucher_id')
             ->groupBy('tally_vouchers.id', 'tally_vouchers.party_ledger_name', 'tally_vouchers.voucher_date', 'tally_vouchers.voucher_number', 'tally_vouchers.voucher_type', 'tally_ledgers.parent', 'tally_ledgers.bill_credit_period', 'tally_ledgers.gst_in', 'tally_ledgers.phone_no', 'tally_ledgers.email', 'tally_voucher_heads.entry_type', 'tally_voucher_heads.amount')
             ->selectRaw('GROUP_CONCAT(DISTINCT related_heads.ledger_name) as related_ledger_names')

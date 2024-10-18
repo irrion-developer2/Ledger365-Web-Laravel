@@ -134,7 +134,7 @@
                 }
             },
             columns: [
-                {data: 'language_name', name: 'language_name',
+                {data: 'name', name: 'name',
                     render: function(data, type, row) {
                         var url = '{{ route("customers.show", ":guid") }}';
                         url = url.replace(':guid', row.guid);

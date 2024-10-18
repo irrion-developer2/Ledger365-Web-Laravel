@@ -43,7 +43,7 @@
                             @foreach($menuItems as $item)
                                 <a href="{{ route('reports.VoucherHead', ['VoucherHead' => $item->guid]) }}" class="list-group-item d-flex align-items-center {{ request()->route('VoucherHead') == $item->guid ? 'active' : '' }}" style="border-top: none;">
                                     <i class='bx {{ $item->icon ?? 'bx-default-icon' }} me-3 font-20'></i>
-                                    <span>{{ $item->language_name }}</span>
+                                    <span>{{ $item->name }}</span>
                                     @if(isset($item->badge))
                                         <span class="badge bg-primary rounded-pill ms-auto">{{ $item->badge }}</span>
                                     @endif
@@ -58,7 +58,7 @@
                 
                 <div class="d-flex align-items-center">
                     <div class="">
-                        <h4 class="my-1 text-info">{{ $voucherHead->language_name }} </h4>
+                        <h4 class="my-1 text-info">{{ $voucherHead->name }} </h4>
                     </div>
                 </div>
                

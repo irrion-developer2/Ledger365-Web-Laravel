@@ -142,7 +142,7 @@ class SalesController extends Controller
         }
 
 
-        $ledgerData = TallyLedger::where('language_name', $saleItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $ledgerData = TallyLedger::where('name', $saleItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
             $ledgerItem = $ledgerData->first();
         } else {

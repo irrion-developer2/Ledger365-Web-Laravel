@@ -43,9 +43,9 @@ class CustomerDataTable extends DataTable
             ->editColumn('created_at', function ($request) {
                 return Carbon::parse($request->created_at)->format('Y-m-d H:i:s');
             })
-            ->editColumn('language_name', function ($data) {
+            ->editColumn('name', function ($data) {
                 $url = route('customers.show', ['customer' => $data->guid]);
-                return '<a href="' . $url . '" style="color: #337ab7;">' . $data->language_name . '</a>';
+                return '<a href="' . $url . '" style="color: #337ab7;">' . $data->name . '</a>';
             })
             ->editColumn('bill_credit_period', function ($data) {
                 if (empty($data->bill_credit_period)) {
@@ -140,7 +140,7 @@ class CustomerDataTable extends DataTable
             })
             
             
-            ->rawColumns(['language_name']);
+            ->rawColumns(['name']);
     }
 
     public function query(TallyLedger $model)
@@ -297,7 +297,7 @@ class CustomerDataTable extends DataTable
     {
         return [
             // Column::make('No')->data('DT_RowIndex')->name('DT_RowIndex')->searchable(false)->orderable(false),
-            Column::make('language_name')->title(__('Name'))->addClass('fixed-column'),
+            Column::make('name')->title(__('Name'))->addClass('fixed-column'),
             Column::make('parent')->title(__('Group')),
             Column::make('sales')->title(__('Sales'))->addClass('text-end'),
             Column::make('sales_last_30_days')->title(__('Sales (Last 30 days)'))->addClass('text-end'),

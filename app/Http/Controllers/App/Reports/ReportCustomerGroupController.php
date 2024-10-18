@@ -168,7 +168,7 @@ class ReportCustomerGroupController extends Controller
             ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
             ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
             ->select(
-                'tally_ledgers.language_name',
+                'tally_ledgers.name',
                 'tally_ledgers.guid',
                 'tally_ledgers.opening_balance',
                 DB::raw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as debit'),
@@ -189,7 +189,7 @@ class ReportCustomerGroupController extends Controller
             ->whereIn('tally_ledgers.company_guid', $companyGuids)
             ->whereNot('tally_vouchers.is_cancelled', 'Yes')
             ->whereNot('tally_vouchers.is_optional', 'Yes')
-            ->groupBy('tally_ledgers.language_name', 'tally_ledgers.guid', 'tally_ledgers.opening_balance');
+            ->groupBy('tally_ledgers.name', 'tally_ledgers.guid', 'tally_ledgers.opening_balance');
 
                 return DataTables::of($query)
                     ->addIndexColumn()
@@ -237,8 +237,8 @@ class ReportCustomerGroupController extends Controller
                         return $this->formatNumber($avgSales);
                     })
                     
-                    ->filterColumn('language_name', function ($query, $keyword) {
-                        $query->where('tally_ledgers.language_name', 'like', "%{$keyword}%");
+                    ->filterColumn('name', function ($query, $keyword) {
+                        $query->where('tally_ledgers.name', 'like', "%{$keyword}%");
                     })
                     ->filterColumn('total_sales', function ($query, $keyword) {
                        

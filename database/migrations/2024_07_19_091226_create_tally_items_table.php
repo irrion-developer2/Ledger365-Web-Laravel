@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('company_guid',100);
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             $table->string('name',150);
-            $table->string('language_name',150)->nullable();
+            // $table->string('language_name',150)->nullable();
             $table->string('parent',100)->nullable()->index();
             $table->string('category',100)->nullable();
             $table->string('gst_applicable',100)->nullable();
@@ -30,7 +30,6 @@ return new class extends Migration
             $table->string('vat_applicable',100)->nullable();
             $table->string('costing_method',100)->nullable();
             $table->string('valuation_method',100)->nullable();
-            $table->string('base_units',100)->nullable();
             $table->string('additional_units',100)->nullable();
             $table->string('excise_item_classification',100)->nullable();
             $table->string('vat_base_unit',100)->nullable();
@@ -75,10 +74,13 @@ return new class extends Migration
             $table->string('vat_base_no',100)->nullable();
             $table->string('vat_trail_no',100)->nullable();
             $table->decimal('vat_actual_ratio', 8, 2)->nullable();
+            $table->string('tally_unit_guid',100);
+            $table->foreign('tally_unit_guid')->references('guid')->on('tally_units')->onDelete('cascade');
+            $table->string('base_units',100)->nullable();
             $table->decimal('opening_balance', 15, 2)->nullable();
             $table->decimal('opening_value', 15, 2)->nullable();
             $table->decimal('opening_rate',15,3)->nullable();
-            $table->string('unit',100);
+            $table->string('unit',100)->nullable();
             $table->decimal('igst_rate',5,2)->nullable();
             $table->string('hsn_code',20)->nullable();
             $table->json('gst_details')->nullable();

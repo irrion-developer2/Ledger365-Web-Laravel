@@ -173,7 +173,7 @@ class ReportItemGroupController extends Controller
             ->whereExists(function ($subQuery) use ($itemGroupLedgerName) {
                 $subQuery->select(DB::raw(1))
                     ->from('tally_vouchers')
-                    ->whereColumn('tally_vouchers.party_ledger_name', 'tally_ledgers.language_name')
+                    ->whereColumn('tally_vouchers.party_ledger_name', 'tally_ledgers.name')
                     ->whereIn('tally_vouchers.voucher_type', ['Sales', 'Credit Note'])
                     ->whereNot('tally_vouchers.is_cancelled', 'Yes')
                     ->whereNot('tally_vouchers.is_optional', 'Yes')
@@ -194,7 +194,7 @@ class ReportItemGroupController extends Controller
                 $stockItemVoucherSaleItem = TallyVoucherItem::where('stock_item_name', $itemGroupLedgerName)
                     ->whereHas('tallyVoucher', function ($query) use ($data){
                         $query->where('voucher_type', 'Sales');
-                        $query->where('party_ledger_name', $data->language_name);
+                        $query->where('party_ledger_name', $data->name);
                     })
                     ->orderByDesc('id')
                     ->value('amount');
@@ -203,7 +203,7 @@ class ReportItemGroupController extends Controller
                 $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $itemGroupLedgerName)
                     ->whereHas('tallyVoucher', function ($query) use ($data){
                         $query->where('voucher_type', 'Credit Note');
-                        $query->where('party_ledger_name', $data->language_name);
+                        $query->where('party_ledger_name', $data->name);
                     })
                     ->orderByDesc('id')
                     ->value('amount');
@@ -218,14 +218,14 @@ class ReportItemGroupController extends Controller
                 $stockItemVoucherSaleItem = TallyVoucherItem::where('stock_item_name', $itemGroupLedgerName)
                     ->whereHas('tallyVoucher', function ($query) use ($data) {
                         $query->where('voucher_type', 'Sales');
-                        $query->where('party_ledger_name', $data->language_name);
+                        $query->where('party_ledger_name', $data->name);
                     })
                     ->count();
 
                 $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $itemGroupLedgerName)
                     ->whereHas('tallyVoucher', function ($query) use ($data) {
                         $query->where('voucher_type', 'Credit Note');
-                        $query->where('party_ledger_name', $data->language_name);
+                        $query->where('party_ledger_name', $data->name);
                     })
                     ->count();
 
@@ -238,7 +238,7 @@ class ReportItemGroupController extends Controller
                 $stockItemAmount = TallyVoucherItem::where('stock_item_name', $itemGroupLedgerName)
                     ->whereHas('tallyVoucher', function ($query) use ($data){
                         $query->where('voucher_type', 'Sales');
-                        $query->where('party_ledger_name', $data->language_name);
+                        $query->where('party_ledger_name', $data->name);
                     })
                     ->orderByDesc('id')
                     ->value('amount');
@@ -246,7 +246,7 @@ class ReportItemGroupController extends Controller
                 $stockItemQty = TallyVoucherItem::where('stock_item_name', $itemGroupLedgerName)
                     ->whereHas('tallyVoucher', function ($query) use ($data){
                         $query->where('voucher_type', 'Sales');
-                        $query->where('party_ledger_name', $data->language_name);
+                        $query->where('party_ledger_name', $data->name);
                     })
                     ->orderByDesc('id')
                     ->value('billed_qty');

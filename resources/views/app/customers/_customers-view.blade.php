@@ -31,7 +31,7 @@
                         <div class="col-lg-12">
                             <div class="row">
                                 <div class="col-lg-6">
-                                    <h4 class="my-1 text-info">{{ $ledger->language_name }}</h4>
+                                    <h4 class="my-1 text-info">{{ $ledger->name }}</h4>
                                 </div>
                                 {{-- <div class="col-lg-6 text-end">
                                     <p class="btn btn-outline-danger border-1"><i class='lni lni-warning'></i> Overdue</p>

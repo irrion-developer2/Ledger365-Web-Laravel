@@ -177,11 +177,11 @@ class SupplierDataTable extends DataTable
                     return '-';
                 }
             })
-            ->editColumn('language_name', function ($data) {
+            ->editColumn('name', function ($data) {
                 $url = route('customers.show', ['customer' => $data->guid]);
-                return '<a href="' . $url . '" style="color: #337ab7;">' . $data->language_name . '</a>';
+                return '<a href="' . $url . '" style="color: #337ab7;">' . $data->name . '</a>';
             })
-            ->rawColumns(['language_name']);
+            ->rawColumns(['name']);
     }
 
     public function query(TallyLedger $model)
@@ -259,7 +259,7 @@ class SupplierDataTable extends DataTable
             // Column::make('No')->data('DT_RowIndex')->name('DT_RowIndex')->searchable(false)->orderable(false),
             // Column::make('guid')->title(__('Guid')),
             // Column::make('guid')->title(__('ID'))->addClass('fixed-column'),
-            Column::make('language_name')->title(__('Name'))->addClass('fixed-column'),
+            Column::make('name')->title(__('Name'))->addClass('fixed-column'),
             Column::make('parent')->title(__('Group')),
             Column::make('purchase')->title(__('₹ Purchase'))->addClass('text-end'),
             Column::make('purchase_last_30_days')->title(__('₹ Purchase (Last 30 days)'))->addClass('text-end'),

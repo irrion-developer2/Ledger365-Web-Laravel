@@ -25,8 +25,8 @@ return new class extends Migration
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
 
 
-            $table->unsignedBigInteger('head_ledger_guid')->nullable();
-            $table->foreign('head_ledger_guid')->references('id')->on('tally_ledgers')->onDelete('cascade');
+            $table->string('head_ledger_guid',100)->nullable();
+            $table->foreign('head_ledger_guid')->references('guid')->on('tally_ledgers')->onDelete('cascade');
        
            
             $table->string('stock_item_name',100)->nullable();

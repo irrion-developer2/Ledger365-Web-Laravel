@@ -195,6 +195,8 @@ class LedgerController extends Controller
                     $guid = $groupData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
     
+                    $companyExists = \DB::table('tally_companies')->where('guid', $companyGuid)->exists();
+    
                     if (!$companyExists) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
                         continue; // Skip this record

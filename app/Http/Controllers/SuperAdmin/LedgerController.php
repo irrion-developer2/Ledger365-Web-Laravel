@@ -11,6 +11,7 @@ use App\Models\TallyCompany;
 use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyItem;
+use App\Models\TallyItemGroup;
 use App\Models\TallyUnit;
 use App\Models\TallyGodown;
 use App\Models\TallyVoucher;
@@ -408,6 +409,46 @@ class LedgerController extends Controller
                 }
             }
 
+            $stockGroupGuid = [];
+            foreach ($messages as $message) {
+                if (isset($message['STOCKGROUP'])) {
+                    $stockGroupData = $message['STOCKGROUP'];
+                    Log::info('STOCKGROUP Data:', ['stockGroupData' => $stockGroupData]);
+
+                    $nameField = $stockGroupData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? null;
+                    if (is_array($nameField)) {
+                        $nameField = implode(', ', $nameField);
+                    }
+                    
+                    $guid = $stockGroupData['GUID'] ?? null;
+                    $companyGuid = substr($guid, 0, 36);
+    
+                    // Check if the company exists in the tally_companies table
+                    $companyExists = \DB::table('tally_companies')->where('guid', $companyGuid)->exists();
+    
+                    if (!$companyExists) {
+                        // Handle case when the company does not exist, log it or throw an exception
+                        Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
+                        throw new \Exception('Company GUID not found in tally_companies: ' . $companyGuid);
+                    }
+
+                    $tallystockGroup = TallyItemGroup::updateOrCreate(
+                        ['guid' => $stockGroupData['GUID'] ?? null],
+                        [
+                            'company_guid' => $companyGuid,
+                            'parent' => $stockGroupData['PARENT'] ?? null,
+                            'alter_id' => $stockGroupData['ALTERID'] ?? null,
+                            'name' => $nameField,
+                        ]
+                    );
+
+                    if (!$tallystockGroup) {
+                        throw new \Exception('Failed to create or update tally Stock Group record.');
+                    }
+                    $stockGroupGuid = $tallystockGroup->guid;
+                }
+            }
+
             foreach ($messages as $message) {
                 if (isset($message['STOCKITEM'])) {
                     $stockItemData = $message['STOCKITEM'];
@@ -459,6 +500,7 @@ class LedgerController extends Controller
                         ['guid' => $stockItemData['GUID'] ?? null],
                         [
                             'company_guid' => $companyGuid,
+                            'item_group_guid' => $stockGroupGuid,
                             'name' => $stockItemData['NAME'] ?? null,
                             'parent' => $stockItemData['PARENT'] ?? null,
                             'category' => $stockItemData['CATEGORY'] ?? null,
@@ -653,7 +695,7 @@ class LedgerController extends Controller
                     $ledgerGuid = TallyLedger::where('name', $partyLedgerName)
                                                 ->where('company_guid', $companyGuid)
                                                 ->value('guid');
-                                                
+
                     Log::info('Party Ledger Name: ' . $partyLedgerName);
                     Log::info('Party Ledger GUID: ' . $ledgerGuid);
                     

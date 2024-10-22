@@ -23,7 +23,7 @@ return new class extends Migration
             $table->unsignedBigInteger('item_group_id')->nullable();
             $table->foreign('item_group_id')->references('item_group_id')->on('tally_item_groups');
             
-            $table->unsignedBigInteger('unit_id');
+            $table->unsignedBigInteger('unit_id')->nullable();
             $table->foreign('unit_id')->references('unit_id')->on('tally_units');
 
             $table->integer('alter_id')->nullable();

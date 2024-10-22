@@ -24,7 +24,7 @@ return new class extends Migration
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
             
             // Foreign key to the ledger group (no auto_increment here)
-            $table->unsignedBigInteger('ledger_group_id');
+            $table->unsignedBigInteger('ledger_group_id')->nullable();
             $table->foreign('ledger_group_id')->references('ledger_group_id')->on('tally_ledger_groups');
            
             // Other columns

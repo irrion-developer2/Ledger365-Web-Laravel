@@ -25,7 +25,7 @@
                         <h5 class="mb-4">License Details</h5>
                         <form action="{{ route('settings.license.save') }}" method="POST">
                             @csrf 
-                            <input type="hidden" name="super_admin_user_id" class="form-control" value="{{ auth()->user()->id }}">
+                            <input type="hidden" name="user_id" class="form-control" value="{{ auth()->user()->id }}">
 
                             <div class="row mb-3">
                                 <label for="input35" class="col-sm-3 col-form-label">Enter License Key</label>

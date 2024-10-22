@@ -22,6 +22,7 @@ use App\Models\TallyBatchAllocation;
 use App\Models\TallyBankAllocation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class LedgerController extends Controller
 {
@@ -84,7 +85,6 @@ class LedgerController extends Controller
         return response()->json(['message' => 'License is valid and active'], 200);
     }
 
-
     public function companyJsonImport(Request $request)
     {
         try {
@@ -125,7 +125,7 @@ class LedgerController extends Controller
                     if (!in_array($companyGuid, $companyGuids)) {
                         $company = TallyCompany::create([
                             'guid' => $companyGuid,
-                            'name' => $companyData['REMOTECMPNAME'] ?? null,
+                            'company_name' => $companyData['REMOTECMPNAME'] ?? null,
                             'state' => $companyData['REMOTECMPSTATE'] ?? null,
                         ]);
     
@@ -179,7 +179,6 @@ class LedgerController extends Controller
             $messagesPath = $result['path'];
             $messages = $result['value'];
 
-            $ledgerGroupGuid = [];
             foreach ($messages as $message) {
                 if (isset($message['GROUP'])) {
                     $groupData = $message['GROUP'];
@@ -194,30 +193,30 @@ class LedgerController extends Controller
                     
                     $guid = $groupData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
-    
-                    $companyExists = \DB::table('tally_companies')->where('guid', $companyGuid)->exists();
-    
-                    if (!$companyExists) {
+
+                    $company = TallyCompany::where('guid', $companyGuid)->first();
+
+                    if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; // Skip this record
+                        continue; 
                     }
-                    
+
+                    $companyId = $company->company_id;
 
                     $tallyLedgerGroup = TallyLedgerGroup::updateOrCreate(
                         ['guid' => $guid],
                         [
-                            'company_guid' => $companyGuid,
+                            'company_id' => $companyId,
                             'parent' => $groupData['PARENT'] ?? null,
                             'affects_stock' => isset($groupData['AFFECTSSTOCK']) && $groupData['AFFECTSSTOCK'] === 'Yes',
                             'alter_id' => $groupData['ALTERID'] ?? null,
-                            'name' => $nameField,
+                            'ledger_group_name' => $nameField,
                         ]
                     );
 
                     if (!$tallyLedgerGroup) {
                         throw new \Exception('Failed to create or update tally ledger group record.');
                     }
-                    $ledgerGroupGuid = $tallyLedgerGroup->guid;
                 }
             }
 
@@ -244,6 +243,15 @@ class LedgerController extends Controller
                     $guid = $ledgerData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
 
+                    $company = TallyCompany::where('guid', $companyGuid)->first();
+
+                    if (!$company) {
+                        Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
+                        continue; 
+                    }
+
+                    $companyId = $company->company_id;
+
                     $nameField = $ledgerData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? [];
                     $aliases = [];
                     if (is_array($nameField)) {
@@ -259,13 +267,21 @@ class LedgerController extends Controller
                     $alias2 = $aliases[1] ?? null;
                     $alias3 = $aliases[2] ?? null;
             
+                    $parent = $ledgerData['PARENT'] ?? null;
+                    $ledgerGroup = TallyLedgerGroup::where('ledger_group_name', $parent)->first();
+                    $ledgerGroupId = $ledgerGroup ? $ledgerGroup->ledger_group_id : null;
 
                     $tallyLedger = TallyLedger::updateOrCreate(
                         ['guid' => $guid],
                         [
-                            'company_guid' => $companyGuid,
+                            'company_id' => $companyId,
+                            'ledger_group_id' => $ledgerGroupId,
+                            'alter_id' => $ledgerData['ALTERID'] ?? null,
+                            'ledger_name' => $languageName,
+                            'alias1' => $alias1,
+                            'alias2' => $alias2,
+                            'alias3' => $alias3,
                             'parent' => $ledgerData['PARENT'] ?? null,
-                            'ledger_group_guid' => $ledgerGroupGuid,
                             'tax_classification_name' => html_entity_decode($ledgerData['TAXCLASSIFICATIONNAME'] ?? null),
                             'tax_type' => $ledgerData['TAXTYPE'] ?? null,
                             'bill_credit_period' => $ledgerData['BILLCREDITPERIOD'] ?? null,
@@ -280,17 +296,12 @@ class LedgerController extends Controller
                             'excise_nature_of_purchase' => html_entity_decode($ledgerData['EXCISENATUREOFPURCHASE'] ?? null),
                             'is_bill_wise_on' => isset($ledgerData['ISBILLWISEON']) && $ledgerData['ISBILLWISEON'] === 'Yes',
                             'is_cost_centres_on' => isset($ledgerData['ISCOSTCENTRESON']) && $ledgerData['ISCOSTCENTRESON'] === 'Yes',
-                            'alter_id' => $ledgerData['ALTERID'] ?? null,
                             'opening_balance' => !empty($ledgerData['OPENINGBALANCE']) ? $ledgerData['OPENINGBALANCE'] : null,
-                            'name' => $languageName,
-                            'alias1' => $alias1,
-                            'alias2' => $alias2,
-                            'alias3' => $alias3,
                             'applicable_from' => $applicableFrom,
                             'ledger_gst_registration_type' => $ledgerData['LEDGSTREGDETAILS.LIST']['GSTREGISTRATIONTYPE'] ?? null,
                             'gst_in' => $ledgerData['LEDGSTREGDETAILS.LIST']['GSTIN'] ?? null,
                             'email' => $ledgerData['EMAIL'] ?? null,
-                            'phone_no' => substr($ledgerData['LEDGERMOBILE'] ?? null, 0, 20),
+                            'phone_number' => substr($ledgerData['LEDGERMOBILE'] ?? null, 0, 20),
                             'mailing_applicable_from' => $mailingApplicableFrom,
                             'pincode' => $ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE'] ?? null,
                             'mailing_name' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['MAILINGNAME'] ?? null),
@@ -347,7 +358,7 @@ class LedgerController extends Controller
             $messagesPath = $result['path'];
             $messages = $result['value'];
 
-            $unitGuids = [];
+            $unitIds = [];
 
             foreach ($messages as $message) {
                 if (isset($message['UNIT'])) {
@@ -363,14 +374,23 @@ class LedgerController extends Controller
                     $guid = $unitData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
 
+                    $company = TallyCompany::where('guid', $companyGuid)->first();
+
+                    if (!$company) {
+                        Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
+                        continue; 
+                    }
+
+                    $companyId = $company->company_id;
+
                     $tallyUnit = TallyUnit::updateOrCreate(
                         ['guid' => $unitData['GUID'] ?? null],
                         [
-                            'company_guid' => $companyGuid,
-                            'name' => $name,
+                            'company_id' => $companyId,
+                            'alter_id' => $unitData['ALTERID'] ?? null,
+                            'unit_name' => $name,
                             'is_gst_excluded' => ($unitData['ISGSTEXCLUDED'] ?? null) === 'Yes' ? true : false,
                             'is_simple_unit' => ($unitData['ISSIMPLEUNIT'] ?? null) === 'Yes' ? true : false,
-                            'alter_id' => $unitData['ALTERID'] ?? null,
                             'reporting_uqc_name' => $reportingUQCName,
                             'applicable_from' => $applicableFrom,
                         ]
@@ -379,7 +399,7 @@ class LedgerController extends Controller
                     if (!$tallyUnit) {
                         throw new \Exception('Failed to create or update tally unit record.');
                     }
-                    $unitGuids[$name] = $tallyUnit->guid;
+                    $unitIds[$name] = $tallyUnit->unit_id;
                 }
             }
 
@@ -398,7 +418,7 @@ class LedgerController extends Controller
                         [
                             'parent' => $godownData['PARENT'] ?? null,
                             'alter_id' => $godownData['ALTERID'] ?? null,
-                            'name' => $nameField,
+                            'godown_name' => $nameField,
                         ]
                     );
 
@@ -408,7 +428,6 @@ class LedgerController extends Controller
                 }
             }
 
-            $stockGroupGuid = [];
             foreach ($messages as $message) {
                 if (isset($message['STOCKGROUP'])) {
                     $stockGroupData = $message['STOCKGROUP'];
@@ -421,30 +440,29 @@ class LedgerController extends Controller
                     
                     $guid = $stockGroupData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
-    
-                    // Check if the company exists in the tally_companies table
-                    $companyExists = \DB::table('tally_companies')->where('guid', $companyGuid)->exists();
-    
-                    if (!$companyExists) {
-                        // Handle case when the company does not exist, log it or throw an exception
+
+                    $company = TallyCompany::where('guid', $companyGuid)->first();
+
+                    if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        throw new \Exception('Company GUID not found in tally_companies: ' . $companyGuid);
+                        continue; 
                     }
+
+                    $companyId = $company->company_id;
 
                     $tallystockGroup = TallyItemGroup::updateOrCreate(
                         ['guid' => $stockGroupData['GUID'] ?? null],
                         [
-                            'company_guid' => $companyGuid,
+                            'company_id' => $companyId,
                             'parent' => $stockGroupData['PARENT'] ?? null,
                             'alter_id' => $stockGroupData['ALTERID'] ?? null,
-                            'name' => $nameField,
+                            'item_group_name' => $nameField,
                         ]
                     );
 
                     if (!$tallystockGroup) {
                         throw new \Exception('Failed to create or update tally Stock Group record.');
                     }
-                    $stockGroupGuid = $tallystockGroup->guid;
                 }
             }
 
@@ -493,22 +511,39 @@ class LedgerController extends Controller
                     $guid = $stockItemData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
 
-                    $tallyUnitGuid = $unitGuids[$stockItemData['BASEUNITS'] ?? null] ?? null;
+                    $company = TallyCompany::where('guid', $companyGuid)->first();
+
+                    if (!$company) {
+                        Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
+                        continue; 
+                    }
+
+                    $companyId = $company->company_id;
+
+                    $itemName = $stockItemData['NAME'] ?? null;
+                    $stockGroup = TallyLedgerGroup::where('ledger_group_name', $itemName)->first();
+                    $stockGroupIds = $stockGroup ? $stockGroup->ledger_group_id : null;
+
+
+                    $unitName = $stockItemData['BASEUNITS'] ?? null;
+                    $unitId = TallyUnit::where('unit_name', $unitName)->first();
+                    $unitIds = $unitId ? $unitId->unit_id : null;
 
                     $tallyStockItem = TallyItem::updateOrCreate(
                         ['guid' => $stockItemData['GUID'] ?? null],
                         [
-                            'company_guid' => $companyGuid,
-                            'item_group_guid' => $stockGroupGuid,
-                            'name' => $stockItemData['NAME'] ?? null,
+                            'company_id' => $companyId,
+                            'item_group_id' => $stockGroupIds,
+                            'unit_id' => $unitIds,
+                            'item_name' => $stockItemData['NAME'] ?? null,
                             'parent' => $stockItemData['PARENT'] ?? null,
                             'category' => $stockItemData['CATEGORY'] ?? null,
-                            'gst_applicable' => $stockItemData['GSTAPPLICABLE'] ?? null,
+                            'gst_applicable' => isset($stockItemData['GSTAPPLICABLE']) && $stockItemData['GSTAPPLICABLE'] === 'Yes',
+                            'vat_applicable' => isset($stockItemData['VATAPPLICABLE']) && $stockItemData['VATAPPLICABLE'] === 'Yes',
                             'tax_classification_name' => $stockItemData['TAXCLASSIFICATIONNAME'] ?? null,
                             'gst_type_of_supply' => $stockItemData['GSTTYPEOFSUPPLY'] ?? null,
                             'excise_applicability' => $stockItemData['EXCISEAPPLICABILITY'] ?? null,
                             'sales_tax_cess_applicable' => $stockItemData['SALESTAXCESSAPPLICABLE'] ?? null,
-                            'vat_applicable' => $stockItemData['VATAPPLICABLE'] ?? null,
                             'costing_method' => $stockItemData['COSTINGMETHOD'] ?? null,
                             'valuation_method' => $stockItemData['VALUATIONMETHOD'] ?? null,
                             'additional_units' => $stockItemData['ADDITIONALUNITS'] ?? null,
@@ -551,16 +586,11 @@ class LedgerController extends Controller
                             'alter_id' => $stockItemData['ALTERID'] ?? null,
                             'denominator' => $stockItemData['DENOMINATOR'] ?? null,
                             'basic_rate_of_excise' => $stockItemData['BASICRATEOFEXCISE'] ?? null,
-                            'rate_of_vat' => $stockItemData['RATEOFVAT'] ?? null,
-                            'vat_base_no' => $stockItemData['VATBASENO'] ?? null,
-                            'vat_trail_no' => $stockItemData['VATTRAILNO'] ?? null,
-                            'vat_actual_ratio' => $stockItemData['VATACTUALRATIO'] ?? null,
-                            'tally_unit_guid' => $tallyUnitGuid,
                             'base_units' => $stockItemData['BASEUNITS'] ?? null,
                             'opening_balance' => isset($stockItemData['OPENINGBALANCE']) ? preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGBALANCE']) : null,
                             'opening_value' => $stockItemData['OPENINGVALUE'] ?? null,
                             'opening_rate' => isset($stockItemData['OPENINGRATE']) ? preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGRATE']) : null,
-                            'unit' => $unit,
+                            // 'unit' => $unit,
                             'igst_rate' => $igstRate,
                             'hsn_code' => $stockItemData['HSNDETAILS.LIST']['HSNCODE'] ?? null,
                             'gst_details' => json_encode($stockItemData['GSTDETAILS.LIST'] ?? []),

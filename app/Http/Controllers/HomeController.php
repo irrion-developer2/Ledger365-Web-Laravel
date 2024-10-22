@@ -33,7 +33,7 @@ class HomeController extends Controller
 
         /* cashBankAmount */
         $cashBank = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
-                    ->where('name', 'Bank Accounts')
+                    ->where('ledger_group_name', 'Bank Accounts')
                     ->first();
 
         $cashBankName = $cashBank ? $cashBank->name : 'Bank Accounts';
@@ -42,8 +42,8 @@ class HomeController extends Controller
                             ->whereIn('company_guid', $companyGuids)
                             ->pluck('guid');
 
-        $cashBankAmount = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-        ->whereIn('tally_voucher_heads.ledger_guid', $cashBankLedgerIds)
+        $cashBankAmount = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+        // ->whereIn('tally_voucher_heads.ledger_guid', $cashBankLedgerIds)
         ->whereIn('tally_vouchers.company_guid', $companyGuids)
         ->sum('tally_voucher_heads.amount');
 
@@ -142,7 +142,7 @@ class HomeController extends Controller
 
     private function calculatePayableCreditNote($companyGuids)
     {
-        $CreditAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
+        $CreditAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_id', '=', 'tally_vouchers.party_ledger_id')
                 ->where('tally_vouchers.voucher_type', 'credit note')
                 ->whereIn('tally_vouchers.company_guid', $companyGuids)
                 ->sum('tally_voucher_heads.amount');

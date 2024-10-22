@@ -28,6 +28,8 @@ return new class extends Migration
             $table->string('primary_group', 100)->nullable();
             
             $table->unique(['company_id', 'ledger_group_name']);
+            
+            $table->timestamps();
         });
     }
 

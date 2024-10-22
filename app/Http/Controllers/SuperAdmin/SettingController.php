@@ -22,12 +22,12 @@ class SettingController extends Controller
     {
         $request->validate([
             'license_number' => 'required|string|max:255',
-            'super_admin_user_id' => 'required|exists:users,id',
+            'user_id' => 'required|exists:users,id',
         ]);
 
         $license = new TallyLicense();
         $license->license_number = $request->input('license_number');
-        $license->super_admin_user_id = $request->input('super_admin_user_id');
+        $license->user_id = $request->input('user_id');
         $license->save();
 
         return redirect()->back()->with('success', 'License saved successfully!');

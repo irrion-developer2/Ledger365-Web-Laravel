@@ -14,19 +14,14 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_vouchers', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('voucher_id');
             $table->string('guid',100)->unique();
             $table->string('company_guid',100);
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
+            $table->integer('alter_id')->nullable();
             $table->string('voucher_type',100)->index();
             $table->boolean('is_cancelled')->default(false);
             $table->boolean('is_optional')->default(false);
-            $table->integer('alter_id')->nullable();
-            $table->string('party_ledger_name',100)->nullable();
-
-            $table->string('party_ledger_guid',100);
-            $table->foreign('party_ledger_guid')->references('guid')->on('tally_ledgers')->onDelete('cascade');
-            
             $table->string('voucher_number',100)->nullable();
             $table->date('voucher_date')->index();
             $table->string('reference_no',100)->nullable();

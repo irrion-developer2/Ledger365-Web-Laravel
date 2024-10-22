@@ -14,8 +14,11 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_bank_allocations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('head_id')->constrained('tally_voucher_heads')->onDelete('cascade');
+            $table->bigIncrements('bank_allocation_id');
+            
+            $table->unsignedBigInteger('voucher_head_id')->nullable();
+            $table->foreign('voucher_head_id')->references('voucher_head_id')->on('tally_voucher_heads')->onDelete('cascade');
+       
             $table->string('bank_name',100)->nullable();
             $table->date('instrument_date')->nullable();
             $table->string('instrument_number',100)->nullable();

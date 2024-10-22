@@ -9,7 +9,7 @@ use App\Models\TallyVoucher;
 class TallyVoucherHead extends Model
 {
     use HasFactory;
-
+    protected $primaryKey = 'voucher_head_id';
     protected $guarded = [];
 
     public function voucherHead()

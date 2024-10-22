@@ -34,7 +34,7 @@ class ReportCancelledController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
 
-            $vouchers = TallyVoucher::where('tally_vouchers.is_cancelled', 'Yes')
+            $vouchers = TallyVoucher::where('tally_vouchers.is_cancelled', 1)
                                     ->whereIn('company_guid', $companyGuids);
 
             $endTime1 = microtime(true);

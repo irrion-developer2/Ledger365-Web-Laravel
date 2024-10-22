@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_ledgers', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('ledger_id');
             $table->string('guid',100)->unique();
             $table->string('company_guid',100);
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');

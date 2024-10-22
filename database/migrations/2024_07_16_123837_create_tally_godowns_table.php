@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_godowns', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('godown_id');
             $table->string('guid',100)->unique();
             $table->string('parent',100)->nullable();
             $table->integer('alter_id')->nullable();

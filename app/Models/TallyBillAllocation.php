@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class TallyBillAllocation extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'bill_allocation_id';
     protected $guarded = [];
 }

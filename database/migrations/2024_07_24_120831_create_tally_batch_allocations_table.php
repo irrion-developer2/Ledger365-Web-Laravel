@@ -14,8 +14,11 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_batch_allocations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('item_id')->constrained('tally_voucher_items')->onDelete('cascade');
+            $table->bigIncrements('batch_allocation_id');
+
+            $table->unsignedBigInteger('voucher_item_id')->nullable();
+            $table->foreign('voucher_item_id')->references('voucher_item_id')->on('tally_voucher_items')->onDelete('cascade');
+
             $table->string('batch_name',100)->nullable();
 
             $table->string('godown_guid',100);

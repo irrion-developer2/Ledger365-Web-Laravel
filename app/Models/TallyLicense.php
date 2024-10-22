@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class TallyLicense extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'license_id';
     protected $guarded = [];
 }

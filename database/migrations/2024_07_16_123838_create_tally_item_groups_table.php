@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_item_groups', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('item_group_id');
             $table->string('guid',100)->unique();
 
             $table->string('company_guid',100)->nullable();

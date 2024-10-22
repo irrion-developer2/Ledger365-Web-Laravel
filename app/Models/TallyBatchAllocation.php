@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class TallyBatchAllocation extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'batch_allocation_id';
     protected $guarded = [];
 }

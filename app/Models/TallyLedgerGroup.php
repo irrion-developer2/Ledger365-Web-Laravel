@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class TallyLedgerGroup extends Model
 {
     use HasFactory;
-
+    protected $primaryKey = 'ledger_group_id';
     protected $guarded = [];
 
     public function tallyLedgers()

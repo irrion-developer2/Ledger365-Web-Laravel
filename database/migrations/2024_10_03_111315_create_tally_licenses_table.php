@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_licenses', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('license_id');
             $table->unsignedBigInteger('super_admin_user_id')->nullable();
             $table->foreign('super_admin_user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('license_number',100)->nullable();

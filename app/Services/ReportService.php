@@ -15,7 +15,7 @@ class ReportService
         $companyId = session('selected_company_id');
         \Log::info('Company ReportService ID Latest:', ['selected_company_id' => $companyId]);            
 
-        return TallyCompany::where('id', $companyId)->pluck('guid')->toArray();
+        return TallyCompany::where('company_id', $companyId)->pluck('guid')->toArray();
     }
     
     public $normalizedNames = [

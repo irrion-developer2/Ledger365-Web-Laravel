@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TallyLedger extends Model
 {
     use HasFactory;
-
+    protected $primaryKey = 'ledger_id';
     protected $guarded = [];
 
     public function tallyVoucherHead()

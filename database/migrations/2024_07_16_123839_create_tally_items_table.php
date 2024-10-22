@@ -14,12 +14,15 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_items', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('item_id');
             $table->string('guid',100)->unique();
             $table->string('company_guid',100);
             $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             $table->string('name',150);
-            // $table->string('language_name',150)->nullable();
+
+            $table->string('item_group_guid',100)->nullable();
+            $table->foreign('item_group_guid')->references('guid')->on('tally_item_groups')->onDelete('cascade');
+            
             $table->string('parent',100)->nullable()->index();
             $table->string('category',100)->nullable();
             $table->string('gst_applicable',100)->nullable();
@@ -74,8 +77,10 @@ return new class extends Migration
             $table->string('vat_base_no',100)->nullable();
             $table->string('vat_trail_no',100)->nullable();
             $table->decimal('vat_actual_ratio', 8, 2)->nullable();
+
             $table->string('tally_unit_guid',100);
             $table->foreign('tally_unit_guid')->references('guid')->on('tally_units')->onDelete('cascade');
+            
             $table->string('base_units',100)->nullable();
             $table->decimal('opening_balance', 15, 3)->nullable();
             $table->decimal('opening_value', 15, 3)->nullable();

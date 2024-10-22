@@ -202,14 +202,7 @@ class LedgerController extends Controller
                         continue; // Skip this record
                     }
                     
-                    Log::info('Inserting into tally_ledger_groups', [
-                        'guid' => $guid,
-                        'company_guid' => $companyGuid,
-                        'parent' => $groupData['PARENT'] ?? null,
-                        'name' => $nameField,
-                    ]);
 
-                    
                     $tallyLedgerGroup = TallyLedgerGroup::updateOrCreate(
                         ['guid' => $guid],
                         [
@@ -698,22 +691,21 @@ class LedgerController extends Controller
                     }
                     $deliveryNotesStr = implode(', ', $deliveryNotes);
 
-                    $ledgerGuid = TallyLedger::where('name', $partyLedgerName)
-                                                ->where('company_guid', $companyGuid)
-                                                ->value('guid');
 
-                    Log::info('Party Ledger Name: ' . $partyLedgerName);
-                    Log::info('Party Ledger GUID: ' . $ledgerGuid);
+                    if (empty($partyLedgerName)) {
+                        Log::error('Party Ledger Name is missing from voucher data:', $voucherData);
+                        continue;
+                    }
+
                     
-
                     $existingVoucher = TallyVoucher::where('guid', $voucherData['GUID'])
                                     ->where('company_guid', $companyGuid)
                                     ->first();
 
                     if ($existingVoucher) {
-                        $voucherHeadIds = TallyVoucherHead::where('tally_voucher_id', $existingVoucher->id)->pluck('id')->toArray();
-                        $inventoryEntriesWithId = TallyVoucherItem::where('id', $existingVoucher->id)->pluck('id')->toArray();
-                        $this->deleteRelatedVoucherData($existingVoucher->id, $voucherHeadIds, $inventoryEntriesWithId);
+                        $voucherHeadIds = TallyVoucherHead::where('voucher_id', $existingVoucher->voucher_id)->pluck('voucher_head_id')->toArray();
+                        $inventoryEntriesWithId = TallyVoucherItem::where('voucher_item_id', $existingVoucher->voucher_id)->pluck('voucher_item_id')->toArray();
+                        $this->deleteRelatedVoucherData($existingVoucher->voucher_id, $voucherHeadIds, $inventoryEntriesWithId);
                         $existingVoucher->delete();
                     }
 
@@ -724,8 +716,6 @@ class LedgerController extends Controller
                         'is_cancelled' => isset($voucherData['ISCANCELLED']) && $voucherData['ISCANCELLED'] === 'Yes',
                         'is_optional' => isset($voucherData['ISOPTIONAL']) && $voucherData['ISOPTIONAL'] === 'Yes',
                         'alter_id' => $voucherData['ALTERID'] ?? null,
-                        'party_ledger_name' => $partyLedgerName,
-                        'party_ledger_guid' => $ledgerGuid,
                         'voucher_number' => $voucherData['VOUCHERNUMBER'] ?? null,
                         'voucher_date' => $voucherData['DATE'] ?? null,
                         'reference_date' => !empty($voucherData['REFERENCEDATE']) ? $voucherData['REFERENCEDATE'] : null,
@@ -762,9 +752,9 @@ class LedgerController extends Controller
                     ]);
 
                     if ($tallyVoucher) {
-                        $voucherHeadIds = $this->processAccountingAllocationForVoucher($tallyVoucher->id, $accountingAllocations);
-                        $voucherHeadIds = $this->processLedgerEntriesForVoucher($tallyVoucher->id, $combinedLedgerEntries);
-                        $inventoryEntriesWithId = $this->processInventoryEntriesForVoucher($tallyVoucher->id, $inventoryEntries, $companyGuid, $voucherHeadIds, $ledgerGuid);
+                        $voucherHeadIds = $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations);
+                        $voucherHeadIds = $this->processLedgerEntriesForVoucher($tallyVoucher->voucher_id, $combinedLedgerEntries);
+                        $inventoryEntriesWithId = $this->processInventoryEntriesForVoucher($tallyVoucher->voucher_id, $inventoryEntries, $companyGuid, $voucherHeadIds, $ledgerId);
                         $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
                         $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
                         $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyGuid);
@@ -783,11 +773,11 @@ class LedgerController extends Controller
 
     private function deleteRelatedVoucherData($voucherId, $voucherHeadIds, $inventoryEntriesWithId)
     {
-        TallyVoucherHead::where('tally_voucher_id', $voucherId)->delete();
-        TallyVoucherItem::where('tally_voucher_id', $voucherId)->delete();
-        TallyBillAllocation::where('head_id', $voucherHeadIds)->delete();
-        TallyBankAllocation::where('head_id', $voucherHeadIds)->delete();
-        TallyBatchAllocation::where('item_id', $inventoryEntriesWithId)->delete();
+        TallyVoucherHead::where('voucher_id', $voucherId)->delete();
+        TallyVoucherItem::where('voucher_head_id', $voucherHeadIds)->delete();
+        TallyBillAllocation::where('voucher_head_id', $voucherHeadIds)->delete();
+        TallyBankAllocation::where('voucher_head_id', $voucherHeadIds)->delete();
+        TallyBatchAllocation::where('voucher_item_id', $inventoryEntriesWithId)->delete();
     }
 
     private function normalizeEntries($entries)
@@ -819,27 +809,27 @@ class LedgerController extends Controller
                 $entryType = $amount < 0 ? "debit" : "credit";
 
                 // Retrieve the ledger GUID from the database
-                $ledgerGuid = TallyLedger::where('name', $ledgerName)
+                $ledgerId = TallyLedger::where('name', $ledgerName)
                     ->where('company_guid', $companyGuid) // Ensure you are filtering by company GUID
-                    ->value('guid');
+                    ->value('ledger_id');
 
-                if ($ledgerGuid) {
+                if ($ledgerId) {
                     // Normalize GUIDs by extracting the base GUID part (before the first '-')
-                    $normalizedLedgerGuid = explode('-', $ledgerGuid)[0];
+                    $normalizedLedgerId = explode('-', $ledgerId)[0];
                     $normalizedEntryGuid = explode('-', $companyGuid)[0];
 
                     // Compare the normalized GUID
-                    if ($normalizedLedgerGuid === $normalizedEntryGuid) {
+                    if ($normalizedLedgerId === $normalizedEntryGuid) {
                         $ledgerEntries[] = [
-                            'ledger_name' => $ledgerName,
+                            // 'ledger_name' => $ledgerName,
                             'amount' => $amount,
                             'entry_type' => $entryType,
-                            'ledger_guid' => $ledgerGuid,
-                            'isdeemedpositive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+                            'ledger_id' => $ledgerId,
+                            'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
                         ];
                     } else {
                         // Log mismatch or handle the case
-                        Log::error('GUID mismatch for ledger: ' . $ledgerName . '. Expected GUID: ' . $normalizedEntryGuid . ', Found GUID: ' . $normalizedLedgerGuid);
+                        Log::error('GUID mismatch for ledger: ' . $ledgerName . '. Expected GUID: ' . $normalizedEntryGuid . ', Found GUID: ' . $normalizedLedgerId);
                     }
                 } else {
                     // Handle case where GUID is not found in the database
@@ -859,20 +849,20 @@ class LedgerController extends Controller
         foreach ($entries as $entry) {
             $voucherHead = TallyVoucherHead::updateOrCreate(
                 [
-                    'tally_voucher_id' => $voucherId,
-                    'ledger_name' => $entry['ledger_name'],
+                    'voucher_id' => $voucherId,
+                    // 'ledger_name' => $entry['ledger_name'],
                 ],
                 [
                     'amount' => $entry['amount'],
                     'entry_type' => $entry['entry_type'],
-                    'ledger_guid' => $entry['ledger_guid'],
-                    'isdeemedpositive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+                    'ledger_id' => $entry['ledger_id'],
+                    'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
         
                 ]
             );
             $voucherHeadIds[] = [
                 'id' => $voucherHead->id,
-                'ledger_name' => $entry['ledger_name'],
+                // 'ledger_name' => $entry['ledger_name'],
             ];
         }
         return $voucherHeadIds;
@@ -889,17 +879,17 @@ class LedgerController extends Controller
                 $entryType = $amount < 0 ? "debit" : "credit";
 
                 // Retrieve the ledger GUID from the database
-                $ledgerGuid = TallyLedger::where('name', $ledgerName)
+                $ledgerId = TallyLedger::where('name', $ledgerName)
                     ->where('company_guid', $companyGuid) // Ensure filtering by company GUID
                     ->value('guid');
 
-                if ($ledgerGuid) {
+                if ($ledgerId) {
                     // Normalize GUIDs by extracting the base GUID part (before the first '-')
-                    $normalizedLedgerGuid = explode('-', $ledgerGuid)[0];
+                    $normalizedLedgerId = explode('-', $ledgerId)[0];
                     $normalizedEntryGuid = explode('-', $companyGuid)[0];
 
                     // Compare the normalized GUID
-                    if ($normalizedLedgerGuid === $normalizedEntryGuid) {
+                    if ($normalizedLedgerId === $normalizedEntryGuid) {
                         // If the same ledger_name already exists, add the amount
                         if (isset($ledgerEntries[$ledgerName])) {
                             $ledgerEntries[$ledgerName]['amount'] += $amount;
@@ -908,14 +898,14 @@ class LedgerController extends Controller
                                 'ledger_name' => $ledgerName,
                                 'amount' => $amount,
                                 'entry_type' => $entryType,
-                                'ledger_guid' => $ledgerGuid,
-                                'isdeemedpositive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+                                'ledger_id' => $ledgerId,
+                                'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
         
                             ];
                         }
                     } else {
                         // Log mismatch or handle the case
-                        Log::error('GUID mismatch for ledger: ' . $ledgerName . '. Expected GUID: ' . $normalizedEntryGuid . ', Found GUID: ' . $normalizedLedgerGuid);
+                        Log::error('GUID mismatch for ledger: ' . $ledgerName . '. Expected GUID: ' . $normalizedEntryGuid . ', Found GUID: ' . $normalizedLedgerId);
                     }
                 } else {
                     // Handle case where GUID is not found in the database
@@ -937,18 +927,18 @@ class LedgerController extends Controller
         foreach ($entries as $entry) {
             // Create a new record for each entry, allowing duplicates
             $voucherHead = TallyVoucherHead::create([
-                'tally_voucher_id' => $voucherId,
-                'ledger_name' => $entry['ledger_name'],
+                'voucher_id' => $voucherId,
+                // 'ledger_name' => $entry['ledger_name'],
                 'amount' => $entry['amount'],
                 'entry_type' => $entry['entry_type'],
-                'ledger_guid' => $entry['ledger_guid'],
-                'isdeemedpositive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+                // 'ledger_guid' => $entry['ledger_guid'],
+                'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
         
             ]);
 
             $voucherHeadIds[] = [
                 'id' => $voucherHead->id,
-                'ledger_name' => $entry['ledger_name'],
+                // 'ledger_name' => $entry['ledger_name'],
             ];
         }
 
@@ -1031,7 +1021,7 @@ class LedgerController extends Controller
         return $inventoryEntries;
     }
 
-    private function processInventoryEntriesForVoucher($voucherId, array $entries, $companyGuid, $voucherHeadIds, $ledgerGuid)
+    private function processInventoryEntriesForVoucher($voucherId, array $entries, $companyGuid, $voucherHeadIds)
     {
         $inventoryEntriesWithId = [];
         $voucherHeadIndex = 0;
@@ -1050,11 +1040,9 @@ class LedgerController extends Controller
                 Log::error('voucherHeadIds is empty.');
             }
 
-            
-            Log::info('head ledger guid: ', ['ledger_guid' => $ledgerGuid]);
 
             $newEntry = TallyVoucherItem::create([
-                'tally_voucher_id' => $voucherId,
+                // 'voucher_id' => $voucherId,
                 'stock_item_name' => $item['stock_item_name'],
                 'billed_qty' => $item['billed_qty'],
                 'actual_qty' => $item['actual_qty'],
@@ -1075,7 +1063,6 @@ class LedgerController extends Controller
                 'stock_item_guid' => $StockItemGuid,
                 'company_guid' => $companyGuid,
                 'voucher_head_id' => $voucherHeadId,
-                'head_ledger_guid' => $ledgerGuid,
             ]);
 
             $inventoryEntriesWithId[] = [
@@ -1099,7 +1086,7 @@ class LedgerController extends Controller
                             if (isset($bill['NAME'], $bill['AMOUNT'])) {
                                 TallyBillAllocation::updateOrCreate(
                                     [
-                                        'head_id' => $voucherHead['id'],
+                                        'voucher_head_id' => $voucherHead['id'],
                                         'name' => $bill['NAME'],
                                     ],
                                     [
@@ -1147,7 +1134,7 @@ class LedgerController extends Controller
                         // Insert or update the record
                         $allocation = TallyBankAllocation::updateOrCreate(
                             [
-                                'head_id' => $voucherHead['id'] ?? null
+                                'voucher_head_id' => $voucherHead['id'] ?? null
                             ],
                             [
                                 'bank_date' => $bankDate,
@@ -1174,7 +1161,7 @@ class LedgerController extends Controller
                 try {
                     $allocation = TallyBankAllocation::updateOrCreate(
                         [
-                            'head_id' => $voucherHead['id'] ?? null
+                            'voucher_head_id' => $voucherHead['id'] ?? null
                         ],
                         [
                             'bank_date' => null,
@@ -1215,7 +1202,7 @@ class LedgerController extends Controller
 
                         TallyBatchAllocation::updateOrCreate(
                             [
-                            'item_id' => $inventoryEntries['id'],
+                            'voucher_item_id' => $inventoryEntries['id'],
                             'batch_name' => $batch['BATCHNAME'],
                             'godown_name' => $batch['GODOWNNAME'] ?? null,
                             'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,

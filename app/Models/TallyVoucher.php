@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class TallyVoucher extends Model
 {
     use HasFactory;
-
+    protected $primaryKey = 'voucher_id';
     protected $guarded = [];
 
     public function voucherHead()

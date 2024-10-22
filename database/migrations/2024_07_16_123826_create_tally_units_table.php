@@ -16,14 +16,18 @@ return new class extends Migration
         Schema::create('tally_units', function (Blueprint $table) {
             $table->bigIncrements('unit_id');
             $table->string('guid',100)->unique();
-            $table->string('company_guid',100);
-            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
-            $table->string('name',100);
+
+            $table->unsignedBigInteger('company_id');
+            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+            
+            $table->integer('alter_id')->nullable();
+            $table->string('unit_name',100);
             $table->boolean('is_gst_excluded')->default(false);
             $table->boolean('is_simple_unit')->default(false);
-            $table->integer('alter_id')->nullable();
             $table->date('applicable_from')->nullable();
             $table->string('reporting_uqc_name',100)->nullable();
+            
+            $table->unique(['company_id', 'unit_name']);
             $table->timestamps();
         });
     }

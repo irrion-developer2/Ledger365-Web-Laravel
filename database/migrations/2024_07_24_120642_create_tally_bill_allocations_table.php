@@ -19,10 +19,10 @@ return new class extends Migration
             $table->unsignedBigInteger('voucher_head_id')->nullable();
             $table->foreign('voucher_head_id')->references('voucher_head_id')->on('tally_voucher_heads')->onDelete('cascade');
        
+            $table->string('name',100)->nullable();
             $table->string('bill_type',100)->nullable();
             $table->decimal('bill_amount',15,3)->nullable();
             $table->string('year_end',10)->nullable();
-            $table->string('name',100)->nullable();
             $table->timestamps();
         });
     }

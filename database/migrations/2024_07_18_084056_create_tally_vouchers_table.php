@@ -16,9 +16,12 @@ return new class extends Migration
         Schema::create('tally_vouchers', function (Blueprint $table) {
             $table->bigIncrements('voucher_id');
             $table->string('guid',100)->unique();
-            $table->string('company_guid',100);
-            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
+
+            $table->unsignedBigInteger('company_id');
+            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+          
             $table->integer('alter_id')->nullable();
+
             $table->string('voucher_type',100)->index();
             $table->boolean('is_cancelled')->default(false);
             $table->boolean('is_optional')->default(false);

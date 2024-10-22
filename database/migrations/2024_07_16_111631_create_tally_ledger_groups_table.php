@@ -15,17 +15,19 @@ return new class extends Migration
     {
         Schema::create('tally_ledger_groups', function (Blueprint $table) {
             $table->bigIncrements('ledger_group_id');
-            $table->string('guid',100)->unique();
-
-            $table->string('company_guid',100)->nullable();
-            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
             
-            $table->string('name',100)->nullable()->index(); 
-            $table->string('parent',100)->nullable();
-            $table->boolean('affects_stock')->default(false); 
-
+            $table->string('guid', 100)->unique();
+            
+            $table->unsignedBigInteger('company_id')->nullable();
+            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+            
             $table->integer('alter_id');
-            $table->timestamps();
+            $table->string('ledger_group_name', 100)->nullable()->index();
+            $table->string('parent', 100)->nullable();
+            $table->boolean('affects_stock')->default(false);
+            $table->string('primary_group', 100)->nullable();
+            
+            $table->unique(['company_id', 'ledger_group_name']);
         });
     }
 

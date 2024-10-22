@@ -16,21 +16,29 @@ return new class extends Migration
         Schema::create('tally_items', function (Blueprint $table) {
             $table->bigIncrements('item_id');
             $table->string('guid',100)->unique();
-            $table->string('company_guid',100);
-            $table->foreign('company_guid')->references('guid')->on('tally_companies')->onDelete('cascade');
-            $table->string('name',150);
 
-            $table->string('item_group_guid',100)->nullable();
-            $table->foreign('item_group_guid')->references('guid')->on('tally_item_groups')->onDelete('cascade');
+            $table->unsignedBigInteger('company_id');
+            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+          
+            $table->unsignedBigInteger('item_group_id')->nullable();
+            $table->foreign('item_group_id')->references('item_group_id')->on('tally_item_groups');
             
+            $table->unsignedBigInteger('unit_id');
+            $table->foreign('unit_id')->references('unit_id')->on('tally_units');
+
+            $table->integer('alter_id')->nullable();
+            $table->string('item_name',150);
+            $table->string('alias1',100)->nullable();
+            $table->string('alias2',100)->nullable();
+            $table->string('alias3',100)->nullable();
             $table->string('parent',100)->nullable()->index();
             $table->string('category',100)->nullable();
-            $table->string('gst_applicable',100)->nullable();
             $table->string('tax_classification_name',100)->nullable();
             $table->string('gst_type_of_supply',20)->nullable();
             $table->string('excise_applicability',100)->nullable();
             $table->string('sales_tax_cess_applicable',100)->nullable();
-            $table->string('vat_applicable',100)->nullable();
+            $table->boolean('gst_applicable')->default(false);
+            $table->boolean('vat_applicable')->default(false);
             $table->string('costing_method',100)->nullable();
             $table->string('valuation_method',100)->nullable();
             $table->string('additional_units',100)->nullable();
@@ -70,30 +78,20 @@ return new class extends Migration
             $table->boolean('inclusive_tax')->default(false);
             $table->boolean('gst_calc_slab_on_mrp')->default(false);
             $table->boolean('modify_mrp_rate')->default(false);
-            $table->integer('alter_id')->nullable();
             $table->decimal('denominator',10,4)->nullable();
             $table->decimal('basic_rate_of_excise', 8, 2)->nullable();
-            $table->decimal('rate_of_vat', 8, 2)->nullable();
-            $table->string('vat_base_no',100)->nullable();
-            $table->string('vat_trail_no',100)->nullable();
-            $table->decimal('vat_actual_ratio', 8, 2)->nullable();
-
-            $table->string('tally_unit_guid',100);
-            $table->foreign('tally_unit_guid')->references('guid')->on('tally_units')->onDelete('cascade');
-            
             $table->string('base_units',100)->nullable();
             $table->decimal('opening_balance', 15, 3)->nullable();
             $table->decimal('opening_value', 15, 3)->nullable();
             $table->decimal('opening_rate',15,3)->nullable();
-            $table->string('unit',100)->nullable();
+            // $table->string('unit',100)->nullable();
             $table->decimal('igst_rate',5,2)->nullable();
             $table->string('hsn_code',20)->nullable();
             $table->json('gst_details')->nullable();
             $table->json('hsn_details')->nullable();
-            $table->string('alias1',100)->nullable();
-            $table->string('alias2',100)->nullable();
-            $table->string('alias3',100)->nullable();
             $table->json('batch_allocations')->nullable();
+            
+            $table->unique(['company_id', 'item_name']);
             $table->timestamps();
         });
     }

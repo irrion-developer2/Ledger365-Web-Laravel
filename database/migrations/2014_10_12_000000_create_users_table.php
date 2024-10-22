@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name',100);
             $table->string('email',100)->unique();
-            $table->string('phone',20)->unique()->nullable();
+            $table->string('phone',50)->unique()->nullable();
             $table->boolean('is_phone_verified')->default(false);
             $table->string('otp',50)->nullable();
             $table->timestamp('otp_expires_at')->nullable();

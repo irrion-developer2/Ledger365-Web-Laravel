@@ -14,12 +14,14 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_godowns', function (Blueprint $table) {
-            $table->bigIncrements('godown_id');
-            $table->string('guid',100)->unique();
+            $table->increments('godown_id');
+            $table->string('godown_guid',100)->unique()->charset('utf8mb4');
             $table->integer('alter_id')->nullable();
             $table->string('parent',100)->nullable();
             $table->string('godown_name',100)->nullable();
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

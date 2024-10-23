@@ -14,15 +14,18 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_vouchers', function (Blueprint $table) {
-            $table->bigIncrements('voucher_id');
-            $table->string('guid',100)->unique();
+            $table->increments('voucher_id');
+            $table->string('voucher_guid',100)->unique()->charset('utf8mb4');
 
-            $table->unsignedBigInteger('company_id');
+            $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+            
+            $table->unsignedInteger('voucher_type_id');
+            $table->foreign('voucher_type_id')->references('voucher_type_id')->on('tally_voucher_types')->onDelete('cascade');
           
             $table->integer('alter_id')->nullable();
 
-            $table->string('voucher_type',100)->index();
+            // $table->string('voucher_type',100)->index();
             $table->boolean('is_cancelled')->default(false);
             $table->boolean('is_optional')->default(false);
             $table->string('voucher_number',100)->nullable();
@@ -56,7 +59,9 @@ return new class extends Migration
             $table->string('cost_center_name',100)->nullable();
             $table->decimal('cost_center_amount',15,3)->nullable();
             $table->string('numbering_style',100)->nullable();
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

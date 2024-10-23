@@ -14,19 +14,20 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_item_groups', function (Blueprint $table) {
-            $table->bigIncrements('item_group_id');
-            $table->string('guid',100)->unique();
+            $table->increments('item_group_id');
+            $table->string('item_group_guid',100)->unique()->charset('utf8mb4');
 
-            $table->unsignedBigInteger('company_id')->nullable();
+            $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
             
             $table->integer('alter_id')->nullable();
-            $table->string('item_group_name',100)->nullable()->index(); 
+            $table->string('item_group_name',100)->index(); 
             $table->string('parent',100)->nullable();
 
             $table->unique(['company_id', 'item_group_name']);
-
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

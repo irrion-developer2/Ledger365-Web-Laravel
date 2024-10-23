@@ -14,16 +14,16 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_items', function (Blueprint $table) {
-            $table->bigIncrements('item_id');
-            $table->string('guid',100)->unique();
+            $table->increments('item_id');
+            $table->string('item_guid',100)->unique()->charset('utf8mb4');
 
-            $table->unsignedBigInteger('company_id');
+            $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
           
-            $table->unsignedBigInteger('item_group_id')->nullable();
+            $table->unsignedInteger('item_group_id')->nullable();
             $table->foreign('item_group_id')->references('item_group_id')->on('tally_item_groups');
             
-            $table->unsignedBigInteger('unit_id')->nullable();
+            $table->unsignedInteger('unit_id')->nullable();
             $table->foreign('unit_id')->references('unit_id')->on('tally_units');
 
             $table->integer('alter_id')->nullable();
@@ -92,7 +92,9 @@ return new class extends Migration
             $table->json('batch_allocations')->nullable();
             
             $table->unique(['company_id', 'item_name']);
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

@@ -14,19 +14,21 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_voucher_heads', function (Blueprint $table) {
-            $table->bigIncrements('voucher_head_id');
+            $table->increments('voucher_head_id');
 
-            $table->unsignedBigInteger('voucher_id')->nullable();
+            $table->unsignedInteger('voucher_id');
             $table->foreign('voucher_id')->references('voucher_id')->on('tally_vouchers')->onDelete('cascade');
          
-            $table->unsignedBigInteger('ledger_id')->nullable();
+            $table->unsignedInteger('ledger_id');
             $table->foreign('ledger_id')->references('ledger_id')->on('tally_ledgers');
             
             $table->boolean('is_party_ledger')->default(false);  
             $table->decimal('amount', 15, 3)->nullable(); 
             $table->string('entry_type',10)->nullable();
             $table->boolean('is_deemed_positive')->default(false); 
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

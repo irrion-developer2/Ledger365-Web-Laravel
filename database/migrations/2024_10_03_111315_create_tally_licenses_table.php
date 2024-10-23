@@ -14,12 +14,14 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_licenses', function (Blueprint $table) {
-            $table->bigIncrements('license_id');
+            $table->increments('license_id');
             $table->unsignedBigInteger('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('license_number',100)->nullable();
             $table->enum('status', ['Active', 'Inactive'])->default('Active');
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

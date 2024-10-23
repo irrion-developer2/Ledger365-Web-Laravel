@@ -14,15 +14,15 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_voucher_items', function (Blueprint $table) {
-            $table->bigIncrements('voucher_item_id');
+            $table->increments('voucher_item_id');
 
-            $table->unsignedBigInteger('voucher_head_id')->nullable();
+            $table->unsignedInteger('voucher_head_id');
             $table->foreign('voucher_head_id')->references('voucher_head_id')->on('tally_voucher_heads')->onDelete('cascade');
         
-            $table->unsignedBigInteger('item_id')->nullable();
+            $table->unsignedInteger('item_id');
             $table->foreign('item_id')->references('item_id')->on('tally_items');
        
-            $table->unsignedBigInteger('unit_id')->nullable();
+            $table->unsignedInteger('unit_id')->nullable();
             $table->foreign('unit_id')->references('unit_id')->on('tally_units');
        
             $table->string('gst_taxability',20)->nullable();
@@ -40,10 +40,12 @@ return new class extends Migration
             $table->decimal('billed_qty', 15, 3)->nullable(); 
             $table->decimal('amount', 15, 3)->nullable(); 
             $table->decimal('discount', 15, 3)->nullable();
-            $table->decimal('igst_rate', 15, 2)->nullable();
+            $table->decimal('igst_rate', 5, 2)->nullable();
             $table->string('gst_hsn_name',100)->nullable();
             
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+
         });
     }
 

@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('sync_logs', function (Blueprint $table) {
-            $table->bigIncrements('sync_log_id');
+            $table->increments('sync_log_id');
             $table->string('serial_number',100)->nullable();
             $table->boolean('is_silver')->default(false);
             $table->boolean('is_gold')->default(false);
@@ -41,7 +41,9 @@ return new class extends Migration
             $table->string('UAC_status',100)->nullable();
             $table->string('system_proxy_settings',100)->nullable();
             $table->string('module_name',100)->nullable();
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

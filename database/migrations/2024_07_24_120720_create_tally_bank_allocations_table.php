@@ -14,9 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_bank_allocations', function (Blueprint $table) {
-            $table->bigIncrements('bank_allocation_id');
+            $table->increments('bank_allocation_id');
             
-            $table->unsignedBigInteger('voucher_head_id')->nullable();
+            $table->unsignedInteger('voucher_head_id');
             $table->foreign('voucher_head_id')->references('voucher_head_id')->on('tally_voucher_heads')->onDelete('cascade');
        
             $table->string('bank_name',100)->nullable();
@@ -25,7 +25,9 @@ return new class extends Migration
             $table->string('transaction_type',50)->nullable();
             $table->date('bank_date')->nullable();
             $table->decimal('amount',15,3)->nullable();
-            $table->timestamps();
+           
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

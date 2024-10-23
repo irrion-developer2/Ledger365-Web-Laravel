@@ -14,22 +14,22 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_ledgers', function (Blueprint $table) {
-            $table->bigIncrements('ledger_id');
+            $table->increments('ledger_id');
             
             // Unique GUID
-            $table->string('guid', 100)->unique();
+            $table->string('ledger_guid', 100)->unique()->charset('utf8mb4');
 
             // Foreign key to the company (no auto_increment here)
-            $table->unsignedBigInteger('company_id');
+            $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
             
             // Foreign key to the ledger group (no auto_increment here)
-            $table->unsignedBigInteger('ledger_group_id')->nullable();
+            $table->unsignedInteger('ledger_group_id')->nullable();
             $table->foreign('ledger_group_id')->references('ledger_group_id')->on('tally_ledger_groups');
            
             // Other columns
             $table->integer('alter_id')->nullable();
-            $table->string('ledger_name', 100)->nullable();
+            $table->string('ledger_name', 100);
             $table->string('alias1', 100)->nullable();
             $table->string('alias2', 100)->nullable();
             $table->string('alias3', 100)->nullable();
@@ -57,7 +57,7 @@ return new class extends Migration
             $table->date('mailing_applicable_from')->nullable();
             $table->string('pincode', 10)->nullable();
             $table->string('mailing_name', 100)->nullable();
-            $table->string('address', 500)->nullable();
+            $table->string('address')->nullable();
             $table->string('state', 100)->nullable();
             $table->string('country', 100)->nullable();
             $table->decimal('this_year_balance', 15, 3)->nullable();
@@ -73,7 +73,8 @@ return new class extends Migration
             $table->unique(['company_id', 'ledger_name']);
             
             // Timestamps
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

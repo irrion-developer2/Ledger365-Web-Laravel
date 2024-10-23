@@ -14,20 +14,20 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_companies', function (Blueprint $table) {
-            $table->bigIncrements('company_id'); 
-            $table->string('guid',100)->unique();
+            $table->increments('company_id'); 
+            $table->string('company_guid',100)->unique()->charset('utf8mb4');
             $table->integer('alter_id')->nullable();
             $table->string('company_name',100)->index();
             $table->string('state',100)->nullable();
             $table->string('sub_id')->nullable();
             
             $table->date('starting_from')->nullable();
-            $table->string('address',500)->nullable();
-            $table->string('address1',255)->nullable();
-            $table->string('address2',255)->nullable();
-            $table->string('address3',255)->nullable();
-            $table->string('address4',255)->nullable();
-            $table->string('address5',255)->nullable();
+            $table->string('address')->nullable();
+            $table->string('address1')->nullable();
+            $table->string('address2')->nullable();
+            $table->string('address3')->nullable();
+            $table->string('address4')->nullable();
+            $table->string('address5')->nullable();
             $table->date('books_from')->nullable();
             $table->date('audited_upto')->nullable();
             $table->string('email',100)->nullable();
@@ -49,7 +49,9 @@ return new class extends Migration
             $table->date('prev_quarter_end')->nullable();
 
             $table->unique(['company_id', 'company_name']);
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

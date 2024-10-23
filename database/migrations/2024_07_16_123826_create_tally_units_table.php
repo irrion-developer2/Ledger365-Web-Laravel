@@ -14,10 +14,10 @@ return new class extends Migration
     public function up()
     {
         Schema::create('tally_units', function (Blueprint $table) {
-            $table->bigIncrements('unit_id');
-            $table->string('guid',100)->unique();
+            $table->increments('unit_id');
+            $table->string('unit_guid',100)->unique()->charset('utf8mb4');
 
-            $table->unsignedBigInteger('company_id');
+            $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
             
             $table->integer('alter_id')->nullable();
@@ -28,7 +28,9 @@ return new class extends Migration
             $table->string('reporting_uqc_name',100)->nullable();
             
             $table->unique(['company_id', 'unit_name']);
-            $table->timestamps();
+            
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

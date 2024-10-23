@@ -13,13 +13,16 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('tally_licenses', function (Blueprint $table) {
-            $table->increments('license_id');
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->string('license_number',100)->nullable();
-            $table->boolean('status')->default(true);
-            
+        Schema::create('tally_currencies', function (Blueprint $table) {
+            $table->increments('currency_id');
+            $table->string('currency_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
+
+            $table->integer('alter_id')->nullable();
+            $table->string('currency_name', 100);
+            $table->string('symbol', 10);
+            $table->string('decimal_symbol', 10);
+            $table->integer('decimal_places');
+
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
@@ -32,6 +35,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('tally_licenses');
+        Schema::dropIfExists('tally_ledger_currencies');
     }
 };

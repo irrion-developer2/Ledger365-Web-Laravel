@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('tally_units', function (Blueprint $table) {
             $table->increments('unit_id');
-            $table->string('unit_guid',100)->unique()->charset('utf8mb4');
+            $table->string('unit_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
 
             $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');

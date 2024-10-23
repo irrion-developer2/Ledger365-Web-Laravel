@@ -17,7 +17,7 @@ return new class extends Migration
             $table->increments('ledger_id');
             
             // Unique GUID
-            $table->string('ledger_guid', 100)->unique()->charset('utf8mb4');
+            $table->string('ledger_guid', 100)->charset('ascii')->collation('ascii_bin')->unique();
 
             // Foreign key to the company (no auto_increment here)
             $table->unsignedInteger('company_id');

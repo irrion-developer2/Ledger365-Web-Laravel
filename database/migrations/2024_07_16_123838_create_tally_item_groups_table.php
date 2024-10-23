@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('tally_item_groups', function (Blueprint $table) {
             $table->increments('item_group_id');
-            $table->string('item_group_guid',100)->unique()->charset('utf8mb4');
+            $table->string('item_group_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
 
             $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');

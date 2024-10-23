@@ -16,13 +16,14 @@ return new class extends Migration
         Schema::create('tally_ledger_groups', function (Blueprint $table) {
             $table->increments('ledger_group_id');
             
-            $table->string('ledger_group_guid', 100)->unique()->charset('utf8mb4');
+            $table->string('ledger_group_guid', 100)->charset('ascii')->collation('ascii_bin')->unique();
             
             $table->unsignedInteger('company_id')->nullable();
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
             
             $table->integer('alter_id');
             $table->string('ledger_group_name', 100)->nullable()->index();
+            $table->boolean('is_primary')->default(false);
             $table->string('parent', 100)->nullable();
             $table->boolean('affects_stock')->default(false);
             $table->string('primary_group', 100)->nullable();

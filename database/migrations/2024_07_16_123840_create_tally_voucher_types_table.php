@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('tally_voucher_types', function (Blueprint $table) {
             $table->increments('voucher_type_id');
-            $table->string('voucher_type_guid',100)->unique()->charset('utf8mb4');
+            $table->string('voucher_type_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
 
             $table->integer('alter_id')->nullable();
             $table->string('voucher_type_name', 100);

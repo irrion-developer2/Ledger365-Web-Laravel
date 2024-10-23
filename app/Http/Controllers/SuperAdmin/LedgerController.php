@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use App\Models\TallyLicense;
 use App\Models\TallyCompany;
+use App\Models\TallyCurrency;
 use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
 use App\Models\TallyItem;
@@ -73,7 +74,7 @@ class LedgerController extends Controller
         if (!$license) {
             Log::info('License not found for license number: ' . $licenseNumber);
             throw new \Exception('License not found');
-        } elseif ($license->status != 'Active') {
+        } elseif ($license->status != 1) {
             Log::info('License not active for license number: ' . $licenseNumber);
             throw new \Exception('License not active');
         }
@@ -91,7 +92,7 @@ class LedgerController extends Controller
 
         if (!$license) {
             return response()->json(['error' => 'License not found'], 404);
-        } elseif ($license->status != 'Active') {
+        } elseif ($license->status != 1) {
             return response()->json(['error' => 'License not active'], 403);
         }
 
@@ -191,6 +192,29 @@ class LedgerController extends Controller
 
             $messagesPath = $result['path'];
             $messages = $result['value'];
+
+
+            foreach ($messages as $message) {
+                if (isset($message['CURRENCY'])) {
+                    $currencyData = $message['CURRENCY'];
+                    Log::info('Currency Data:', ['currencyData' => $currencyData]);
+
+                    $tallyCurrency = TallyCurrency::updateOrCreate(
+                        ['currency_guid' => $currencyData['GUID'] ?? null,],
+                        [
+                            'alter_id' => $currencyData['ALTERID'] ?? null,
+                            'currency_name' => $currencyData['MAILINGNAME'] ?? null,
+                            'symbol' => $currencyData['EXPANDEDSYMBOL'] ?? null,
+                            'decimal_symbol' => $currencyData['DECIMALSYMBOL'] ?? null,
+                            'decimal_places' => $currencyData['DECIMALPLACES'] ?? null,
+                        ]
+                    );
+
+                    if (!$tallyCurrency) {
+                        throw new \Exception('Failed to create or update tally ledger Currency record.');
+                    }
+                }
+            }
 
             foreach ($messages as $message) {
                 if (isset($message['GROUP'])) {
@@ -533,10 +557,9 @@ class LedgerController extends Controller
 
                     $companyId = $company->company_id;
 
-                    $itemName = $stockItemData['NAME'] ?? null;
-                    $stockGroup = TallyLedgerGroup::where('ledger_group_name', $itemName)->first();
-                    $stockGroupIds = $stockGroup ? $stockGroup->ledger_group_id : null;
-
+                    $itemParentName = $stockItemData['PARENT'] ?? null;
+                    $itemGroup = TallyItemGroup::where('item_group_name', $itemParentName)->first();
+                    $itemGroupIds = $itemGroup ? $itemGroup->item_group_id : null;
 
                     $unitName = $stockItemData['BASEUNITS'] ?? null;
                     $unitId = TallyUnit::where('unit_name', $unitName)->first();
@@ -546,7 +569,7 @@ class LedgerController extends Controller
                         ['item_guid' => $stockItemData['GUID'] ?? null],
                         [
                             'company_id' => $companyId,
-                            'item_group_id' => $stockGroupIds,
+                            'item_group_id' => $itemGroupIds,
                             'unit_id' => $unitIds,
                             'item_name' => $stockItemData['NAME'] ?? null,
                             'parent' => $stockItemData['PARENT'] ?? null,
@@ -700,7 +723,7 @@ class LedgerController extends Controller
                     $tallyVoucher = TallyVoucher::updateOrCreate([
                         'voucher_guid' => $voucherData['GUID'],
                         'company_id' => $companyId,
-                        'voucher_type' => $voucherData['VOUCHERTYPENAME'] ?? null,
+                        // 'voucher_type' => $voucherData['VOUCHERTYPENAME'] ?? null,
                         'is_cancelled' => isset($voucherData['ISCANCELLED']) && $voucherData['ISCANCELLED'] === 'Yes',
                         'is_optional' => isset($voucherData['ISOPTIONAL']) && $voucherData['ISOPTIONAL'] === 'Yes',
                         'alter_id' => $voucherData['ALTERID'] ?? null,
@@ -744,7 +767,7 @@ class LedgerController extends Controller
                         throw new \Exception('Failed to create or update tally Voucher record.');
                     }
 
-                    $this->processLedgerEntries($voucherData, $tallyVoucher);
+                    $this->processLedgerEntries($voucherData, $tallyVoucher, $companyId);
                 }
             }
 
@@ -755,16 +778,28 @@ class LedgerController extends Controller
         }
     }
 
-    private function processLedgerEntries(array $voucherData, TallyVoucher $tallyVoucher)
+    private function processLedgerEntries(array $voucherData, TallyVoucher $tallyVoucher, $companyId)
     {
         if (isset($voucherData['LEDGERENTRIES.LIST'])) {
             $ledgerEntries = $this->ensureArray($voucherData['LEDGERENTRIES.LIST']);
     
             foreach ($ledgerEntries as $ledgerEntry) {
+
+                $ledgerName = htmlspecialchars_decode($ledgerEntry['LEDGERNAME']);
+                $amount = $ledgerEntry['AMOUNT'];
+                $entryType = $amount < 0 ? "debit" : "credit";
+
+                $ledgerId = TallyLedger::where('ledger_name', $ledgerName)
+                    ->where('company_id', $companyId)
+                    ->value('ledger_id');
+
+
                 $ledgerHeadData = [
                     'voucher_id'   => $tallyVoucher->voucher_id,
-                    'entry_type'   => 'LeDebit',
-                    'amount'       => $ledgerEntry['AMOUNT'] ?? null,
+                    'amount'       => $amount,
+                    'entry_type'   => $entryType,
+                    'ledger_id' => $ledgerId,
+                    'is_deemed_positive' => isset($ledgerEntry['ISDEEMEDPOSITIVE']) && $ledgerEntry['ISDEEMEDPOSITIVE'] === 'Yes',
                 ];
     
                 try {
@@ -784,10 +819,21 @@ class LedgerController extends Controller
             $allLedgerEntries = $this->ensureArray($voucherData['ALLLEDGERENTRIES.LIST']);
     
             foreach ($allLedgerEntries as $allLedgerEntry) {
+
+                $ledgerName = htmlspecialchars_decode($allLedgerEntry['LEDGERNAME']);
+                $amount = $allLedgerEntry['AMOUNT'];
+                $entryType = $amount < 0 ? "debit" : "credit";
+
+                $ledgerId = TallyLedger::where('ledger_name', $ledgerName)
+                    ->where('company_id', $companyId)
+                    ->value('ledger_id');
+
                 $allLedgerHeadData = [
                     'voucher_id'   => $tallyVoucher->voucher_id,
-                    'entry_type'   => 'AllDebit',
-                    'amount'       => $allLedgerEntry['AMOUNT'] ?? null,
+                    'amount'       => $amount,
+                    'entry_type'   => $entryType,
+                    'ledger_id' => $ledgerId,
+                    'is_deemed_positive' => isset($ledgerEntry['ISDEEMEDPOSITIVE']) && $ledgerEntry['ISDEEMEDPOSITIVE'] === 'Yes',
                 ];
     
                 try {
@@ -803,22 +849,46 @@ class LedgerController extends Controller
             }
         }
     
+
         if (isset($voucherData['ALLINVENTORYENTRIES.LIST'])) {
             $inventoryEntries = $this->ensureArray($voucherData['ALLINVENTORYENTRIES.LIST']);
-    
+        
             foreach ($inventoryEntries as $inventoryEntry) {
                 if (is_array($inventoryEntry) && isset($inventoryEntry['ACCOUNTINGALLOCATIONS.LIST']) && is_array($inventoryEntry['ACCOUNTINGALLOCATIONS.LIST'])) {
                     $allocations = $this->ensureArray($inventoryEntry['ACCOUNTINGALLOCATIONS.LIST']);
-    
+        
+                    Log::info('allocations Json:', ['allocations Data Found in Json' => $allocations]);
+
                     foreach ($allocations as $allocation) {
+    
+                        $ledgerName = htmlspecialchars_decode($allocation['LEDGERNAME'] ?? ''); // Ensure that LEDGERNAME is set
+                        if (!$ledgerName) {
+                            Log::warning('Missing LEDGERNAME in ACCOUNTINGALLOCATIONS.LIST', ['allocation' => $allocation]);
+                            continue;
+                        }
+    
+                        $amount = $allocation['AMOUNT'] ?? 0;
+                        $entryType = $amount < 0 ? "debit" : "credit";
+    
+                        $ledgerId = TallyLedger::where('ledger_name', $ledgerName)
+                            ->where('company_id', $companyId)
+                            ->value('ledger_id');
+    
+                        if (!$ledgerId) {
+                            Log::warning('Ledger ID not found for LEDGERNAME', ['ledger_name' => $ledgerName]);
+                            continue;
+                        }
+    
                         $allocationHeadData = [
                             'voucher_id'   => $tallyVoucher->voucher_id,
+                            'amount'       => $amount,
                             'entry_type'   => 'AccDebit',
-                            'amount'       => $allocation['AMOUNT'] ?? null,
+                            'ledger_id' => $ledgerId,
+                            'is_deemed_positive' => isset($allocation['ISDEEMEDPOSITIVE']) && $allocation['ISDEEMEDPOSITIVE'] === 'Yes',
                         ];
     
                         try {
-                            if (TallyVoucherHead::updateOrCreate($allocationHeadData) === false) {
+                            if (TallyVoucherHead::create($allocationHeadData) === false) {
                                 Log::error('Error saving ACCOUNTINGALLOCATIONS data:', ['data' => $allocationHeadData]);
                             }
                         } catch (\Exception $e) {

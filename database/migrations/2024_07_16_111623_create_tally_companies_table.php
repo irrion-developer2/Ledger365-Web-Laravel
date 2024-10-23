@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('tally_companies', function (Blueprint $table) {
             $table->increments('company_id'); 
-            $table->string('company_guid',100)->unique()->charset('utf8mb4');
+            $table->string('company_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
             $table->integer('alter_id')->nullable();
             $table->string('company_name',100)->index();
             $table->string('state',100)->nullable();
@@ -49,7 +49,7 @@ return new class extends Migration
             $table->date('prev_quarter_end')->nullable();
 
             $table->unique(['company_id', 'company_name']);
-            
+
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });

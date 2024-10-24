@@ -16,7 +16,10 @@ return new class extends Migration
         Schema::create('tally_currencies', function (Blueprint $table) {
             $table->increments('currency_id');
             $table->string('currency_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
-
+            
+            $table->unsignedInteger('company_id')->nullable();
+            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+            
             $table->integer('alter_id')->nullable();
             $table->string('currency_name', 100);
             $table->string('symbol', 10);

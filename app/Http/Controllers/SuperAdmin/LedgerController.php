@@ -230,7 +230,7 @@ class LedgerController extends Controller
                     ['company_name' => $companyName]
                 );
             }
-            
+
             $messagesPath = $result['path'];
             $messages = $result['value'];
 
@@ -911,8 +911,9 @@ class LedgerController extends Controller
 
                     $inventoryEntriesWithId = $this->processInventoryEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? [], $voucherHeadIds, $companyId);
 
-                    if (!empty($inventoryEntriesWithId)) {
                     $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations, $companyId);
+                    
+                    if (!empty($inventoryEntriesWithId)) {
                     $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId); 
                     } else {
                         Log::info('No inventory entries with ID found; skipping batch allocations.');

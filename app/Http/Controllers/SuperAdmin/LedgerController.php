@@ -221,6 +221,16 @@ class LedgerController extends Controller
                 throw new \Exception('TALLYMESSAGE key not found in the JSON data.');
             }
 
+            $companyGuid = $request->input('company_guid');
+            $companyName = $request->input('company_name');
+            
+            if ($companyGuid && $companyName) {
+                TallyCompany::firstOrCreate(
+                    ['company_guid' => $companyGuid],
+                    ['company_name' => $companyName]
+                );
+            }
+            
             $messagesPath = $result['path'];
             $messages = $result['value'];
 
@@ -235,13 +245,6 @@ class LedgerController extends Controller
 
                     $guid = $currencyData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
-
-                    $company = TallyCompany::firstOrCreate(
-                        ['company_guid' => $companyGuid],
-                        [
-                            'company_name' => $companyGuid,
-                        ]
-                    );
 
                     $company = TallyCompany::where('company_guid', $companyGuid)->first();
 

@@ -835,9 +835,13 @@ class LedgerController extends Controller
 
                     $inventoryEntriesWithId = $this->processInventoryEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? [], $voucherHeadIds, $companyId);
 
+                    if (!empty($inventoryEntriesWithId)) {
                     $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations, $companyId);
-                
                     $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId); 
+                    } else {
+                        Log::info('No inventory entries with ID found; skipping batch allocations.');
+                    }
+                    
                     $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
                     $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
                     
@@ -968,45 +972,43 @@ class LedgerController extends Controller
         return $voucherHeadIds;
     }
 
-
-
     private function processInventoryEntries($inventoryEntries, array $voucherHeadIds, $companyId)
     {
         Log::info('Processing Inventory Entries:', ['count' => is_array($inventoryEntries) ? count($inventoryEntries) : 1]);
         Log::info('Available Voucher Head IDs:', ['voucherHeadIds' => $voucherHeadIds]);
-
+    
         if (empty($voucherHeadIds)) {
             Log::error('No voucher_head_id available for inventory entry.');
             return;
         }
-
+    
         $voucherHeadId = $voucherHeadIds[0];
         Log::info('Using Voucher Head ID:', ['voucherHeadId' => $voucherHeadId]);
-
+    
         $inventoryEntries = $this->normalizeEntries($inventoryEntries);
         Log::info('Normalized Inventory Entries:', ['entries' => $inventoryEntries]);
-
+    
         $inventoryEntriesWithId = [];
-
+    
         foreach ($inventoryEntries as $inventoryEntry) {
             $itemName = trim(htmlspecialchars_decode($inventoryEntry['STOCKITEMNAME'] ?? ''));
-
+    
             if (!$itemName) {
                 Log::warning('Skipped inventory entry due to missing STOCKITEMNAME:', ['entry' => $inventoryEntry]);
                 continue;
             }
-
+    
             $itemId = TallyItem::whereRaw('LOWER(item_name) = ?', [strtolower($itemName)])->value('item_id');
-
+    
             if (!$itemId) {
                 Log::error('Item ID not found for stock item:', [
                     'stock_item_name' => $itemName,
                     'attempted_match' => strtolower($itemName),
-                    'inventoryEntry' => $inventoryEntry  // Log full entry for better diagnostics
+                    'inventoryEntry' => $inventoryEntry  
                 ]);
                 continue;
             }
-
+    
             $rateString = $inventoryEntry['RATE'] ?? null;
             $rate = null;
             $unit = null;
@@ -1020,16 +1022,16 @@ class LedgerController extends Controller
                     $rate = $rateString;
                 }
             }
-
+    
             $unitId = null;
             if ($unit) {
                 $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->value('unit_id');
                 Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
             }
-
+    
             $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
             $actual_qty = $this->extractNumericValue($inventoryEntry['ACTUALQTY'] ?? null);
-
+    
             $igstRate = null;
             if (isset($inventoryEntry['RATEDETAILS.LIST'])) {
                 foreach ($this->ensureArray($inventoryEntry['RATEDETAILS.LIST']) as $rateDetail) {
@@ -1039,10 +1041,10 @@ class LedgerController extends Controller
                     }
                 }
             }
-
+    
             $inventoryData = [
                 'voucher_head_id' => $voucherHeadId,
-                'item_id' => $itemId,
+                'item_id' => $itemId,  // Ensure item_id is included in the data array
                 'unit_id' => $unitId,
                 'gst_taxability' => $inventoryEntry['GSTOVRDNTAXABILITY'] ?? null,
                 'gst_source_type' => $inventoryEntry['GSTSOURCETYPE'] ?? null,
@@ -1060,23 +1062,17 @@ class LedgerController extends Controller
                 'igst_rate' => $igstRate,
                 'gst_hsn_name' => $inventoryEntry['GSTHSNNAME'] ?? null,
             ];
-
+    
             try {
-                $tallyVoucherItem = TallyVoucherItem::updateOrCreate(
-                    [
-                        'voucher_head_id' => $voucherHeadId,
-                        'item_id' => $itemId,
-                    ],
-                    $inventoryData
-                );
-
+                $tallyVoucherItem = TallyVoucherItem::create($inventoryData);
+    
                 $inventoryEntriesWithId[] = [
                     'voucher_item_id' => $tallyVoucherItem->voucher_item_id,
                     'stock_item_name' => $itemName,
                 ];
-
+    
                 Log::info('Inventory Entry Processed:', ['inventoryData' => $inventoryData]);
-
+    
             } catch (\Exception $e) {
                 Log::error('Error saving inventory entry:', [
                     'stock_item_name' => $itemName,
@@ -1084,127 +1080,9 @@ class LedgerController extends Controller
                 ]);
             }
         }
-
+    
         return $inventoryEntriesWithId;
     }
-
-
-    // private function processInventoryEntries($inventoryEntries, array $voucherHeadIds, $companyId)
-    // {
-    //     Log::info('Processing Inventory Entries:', ['count' => is_array($inventoryEntries) ? count($inventoryEntries) : 1]);
-    //     Log::info('Available Voucher Head IDs:', ['voucherHeadIds' => $voucherHeadIds]);
-
-    //     if (empty($voucherHeadIds)) {
-    //         Log::error('No voucher_head_id available for inventory entry.');
-    //         return; 
-    //     }
-
-    //     $voucherHeadId = $voucherHeadIds[0];
-    //     Log::info('Using Voucher Head ID:', ['voucherHeadId' => $voucherHeadId]);
-
-    //     // Ensure $inventoryEntries is an array, even if it’s a single object
-    //     $inventoryEntries = $this->normalizeEntries($inventoryEntries);
-    //     Log::info('Normalized Inventory Entries:', ['entries' => $inventoryEntries]);
-
-    //     $inventoryEntriesWithId = [];
-
-    //     foreach ($inventoryEntries as $inventoryEntry) {
-    //         $itemName = trim(htmlspecialchars_decode($inventoryEntry['STOCKITEMNAME'] ?? ''));
-
-    //         // Attempt to retrieve the item_id
-    //         $itemId = TallyItem::whereRaw('LOWER(item_name) = ?', [strtolower($itemName)])->value('item_id');
-
-    //         if (!$itemId) {
-    //             // Log detailed information about the missing item ID
-    //             Log::error('Item ID not found for stock item:', [
-    //                 'stock_item_name' => $itemName,
-    //                 'attempted_match' => strtolower($itemName),
-    //             ]);
-    //             continue;  // Skip processing if item ID is missing
-    //         }
-
-    //         // Parsing the rate and unit
-    //         $rateString = $inventoryEntry['RATE'] ?? null;
-    //         $rate = null;
-    //         $unit = null;
-    //         if ($rateString) {
-    //             $parts = explode('/', $rateString);
-    //             if (count($parts) === 2) {
-    //                 $rate = trim($parts[0]);
-    //                 $unit = trim($parts[1]);
-    //             } else {
-    //                 Log::warning('Rate format not as expected:', ['stock_item_name' => $itemName, 'rate' => $rateString]);
-    //                 $rate = $rateString;
-    //             }
-    //         }
-
-    //         $unitId = null;
-    //         if ($unit) {
-    //             $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->value('unit_id');
-    //             Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
-    //         }
-
-    //         $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
-    //         $actual_qty = $this->extractNumericValue($inventoryEntry['ACTUALQTY'] ?? null);
-
-    //         $igstRate = null;
-    //         if (isset($inventoryEntry['RATEDETAILS.LIST'])) {
-    //             foreach ($this->ensureArray($inventoryEntry['RATEDETAILS.LIST']) as $rateDetail) {
-    //                 if (isset($rateDetail['GSTRATEDUTYHEAD']) && $rateDetail['GSTRATEDUTYHEAD'] === 'IGST') {
-    //                     $igstRate = $rateDetail['GSTRATE'] ?? null;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-
-    //         $inventoryData = [
-    //             'voucher_head_id' => $voucherHeadId,
-    //             'item_id' => $itemId,
-    //             'unit_id' => $unitId,
-    //             'gst_taxability' => $inventoryEntry['GSTOVRDNTAXABILITY'] ?? null, 
-    //             'gst_source_type' => $inventoryEntry['GSTSOURCETYPE'] ?? null,    
-    //             'gst_item_source' => $inventoryEntry['GSTITEMSOURCE'] ?? null,
-    //             'gst_ledger_source' => $inventoryEntry['GSTLEDGERSOURCE'] ?? null,
-    //             'hsn_source_type' => $inventoryEntry['HSNSOURCETYPE'] ?? null,    
-    //             'hsn_item_source' => $inventoryEntry['HSNITEMSOURCE'] ?? null,
-    //             'gst_rate_infer_applicability' => $inventoryEntry['GSTRATEINFERAPPLICABILITY'] ?? null,
-    //             'gst_hsn_infer_applicability' => $inventoryEntry['GSTHSNINFERAPPLICABILITY'] ?? null,
-    //             'rate' => $rate,
-    //             'billed_qty' => $billed_qty ?? 0,
-    //             'actual_qty' => $actual_qty ?? 0,
-    //             'amount' => $inventoryEntry['AMOUNT'] ?? 0,
-    //             'discount' => $inventoryEntry['DISCOUNT'] ?? 0,
-    //             'igst_rate' => $igstRate,
-    //             'gst_hsn_name' => $inventoryEntry['GSTHSNNAME'] ?? null,
-    //         ];
-
-    //         try {
-    //             $tallyVoucherItem = TallyVoucherItem::updateOrCreate(
-    //                 [
-    //                     'voucher_head_id' => $voucherHeadId,
-    //                     'item_id' => $itemId,
-    //                 ],
-    //                 $inventoryData
-    //             );
-
-    //             $inventoryEntriesWithId[] = [
-    //                 'voucher_item_id' => $tallyVoucherItem->voucher_item_id,
-    //                 'stock_item_name' => $itemName,
-    //             ];
-
-    //             Log::info('Inventory Entry Processed:', ['inventoryData' => $inventoryData]);
-
-    //         } catch (\Exception $e) {
-    //             Log::error('Error saving inventory entry:', [
-    //                 'stock_item_name' => $itemName,
-    //                 'error_message' => $e->getMessage(),
-    //             ]);
-    //         }
-    //     }
-
-    //     return $inventoryEntriesWithId;
-    // }
-
 
     private function processBatchAllocationsForVoucher(array $inventoryEntriesWithId, array $batchAllocations, $companyId)
     {

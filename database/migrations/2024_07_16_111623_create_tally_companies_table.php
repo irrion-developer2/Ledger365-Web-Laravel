@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('state',100)->nullable();
             $table->string('sub_id')->nullable();
             
+            $table->string('license_number',100)->nullable();
             $table->date('starting_from')->nullable();
             $table->string('address')->nullable();
             $table->string('address1')->nullable();

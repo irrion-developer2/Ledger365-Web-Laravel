@@ -47,6 +47,24 @@ class LedgerController extends Controller
         return !empty($data) ? [$data] : [];
     }
 
+    private function normalizeEntries($entries)
+    {
+        if (is_object($entries)) {
+            $entries = (array) $entries;
+        }
+
+        if (is_array($entries)) {
+            foreach ($entries as &$entry) {
+                if (is_object($entry)) {
+                    $entry = (array) $entry;
+                }
+            }
+            return empty($entries) || isset($entries[0]) ? $entries : [$entries];
+        }
+
+        return [];
+    }
+
     private function convertToDesiredDateFormat($date)
     {
         if (preg_match('/^\d{8}$/', $date)) {
@@ -142,6 +160,7 @@ class LedgerController extends Controller
             $companyGuids = TallyCompany::pluck('company_guid')->toArray();
             Log::info('Company GUIDs in Database:', ['companyGuids' => $companyGuids]);
     
+            $insertedRecordsCount = 0;
             foreach ($messages as $message) {
                 if (isset($message['COMPANY'])) {
                     $companyData = $message['COMPANY']['REMOTECMPINFO.LIST'];
@@ -159,11 +178,12 @@ class LedgerController extends Controller
                         }
     
                         $companyGuids[] = $companyGuid;
+                        $insertedRecordsCount++;
                     }
                 }
             }
     
-            return response()->json(['message' => 'Tally data saved successfully.', 'path' => $messagesPath]);
+            return response()->json(['message' => 'Tally Company data saved successfully.', 'records_inserted' => $insertedRecordsCount]);
     
         } catch (\Exception $e) {
             Log::error('Error importing data: ' . $e->getMessage());
@@ -204,6 +224,9 @@ class LedgerController extends Controller
             $messagesPath = $result['path'];
             $messages = $result['value'];
 
+            $currencyCount = 0;
+            $groupCount = 0;
+            $ledgerCount = 0;
 
             foreach ($messages as $message) {
                 if (isset($message['CURRENCY'])) {
@@ -212,6 +235,13 @@ class LedgerController extends Controller
 
                     $guid = $currencyData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
+
+                    $company = TallyCompany::firstOrCreate(
+                        ['company_guid' => $companyGuid],
+                        [
+                            'company_name' => $companyGuid,
+                        ]
+                    );
 
                     $company = TallyCompany::where('company_guid', $companyGuid)->first();
 
@@ -234,7 +264,12 @@ class LedgerController extends Controller
                         ]
                     );
 
+                    if ($tallyCurrency) {
+                        $currencyCount++;
+                    }
+
                     if (!$tallyCurrency) {
+                        $currencyCount++;
                         throw new \Exception('Failed to create or update tally ledger Currency record.');
                     }
                 }
@@ -245,8 +280,6 @@ class LedgerController extends Controller
                     $groupData = $message['GROUP'];
                     Log::info('Group Data:', ['groupData' => $groupData]);
 
-
-                    // Convert array fields to strings
                     $nameField = $groupData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? null;
                     if (is_array($nameField)) {
                         $nameField = implode(', ', $nameField);
@@ -275,6 +308,9 @@ class LedgerController extends Controller
                         ]
                     );
 
+                    if ($tallyLedgerGroup) {
+                        $groupCount++;
+                    }
                     if (!$tallyLedgerGroup) {
                         throw new \Exception('Failed to create or update tally ledger group record.');
                     }
@@ -372,13 +408,16 @@ class LedgerController extends Controller
                         ]
                     );
 
+                    if ($tallyLedger) {
+                        $ledgerCount++;
+                    }
                     if (!$tallyLedger) {
                         throw new \Exception('Failed to create or update tally ledger record.');
                     }
                 }
             }
 
-            return response()->json(['message' => 'Tally data saved successfully.', 'path' => $messagesPath]);
+            return response()->json(['message' => 'Tally Master data saved successfully.', 'currencies_inserted' => $currencyCount, 'groups_inserted' => $groupCount, 'ledgers_inserted' => $ledgerCount]);
 
         } catch (\Exception $e) {
             Log::error('Error importing data: ' . $e->getMessage());
@@ -419,6 +458,11 @@ class LedgerController extends Controller
             $messagesPath = $result['path'];
             $messages = $result['value'];
 
+            $unitCount = 0;
+            $godownCount = 0;
+            $stockGroupCount = 0;
+            $stockItemCount = 0;
+
             $unitIds = [];
 
             foreach ($messages as $message) {
@@ -457,6 +501,9 @@ class LedgerController extends Controller
                         ]
                     );
 
+                    if ($tallyUnit) {
+                        $unitCount++;
+                    }
                     if (!$tallyUnit) {
                         throw new \Exception('Failed to create or update tally unit record.');
                     }
@@ -483,6 +530,9 @@ class LedgerController extends Controller
                         ]
                     );
 
+                    if ($tallyGodown) {
+                        $godownCount++;
+                    }
                     if (!$tallyGodown) {
                         throw new \Exception('Failed to create or update tally Godown record.');
                     }
@@ -521,6 +571,9 @@ class LedgerController extends Controller
                         ]
                     );
 
+                    if ($tallystockGroup) {
+                        $stockGroupCount++;
+                    }
                     if (!$tallystockGroup) {
                         throw new \Exception('Failed to create or update tally Stock Group record.');
                     }
@@ -662,13 +715,21 @@ class LedgerController extends Controller
                         ]
                     );
 
+                    if ($tallyStockItem) {
+                        $stockItemCount++;
+                    }
                     if (!$tallyStockItem) {
                         throw new \Exception('Failed to create or update tally stock item record.');
                     }
                 }
             }
 
-            return response()->json(['message' => 'Tally data saved successfully.', 'path' => $messagesPath]);
+            return response()->json(['message' => 'Tally stock item data saved successfully.', 
+                                        'units_inserted' => $unitCount,
+                                        'godowns_inserted' => $godownCount,
+                                        'stock_groups_inserted' => $stockGroupCount,
+                                        'stock_items_inserted' => $stockItemCount
+                                    ]);
         } catch (\Exception $e) {
             Log::error('Error importing stock items:', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
@@ -707,6 +768,8 @@ class LedgerController extends Controller
 
             $messagesPath = $result['path'];
             $messages = $result['value'];
+
+            $voucherCount = 0;
 
             foreach ($messages as $message) {
                 if (isset($message['VOUCHER'])) {
@@ -826,6 +889,9 @@ class LedgerController extends Controller
                         'cost_center_amount' => $voucherData['COSTCENTREAMOUNT'] ?? null,
                     ]);
 
+                    if ($tallyVoucher) {
+                        $voucherCount++;
+                    }
 
                     if (!$tallyVoucher) {
                         throw new \Exception('Failed to create or update tally Voucher record.');
@@ -849,7 +915,9 @@ class LedgerController extends Controller
                 }
             }
 
-            return response()->json(['message' => 'Tally data saved successfully.', 'path' => $messagesPath]);
+            return response()->json(['message' => 'Tally Voucher data saved successfully.', 
+                                        'vouchers_processed' => $voucherCount,
+                                    ]);
         } catch (\Exception $e) {
             Log::error('Error saving Tally voucher data:', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'Failed to save Tally data', 'message' => $e->getMessage()], 500);
@@ -898,24 +966,6 @@ class LedgerController extends Controller
             }
         }
         return $voucherHeadIds;
-    }
-
-    private function normalizeEntries($entries)
-    {
-        if (is_object($entries)) {
-            $entries = (array) $entries;
-        }
-
-        if (is_array($entries)) {
-            foreach ($entries as &$entry) {
-                if (is_object($entry)) {
-                    $entry = (array) $entry;
-                }
-            }
-            return empty($entries) || isset($entries[0]) ? $entries : [$entries];
-        }
-
-        return [];
     }
 
     private function processAccountingAllocations(array $entries, $companyId)
@@ -1086,6 +1136,8 @@ class LedgerController extends Controller
 
     private function processBatchAllocationsForVoucher(array $inventoryEntriesWithId, array $batchAllocations, $companyId)
     {
+        $count = 0;
+
         foreach ($inventoryEntriesWithId as $inventoryEntries) {
             $stockItemName = $inventoryEntries['stock_item_name'];
             if (isset($batchAllocations[$stockItemName]) && is_array($batchAllocations[$stockItemName])) {
@@ -1111,10 +1163,12 @@ class LedgerController extends Controller
                             'godown_id' => $godownId,
                             ]
                         );
+                        $count++;
                     }
                 }
             }
         }
+        return $count;
     }
 
     private function processBillAllocationsForVoucher($voucherHeadIds, array $billAllocations)
@@ -1199,6 +1253,5 @@ class LedgerController extends Controller
             }
         }
     }
-
 
 }

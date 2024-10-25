@@ -19,7 +19,6 @@ return new class extends Migration
             $table->boolean('is_phone_verified')->default(false);
             $table->string('otp',50)->nullable();
             $table->timestamp('otp_expires_at')->nullable();
-            $table->string('sub_id')->nullable();
             $table->string('role',100)->nullable();
             $table->foreignId('owner_employee_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('tally_connector_id')->nullable();

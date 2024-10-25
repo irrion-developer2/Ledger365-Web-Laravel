@@ -19,7 +19,6 @@ return new class extends Migration
             $table->integer('alter_id')->nullable();
             $table->string('company_name',100)->index();
             $table->string('state',100)->nullable();
-            $table->string('sub_id')->nullable();
             
             $table->string('license_number',100)->nullable();
             $table->date('starting_from')->nullable();

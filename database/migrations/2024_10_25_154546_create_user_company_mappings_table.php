@@ -13,19 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('tally_currencies', function (Blueprint $table) {
-            $table->increments('currency_id');
-            $table->string('currency_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
-            
-            $table->unsignedInteger('company_id')->nullable();
+        Schema::create('user_company_mappings', function (Blueprint $table) {
+            $table->increments('user_company_mapping_id');
+
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+
+            $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
             
-            $table->integer('alter_id')->nullable();
-            $table->string('currency_name', 100);
-            $table->string('symbol', 10);
-            $table->string('decimal_symbol', 10);
-            $table->integer('decimal_places');
-
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
@@ -38,6 +34,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('tally_currencies');
+        Schema::dropIfExists('user_company_mappings');
     }
 };

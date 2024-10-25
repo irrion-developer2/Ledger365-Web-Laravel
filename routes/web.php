@@ -3,7 +3,6 @@
 use Laravel\Jetstream\Jetstream;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\TenantController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SuperAdmin\UserController;
 use App\Http\Controllers\SuperAdmin\SettingController;
@@ -82,8 +81,6 @@ Route::middleware([
         Route::get('/analytics', [AnalyticController::class, 'index'])->name('analytics.index');
 
         Route::get('/fetch-company-data/{company_id}', [CompanyController::class, 'fetchCompanyData'])->name('fetch.company.data');
-
-        Route::resource('tenants', TenantController::class);
 
         Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/get-data', [CustomerController::class, 'getData'])->name('customers.get-data');

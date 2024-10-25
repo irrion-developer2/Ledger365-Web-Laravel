@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\App\JsonImportController;
 use App\Http\Controllers\SuperAdmin\TallyController;
 use App\Http\Controllers\SuperAdmin\LedgerController;
 
@@ -20,11 +19,6 @@ use App\Http\Controllers\SuperAdmin\LedgerController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
-Route::post('/ledgers/{token_id}/{company_id}', [JsonImportController::class, 'ledgerJsonImport'])
-    ->name('jsonImport.ledgers.import')
-    ->middleware('tenant');
-
 
 Route::post('/license_check', [LedgerController::class, 'licenseCheckJsonImport'])->name('license.import');
 

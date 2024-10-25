@@ -837,9 +837,9 @@ class LedgerController extends Controller
 
                     $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations, $companyId);
                 
-                    $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId); 
-                    $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
-                    $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
+                    // $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId); 
+                    // $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
+                    // $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
                     
 
                 }
@@ -968,90 +968,104 @@ class LedgerController extends Controller
         return $voucherHeadIds;
     }
 
-    private function processInventoryEntries(array $inventoryEntries, array $voucherHeadIds, $companyId)
-    {
-        Log::info('Processing Inventory Entries:', ['count' => count($inventoryEntries)]);
-        Log::info('Available Voucher Head IDs:', ['voucherHeadIds' => $voucherHeadIds]);
 
-        if (empty($voucherHeadIds)) {
-            Log::error('No voucher_head_id available for inventory entry.');
-            return; 
+
+private function processInventoryEntries($inventoryEntries, array $voucherHeadIds, $companyId)
+{
+    Log::info('Processing Inventory Entries:', ['count' => is_array($inventoryEntries) ? count($inventoryEntries) : 1]);
+    Log::info('Available Voucher Head IDs:', ['voucherHeadIds' => $voucherHeadIds]);
+
+    if (empty($voucherHeadIds)) {
+        Log::error('No voucher_head_id available for inventory entry.');
+        return;
+    }
+
+    $voucherHeadId = $voucherHeadIds[0];
+    Log::info('Using Voucher Head ID:', ['voucherHeadId' => $voucherHeadId]);
+
+    $inventoryEntries = $this->normalizeEntries($inventoryEntries);
+    Log::info('Normalized Inventory Entries:', ['entries' => $inventoryEntries]);
+
+    $inventoryEntriesWithId = [];
+
+    foreach ($inventoryEntries as $inventoryEntry) {
+        $itemName = trim(htmlspecialchars_decode($inventoryEntry['STOCKITEMNAME'] ?? ''));
+
+        if (!$itemName) {
+            Log::warning('Skipped inventory entry due to missing STOCKITEMNAME:', ['entry' => $inventoryEntry]);
+            continue;
         }
 
-        $voucherHeadId = $voucherHeadIds[0];
-        Log::info('Using Voucher Head ID:', ['voucherHeadId' => $voucherHeadId]);
+        $itemId = TallyItem::whereRaw('LOWER(item_name) = ?', [strtolower($itemName)])->value('item_id');
 
-        $inventoryEntriesWithId = [];
+        if (!$itemId) {
+            Log::error('Item ID not found for stock item:', [
+                'stock_item_name' => $itemName,
+                'attempted_match' => strtolower($itemName),
+                'inventoryEntry' => $inventoryEntry  // Log full entry for better diagnostics
+            ]);
+            continue;
+        }
 
-        foreach ($inventoryEntries as $inventoryEntry) {
-            $itemName = trim(htmlspecialchars_decode($inventoryEntry['STOCKITEMNAME'] ?? ''));
-            $itemId = TallyItem::whereRaw('LOWER(item_name) = ?', [strtolower($itemName)])->value('item_id');
-
-            if (!$itemId) {
-                Log::error('Item ID not found for stock item: ' . $itemName);
-                continue;
+        $rateString = $inventoryEntry['RATE'] ?? null;
+        $rate = null;
+        $unit = null;
+        if ($rateString) {
+            $parts = explode('/', $rateString);
+            if (count($parts) === 2) {
+                $rate = trim($parts[0]);
+                $unit = trim($parts[1]);
+            } else {
+                Log::warning('Rate format not as expected:', ['stock_item_name' => $itemName, 'rate' => $rateString]);
+                $rate = $rateString;
             }
+        }
 
-            $rateString = $inventoryEntry['RATE'] ?? null;
-            $rate = null;
-            $unit = null;
-            if ($rateString) {
-                $parts = explode('/', $rateString);
-                if (count($parts) === 2) {
-                    $rate = trim($parts[0]);
-                    $unit = trim($parts[1]);
-                } else {
-                    $rate = $rateString;
+        $unitId = null;
+        if ($unit) {
+            $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->value('unit_id');
+            Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
+        }
+
+        $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
+        $actual_qty = $this->extractNumericValue($inventoryEntry['ACTUALQTY'] ?? null);
+
+        $igstRate = null;
+        if (isset($inventoryEntry['RATEDETAILS.LIST'])) {
+            foreach ($this->ensureArray($inventoryEntry['RATEDETAILS.LIST']) as $rateDetail) {
+                if (isset($rateDetail['GSTRATEDUTYHEAD']) && $rateDetail['GSTRATEDUTYHEAD'] === 'IGST') {
+                    $igstRate = $rateDetail['GSTRATE'] ?? null;
+                    break;
                 }
             }
+        }
 
-            $unitId = null;
-            if ($unit) {
-                $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->value('unit_id');
-                Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
-            }
+        $inventoryData = [
+            'voucher_head_id' => $voucherHeadId,
+            'item_id' => $itemId,
+            'unit_id' => $unitId,
+            'gst_taxability' => $inventoryEntry['GSTOVRDNTAXABILITY'] ?? null,
+            'gst_source_type' => $inventoryEntry['GSTSOURCETYPE'] ?? null,
+            'gst_item_source' => $inventoryEntry['GSTITEMSOURCE'] ?? null,
+            'gst_ledger_source' => $inventoryEntry['GSTLEDGERSOURCE'] ?? null,
+            'hsn_source_type' => $inventoryEntry['HSNSOURCETYPE'] ?? null,
+            'hsn_item_source' => $inventoryEntry['HSNITEMSOURCE'] ?? null,
+            'gst_rate_infer_applicability' => $inventoryEntry['GSTRATEINFERAPPLICABILITY'] ?? null,
+            'gst_hsn_infer_applicability' => $inventoryEntry['GSTHSNINFERAPPLICABILITY'] ?? null,
+            'rate' => $rate,
+            'billed_qty' => $billed_qty ?? 0,
+            'actual_qty' => $actual_qty ?? 0,
+            'amount' => $inventoryEntry['AMOUNT'] ?? 0,
+            'discount' => $inventoryEntry['DISCOUNT'] ?? 0,
+            'igst_rate' => $igstRate,
+            'gst_hsn_name' => $inventoryEntry['GSTHSNNAME'] ?? null,
+        ];
 
-            $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
-            Log::info('billed_qty Data:', ['billed_qty' => $billed_qty]);
-
-            $actual_qty = $this->extractNumericValue($inventoryEntry['ACTUALQTY'] ?? null);
-            Log::info('actual_qty Data:', ['actual_qty' => $actual_qty]);
-
-            $igstRate = null;
-            if (isset($inventoryEntry['RATEDETAILS.LIST'])) {
-                foreach ($this->ensureArray($inventoryEntry['RATEDETAILS.LIST']) as $rateDetail) {
-                    if (isset($rateDetail['GSTRATEDUTYHEAD']) && $rateDetail['GSTRATEDUTYHEAD'] === 'IGST') {
-                        $igstRate = $rateDetail['GSTRATE'] ?? null;
-                        break;
-                    }
-                }
-            }
-
-            $inventoryData = [
-                'voucher_head_id' => $voucherHeadId,
-                'item_id' => $itemId,
-                'unit_id' => $unitId,
-                'gst_taxability' => $inventoryEntry['GSTOVRDNTAXABILITY'] ?? null,
-                'gst_source_type' => $inventoryEntry['GSTSOURCETYPE'] ?? null,
-                'gst_item_source' => $inventoryEntry['GSTITEMSOURCE'] ?? null,
-                'gst_ledger_source' => $inventoryEntry['GSTLEDGERSOURCE'] ?? null,
-                'hsn_source_type' => $inventoryEntry['HSNSOURCETYPE'] ?? null,
-                'hsn_item_source' => $inventoryEntry['HSNITEMSOURCE'] ?? null,
-                'gst_rate_infer_applicability' => $inventoryEntry['GSTRATEINFERAPPLICABILITY'] ?? null,
-                'gst_hsn_infer_applicability' => $inventoryEntry['GSTHSNINFERAPPLICABILITY'] ?? null,
-                'rate' => $rate,
-                'billed_qty' => $billed_qty,
-                'actual_qty' => $actual_qty,
-                'amount' => $inventoryEntry['AMOUNT'] ?? null,
-                'discount' => $inventoryEntry['DISCOUNT'] ?? null,
-                'igst_rate' => $igstRate,
-                'gst_hsn_name' => $inventoryEntry['GSTHSNNAME'] ?? null,
-            ];
-
+        try {
             $tallyVoucherItem = TallyVoucherItem::updateOrCreate(
                 [
-                    'voucher_head_id' => $voucherHeadId, 
-                    'item_id' => $itemId
+                    'voucher_head_id' => $voucherHeadId,
+                    'item_id' => $itemId,
                 ],
                 $inventoryData
             );
@@ -1062,129 +1076,251 @@ class LedgerController extends Controller
             ];
 
             Log::info('Inventory Entry Processed:', ['inventoryData' => $inventoryData]);
+
+        } catch (\Exception $e) {
+            Log::error('Error saving inventory entry:', [
+                'stock_item_name' => $itemName,
+                'error_message' => $e->getMessage(),
+            ]);
         }
-        
-        return $inventoryEntriesWithId;
     }
 
-    private function processBatchAllocationsForVoucher(array $inventoryEntriesWithId, array $batchAllocations, $companyId)
-    {
-        foreach ($inventoryEntriesWithId as $inventoryEntries) {
-            $stockItemName = $inventoryEntries['stock_item_name'];
-            if (isset($batchAllocations[$stockItemName]) && is_array($batchAllocations[$stockItemName])) {
-                foreach ($batchAllocations[$stockItemName] as $batch) {
-                    if (isset($batch['BATCHNAME'], $batch['AMOUNT'])) {
+    return $inventoryEntriesWithId;
+}
 
-                        $godownId = TallyGodown::select('tally_godowns.godown_id')
-                        ->join('tally_companies', \DB::raw('LEFT(tally_godowns.godown_guid, 36)'), '=', 'tally_companies.company_guid')
-                        ->where('tally_godowns.godown_name', $batch['GODOWNNAME'] ?? null)
-                        ->where('tally_companies.company_id', $companyId) 
-                        ->value('tally_godowns.godown_id');
+
+    // private function processInventoryEntries($inventoryEntries, array $voucherHeadIds, $companyId)
+    // {
+    //     Log::info('Processing Inventory Entries:', ['count' => is_array($inventoryEntries) ? count($inventoryEntries) : 1]);
+    //     Log::info('Available Voucher Head IDs:', ['voucherHeadIds' => $voucherHeadIds]);
+
+    //     if (empty($voucherHeadIds)) {
+    //         Log::error('No voucher_head_id available for inventory entry.');
+    //         return; 
+    //     }
+
+    //     $voucherHeadId = $voucherHeadIds[0];
+    //     Log::info('Using Voucher Head ID:', ['voucherHeadId' => $voucherHeadId]);
+
+    //     // Ensure $inventoryEntries is an array, even if it’s a single object
+    //     $inventoryEntries = $this->normalizeEntries($inventoryEntries);
+    //     Log::info('Normalized Inventory Entries:', ['entries' => $inventoryEntries]);
+
+    //     $inventoryEntriesWithId = [];
+
+    //     foreach ($inventoryEntries as $inventoryEntry) {
+    //         $itemName = trim(htmlspecialchars_decode($inventoryEntry['STOCKITEMNAME'] ?? ''));
+
+    //         // Attempt to retrieve the item_id
+    //         $itemId = TallyItem::whereRaw('LOWER(item_name) = ?', [strtolower($itemName)])->value('item_id');
+
+    //         if (!$itemId) {
+    //             // Log detailed information about the missing item ID
+    //             Log::error('Item ID not found for stock item:', [
+    //                 'stock_item_name' => $itemName,
+    //                 'attempted_match' => strtolower($itemName),
+    //             ]);
+    //             continue;  // Skip processing if item ID is missing
+    //         }
+
+    //         // Parsing the rate and unit
+    //         $rateString = $inventoryEntry['RATE'] ?? null;
+    //         $rate = null;
+    //         $unit = null;
+    //         if ($rateString) {
+    //             $parts = explode('/', $rateString);
+    //             if (count($parts) === 2) {
+    //                 $rate = trim($parts[0]);
+    //                 $unit = trim($parts[1]);
+    //             } else {
+    //                 Log::warning('Rate format not as expected:', ['stock_item_name' => $itemName, 'rate' => $rateString]);
+    //                 $rate = $rateString;
+    //             }
+    //         }
+
+    //         $unitId = null;
+    //         if ($unit) {
+    //             $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->value('unit_id');
+    //             Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
+    //         }
+
+    //         $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
+    //         $actual_qty = $this->extractNumericValue($inventoryEntry['ACTUALQTY'] ?? null);
+
+    //         $igstRate = null;
+    //         if (isset($inventoryEntry['RATEDETAILS.LIST'])) {
+    //             foreach ($this->ensureArray($inventoryEntry['RATEDETAILS.LIST']) as $rateDetail) {
+    //                 if (isset($rateDetail['GSTRATEDUTYHEAD']) && $rateDetail['GSTRATEDUTYHEAD'] === 'IGST') {
+    //                     $igstRate = $rateDetail['GSTRATE'] ?? null;
+    //                     break;
+    //                 }
+    //             }
+    //         }
+
+    //         $inventoryData = [
+    //             'voucher_head_id' => $voucherHeadId,
+    //             'item_id' => $itemId,
+    //             'unit_id' => $unitId,
+    //             'gst_taxability' => $inventoryEntry['GSTOVRDNTAXABILITY'] ?? null, 
+    //             'gst_source_type' => $inventoryEntry['GSTSOURCETYPE'] ?? null,    
+    //             'gst_item_source' => $inventoryEntry['GSTITEMSOURCE'] ?? null,
+    //             'gst_ledger_source' => $inventoryEntry['GSTLEDGERSOURCE'] ?? null,
+    //             'hsn_source_type' => $inventoryEntry['HSNSOURCETYPE'] ?? null,    
+    //             'hsn_item_source' => $inventoryEntry['HSNITEMSOURCE'] ?? null,
+    //             'gst_rate_infer_applicability' => $inventoryEntry['GSTRATEINFERAPPLICABILITY'] ?? null,
+    //             'gst_hsn_infer_applicability' => $inventoryEntry['GSTHSNINFERAPPLICABILITY'] ?? null,
+    //             'rate' => $rate,
+    //             'billed_qty' => $billed_qty ?? 0,
+    //             'actual_qty' => $actual_qty ?? 0,
+    //             'amount' => $inventoryEntry['AMOUNT'] ?? 0,
+    //             'discount' => $inventoryEntry['DISCOUNT'] ?? 0,
+    //             'igst_rate' => $igstRate,
+    //             'gst_hsn_name' => $inventoryEntry['GSTHSNNAME'] ?? null,
+    //         ];
+
+    //         try {
+    //             $tallyVoucherItem = TallyVoucherItem::updateOrCreate(
+    //                 [
+    //                     'voucher_head_id' => $voucherHeadId,
+    //                     'item_id' => $itemId,
+    //                 ],
+    //                 $inventoryData
+    //             );
+
+    //             $inventoryEntriesWithId[] = [
+    //                 'voucher_item_id' => $tallyVoucherItem->voucher_item_id,
+    //                 'stock_item_name' => $itemName,
+    //             ];
+
+    //             Log::info('Inventory Entry Processed:', ['inventoryData' => $inventoryData]);
+
+    //         } catch (\Exception $e) {
+    //             Log::error('Error saving inventory entry:', [
+    //                 'stock_item_name' => $itemName,
+    //                 'error_message' => $e->getMessage(),
+    //             ]);
+    //         }
+    //     }
+
+    //     return $inventoryEntriesWithId;
+    // }
+
+
+    // private function processBatchAllocationsForVoucher(array $inventoryEntriesWithId, array $batchAllocations, $companyId)
+    // {
+    //     foreach ($inventoryEntriesWithId as $inventoryEntries) {
+    //         $stockItemName = $inventoryEntries['stock_item_name'];
+    //         if (isset($batchAllocations[$stockItemName]) && is_array($batchAllocations[$stockItemName])) {
+    //             foreach ($batchAllocations[$stockItemName] as $batch) {
+    //                 if (isset($batch['BATCHNAME'], $batch['AMOUNT'])) {
+
+    //                     $godownId = TallyGodown::select('tally_godowns.godown_id')
+    //                     ->join('tally_companies', \DB::raw('LEFT(tally_godowns.godown_guid, 36)'), '=', 'tally_companies.company_guid')
+    //                     ->where('tally_godowns.godown_name', $batch['GODOWNNAME'] ?? null)
+    //                     ->where('tally_companies.company_id', $companyId) 
+    //                     ->value('tally_godowns.godown_id');
                     
 
-                        TallyBatchAllocation::updateOrCreate(
-                            [
-                            'voucher_item_id' => $inventoryEntries['voucher_item_id'],
-                            'batch_name' => $batch['BATCHNAME'],
-                            'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
-                            'amount' => $batch['AMOUNT'],
-                            'actual_qty' => isset($batch['ACTUALQTY']) ? preg_replace('/[^0-9.]/', '', $batch['ACTUALQTY']) : null,
-                            'billed_qty' => isset($batch['BILLEDQTY']) ? preg_replace('/[^0-9.]/', '', $batch['BILLEDQTY']) : null,                           
-                            'order_no' => $batch['ORDERNO'] ?? null,
-                            'godown_id' => $godownId,
-                            ]
-                        );
-                    }
-                }
-            }
-        }
-    }
+    //                     TallyBatchAllocation::updateOrCreate(
+    //                         [
+    //                         'voucher_item_id' => $inventoryEntries['voucher_item_id'],
+    //                         'batch_name' => $batch['BATCHNAME'],
+    //                         'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
+    //                         'amount' => $batch['AMOUNT'],
+    //                         'actual_qty' => isset($batch['ACTUALQTY']) ? preg_replace('/[^0-9.]/', '', $batch['ACTUALQTY']) : null,
+    //                         'billed_qty' => isset($batch['BILLEDQTY']) ? preg_replace('/[^0-9.]/', '', $batch['BILLEDQTY']) : null,                           
+    //                         'order_no' => $batch['ORDERNO'] ?? null,
+    //                         'godown_id' => $godownId,
+    //                         ]
+    //                     );
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    
-    private function processBillAllocationsForVoucher($voucherHeadIds, array $billAllocations)
-    {
-        Log::info('Processing Bill Allocations', ['voucherHeadIds' => $voucherHeadIds, 'billAllocations' => $billAllocations]);
+    // private function processBillAllocationsForVoucher($voucherHeadIds, array $billAllocations)
+    // {
+    //     Log::info('Processing Bill Allocations', ['voucherHeadIds' => $voucherHeadIds, 'billAllocations' => $billAllocations]);
         
-        foreach ($voucherHeadIds as $voucherHead) {
-            Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
+    //     foreach ($voucherHeadIds as $voucherHead) {
+    //         Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
     
-            foreach ($billAllocations as $ledgerName => $bills) {
-                if (is_array($bills)) {
-                    foreach ($bills as $bill) {
-                        Log::info('Current bill being processed:', ['bill' => $bill]);
+    //         foreach ($billAllocations as $ledgerName => $bills) {
+    //             if (is_array($bills)) {
+    //                 foreach ($bills as $bill) {
+    //                     Log::info('Current bill being processed:', ['bill' => $bill]);
     
-                        if (is_array($bill)) {
-                            try {
-                                if (isset($bill['NAME'], $bill['AMOUNT'])) {
-                                    TallyBillAllocation::updateOrCreate(
-                                        [
-                                            'voucher_head_id' => $voucherHead ?? null,  // Log voucher_head_id before using
-                                            'name' => $bill['NAME'],
-                                        ],
-                                        [
-                                            'bill_amount' => $bill['AMOUNT'],
-                                            'year_end' => $bill['YEAREND'] ?? null,
-                                            'bill_type' => $bill['BILLTYPE'] ?? null,
-                                        ]
-                                    );
-                                    Log::info('Successfully processed bill allocation', ['ledger_name' => $ledgerName, 'bill' => $bill]);
-                                } else {
-                                    Log::error('Missing NAME or AMOUNT in BILLALLOCATIONS.LIST entry: ' . json_encode($bill));
-                                }
-                            } catch (\Exception $e) {
-                                Log::error('Error processing bill allocation: ' . $e->getMessage());
-                            }
-                        } else {
-                            Log::error('Invalid bill format. Expected array but got ' . gettype($bill) . ': ' . json_encode($bill));
-                        }
-                    }
-                } else {
-                    Log::error('Invalid bill allocations format for ledger name: ' . $ledgerName . '. Expected array but got ' . gettype($bills));
-                }
-            }
-        }
-    }
+    //                     if (is_array($bill)) {
+    //                         try {
+    //                             if (isset($bill['NAME'], $bill['AMOUNT'])) {
+    //                                 TallyBillAllocation::updateOrCreate(
+    //                                     [
+    //                                         'voucher_head_id' => $voucherHead ?? null,  // Log voucher_head_id before using
+    //                                         'name' => $bill['NAME'],
+    //                                     ],
+    //                                     [
+    //                                         'bill_amount' => $bill['AMOUNT'],
+    //                                         'year_end' => $bill['YEAREND'] ?? null,
+    //                                         'bill_type' => $bill['BILLTYPE'] ?? null,
+    //                                     ]
+    //                                 );
+    //                                 Log::info('Successfully processed bill allocation', ['ledger_name' => $ledgerName, 'bill' => $bill]);
+    //                             } else {
+    //                                 Log::error('Missing NAME or AMOUNT in BILLALLOCATIONS.LIST entry: ' . json_encode($bill));
+    //                             }
+    //                         } catch (\Exception $e) {
+    //                             Log::error('Error processing bill allocation: ' . $e->getMessage());
+    //                         }
+    //                     } else {
+    //                         Log::error('Invalid bill format. Expected array but got ' . gettype($bill) . ': ' . json_encode($bill));
+    //                     }
+    //                 }
+    //             } else {
+    //                 Log::error('Invalid bill allocations format for ledger name: ' . $ledgerName . '. Expected array but got ' . gettype($bills));
+    //             }
+    //         }
+    //     }
+    // }
     
-    
+    // private function processBankAllocationsForVoucher($voucherHeadIds, array $bankAllocations)
+    // {
+    //     Log::info('Processing Bank Allocations', ['voucherHeadIds' => $voucherHeadIds, 'bankAllocations' => $bankAllocations]);
 
-    private function processBankAllocationsForVoucher($voucherHeadIds, array $bankAllocations)
-    {
-        Log::info('Processing Bank Allocations', ['voucherHeadIds' => $voucherHeadIds, 'bankAllocations' => $bankAllocations]);
+    //     foreach ($voucherHeadIds as $voucherHead) {
+    //         Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
 
-        foreach ($voucherHeadIds as $voucherHead) {
-            Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
+    //         $ledgerName = $voucherHead['ledger_name'] ?? null;
+    //         Log::info("Ledger name: " . $ledgerName);
 
-            $ledgerName = $voucherHead['ledger_name'] ?? null;
-            Log::info("Ledger name: " . $ledgerName);
+    //         if (isset($bankAllocations[$ledgerName]) && is_array($bankAllocations[$ledgerName])) {
+    //             foreach ($bankAllocations[$ledgerName] as $bank) {
+    //                 Log::info("Processing bank allocation: " . json_encode($bank));
 
-            if (isset($bankAllocations[$ledgerName]) && is_array($bankAllocations[$ledgerName])) {
-                foreach ($bankAllocations[$ledgerName] as $bank) {
-                    Log::info("Processing bank allocation: " . json_encode($bank));
-
-                    try {
-                        $allocation = TallyBankAllocation::updateOrCreate(
-                            [
-                                'voucher_head_id' => $voucherHead ?? null,
-                            ],
-                            [
-                                'bank_date' => $this->sanitizeDate($bank['DATE'] ?? null),
-                                'instrument_date' => $this->sanitizeDate($bank['INSTRUMENTDATE'] ?? null),
-                                'instrument_number' => $bank['INSTRUMENTNUMBER'] ?? null,
-                                'transaction_type' => $bank['TRANSACTIONTYPE'] ?? null,
-                                'bank_name' => $bank['BANKNAME'] ?? null,
-                                'amount' => $bank['AMOUNT'] ?? null,
-                            ]
-                        );
-                        Log::info("Bank allocation stored: " . json_encode($allocation));
-                    } catch (\Exception $e) {
-                        Log::error("Failed to process bank allocation: " . $e->getMessage());
-                    }
-                }
-            } else {
-                Log::error("No bank allocations found for ledger: " . $ledgerName);
-            }
-        }
-    }
+    //                 try {
+    //                     $allocation = TallyBankAllocation::updateOrCreate(
+    //                         [
+    //                             'voucher_head_id' => $voucherHead ?? null,
+    //                         ],
+    //                         [
+    //                             'bank_date' => $this->sanitizeDate($bank['DATE'] ?? null),
+    //                             'instrument_date' => $this->sanitizeDate($bank['INSTRUMENTDATE'] ?? null),
+    //                             'instrument_number' => $bank['INSTRUMENTNUMBER'] ?? null,
+    //                             'transaction_type' => $bank['TRANSACTIONTYPE'] ?? null,
+    //                             'bank_name' => $bank['BANKNAME'] ?? null,
+    //                             'amount' => $bank['AMOUNT'] ?? null,
+    //                         ]
+    //                     );
+    //                     Log::info("Bank allocation stored: " . json_encode($allocation));
+    //                 } catch (\Exception $e) {
+    //                     Log::error("Failed to process bank allocation: " . $e->getMessage());
+    //                 }
+    //             }
+    //         } else {
+    //             Log::error("No bank allocations found for ledger: " . $ledgerName);
+    //         }
+    //     }
+    // }
 
 
 }

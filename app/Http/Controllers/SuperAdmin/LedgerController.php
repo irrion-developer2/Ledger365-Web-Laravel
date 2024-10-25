@@ -297,6 +297,10 @@ class LedgerController extends Controller
 
                     $companyId = $company->company_id;
 
+                    $parent = $groupData['PARENT'] ?? null;
+                    $isPrimary = empty($parent);
+            
+
                     $tallyLedgerGroup = TallyLedgerGroup::updateOrCreate(
                         ['ledger_group_guid' => $guid],
                         [
@@ -305,15 +309,18 @@ class LedgerController extends Controller
                             'affects_stock' => isset($groupData['AFFECTSSTOCK']) && $groupData['AFFECTSSTOCK'] === 'Yes',
                             'alter_id' => $groupData['ALTERID'] ?? null,
                             'ledger_group_name' => $nameField,
+                            'is_primary' => $isPrimary,
                         ]
                     );
 
+                    
                     if ($tallyLedgerGroup) {
                         $groupCount++;
                     }
                     if (!$tallyLedgerGroup) {
                         throw new \Exception('Failed to create or update tally ledger group record.');
                     }
+                    
                 }
             }
 
@@ -947,6 +954,7 @@ class LedgerController extends Controller
                 'amount' => $amount,
                 'entry_type' => $entryType,
                 'ledger_id' => $ledgerId,
+                'is_party_ledger' => ($ledgerEntry['ISPARTYLEDGER'] ?? null) === 'Yes' ? true : false,
                 'is_deemed_positive' => isset($ledgerEntry['ISDEEMEDPOSITIVE']) && $ledgerEntry['ISDEEMEDPOSITIVE'] === 'Yes',
             ];
 

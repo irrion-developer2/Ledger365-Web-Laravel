@@ -999,18 +999,55 @@ class LedgerController extends Controller
                     continue;
                 }
 
-                $ledgerEntries[$ledgerName] = [
-                    'amount' => $amount,
-                    'entry_type' => $entryType,
-                    'ledger_id' => $ledgerId,
-                    'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
-                ];
+                if (isset($ledgerEntries[$ledgerName])) {
+                    $ledgerEntries[$ledgerName]['amount'] += $amount;
+                } else {
+                    $ledgerEntries[$ledgerName] = [
+                        'amount' => $amount,
+                        'entry_type' => $entryType,
+                        'ledger_id' => $ledgerId,
+                        'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+                    ];
+                }
             } else {
                 Log::error('Missing or invalid LEDGERNAME or AMOUNT in LEDGERENTRIES.LIST entry: ' . json_encode($entry));
             }
         }
         return array_values($ledgerEntries);
     }
+
+
+    // private function processAccountingAllocations(array $entries, $companyId)
+    // {
+    //     $ledgerEntries = [];
+
+    //     foreach ($entries as $entry) {
+    //         if (isset($entry['LEDGERNAME'], $entry['AMOUNT'])) {
+    //             $ledgerName = htmlspecialchars_decode($entry['LEDGERNAME']);
+    //             $amount = $entry['AMOUNT'];
+    //             $entryType = $amount < 0 ? "debit" : "credit";
+
+    //             $ledgerId = TallyLedger::where('ledger_name', $ledgerName)
+    //                 ->where('company_Id', $companyId)
+    //                 ->value('ledger_id');
+
+    //             if (!$ledgerId) {
+    //                 Log::error('Ledger GUID not found in database for ledger: ' . $ledgerName);
+    //                 continue;
+    //             }
+
+    //             $ledgerEntries[$ledgerName] = [
+    //                 'amount' => $amount,
+    //                 'entry_type' => $entryType,
+    //                 'ledger_id' => $ledgerId,
+    //                 'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
+    //             ];
+    //         } else {
+    //             Log::error('Missing or invalid LEDGERNAME or AMOUNT in LEDGERENTRIES.LIST entry: ' . json_encode($entry));
+    //         }
+    //     }
+    //     return array_values($ledgerEntries);
+    // }
 
     private function processAccountingAllocationForVoucher($voucherId, array $entries)
     {

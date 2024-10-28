@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class TallyVoucherType extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'voucher_type_id';
+    protected $guarded = [];
 }

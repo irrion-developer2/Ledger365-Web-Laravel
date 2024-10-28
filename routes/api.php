@@ -28,6 +28,8 @@ Route::post('/master', [LedgerController::class, 'masterJsonImport'])->name('mas
 
 Route::post('/stock_item', [LedgerController::class, 'stockItemJsonImport'])->name('stockItem.import');
 
+Route::post('/voucher_types', [LedgerController::class, 'voucherTypeJsonImport'])->name('voucherType.import');
+
 Route::post('/vouchers', [LedgerController::class, 'voucherJsonImport'])->name('voucher.import');
 
 Route::post('/reports', [LedgerController::class, 'reportJsonImport'])->name('report.import');

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('numbering_method', 50);
             $table->boolean('prevent_duplicate')->default(false);
             $table->boolean('use_zero_entries')->default(false);
-            $table->boolean('is_deemed_postive');
+            $table->boolean('is_deemed_positive');
             $table->boolean('affects_stock');
             $table->boolean('is_active');
             $table->integer('total_vouchers')->nullable();

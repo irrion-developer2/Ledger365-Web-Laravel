@@ -1,16 +1,16 @@
 <?php
     $user = auth()->user();
-    $userSubIds = json_decode($user->sub_id, true);
+    $userId = $user->id;
 
-    if (!is_array($userSubIds)) {
-        $userSubIds = [$user->sub_id];
-    }
-    $companies = App\Models\TallyCompany::whereIn('sub_id', $userSubIds)->get();
+    $userCompanyMapping = App\Models\UserCompanyMapping::where('user_id', $userId)->first();
+    $companyId = $userCompanyMapping ? $userCompanyMapping->company_id : null;
+
+    $companies = App\Models\TallyCompany::where('company_id', $companyId)->get();
 ?>
 <style>
   .dropdown-item.selected {
-      background-color: #007bff; /* Example color */
-      color: #fff; /* Example text color */
+      background-color: #007bff;
+      color: #fff;
   }
 </style>
 
@@ -186,24 +186,25 @@
             @endif
 
             @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
-                  <div class="parent-icon"><i class="bx bx-buildings"></i>
-                  </div>
-                  <div class="menu-title d-flex align-items-center company-changes">Companies</div>
-                  <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
-                </a>
-                <ul class="dropdown-menu">
-                  @foreach($companies as $company)
-                      <li>
-                          <a class="dropdown-item {{ session('selected_company_id') == $company->id ? 'selected' : '' }}"
-                            href="javascript:;" onclick="changeCompany('{{ $company->id }}', '{{ $company->name }}')">
-                              {{ $company->name }}
-                          </a>
-                      </li>
-                  @endforeach
-                </ul>
-            </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
+                        <div class="parent-icon"><i class="bx bx-buildings"></i></div>
+                        <div class="menu-title d-flex align-items-center company-changes">
+                            {{ session('selected_company_name', 'Companies') }}
+                        </div>
+                        <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
+                    </a>
+                    <ul class="dropdown-menu">
+                        @foreach($companies as $company)
+                            <li>
+                                <a class="dropdown-item {{ session('selected_company_id') == $company->company_id ? 'selected' : '' }}"
+                                href="javascript:;" onclick="changeCompany('{{ $company->company_id }}', '{{ $company->company_name }}')">
+                                    {{ $company->company_name }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </li>
             @endif
             
          </ul>
@@ -212,119 +213,43 @@
  </nav>
 </div>
 <script>
-  function changeCompany(companyId, companyName) {
-      console.log('Selected Company ID:', companyId);
-      if (!companyId) {
-          return;
-      }
-      const url = `/fetch-company-data/${companyId}`; 
-      console.log('Request URL:', url);
-  
-      fetch(url)
-          .then(response => {
-              if (!response.ok) {
-                  return Promise.reject(new Error('Network response was not ok: ' + response.statusText));
-              }
-              return response.json();
-          })
-          .then(data => {
-              if (data && data.company) { 
-                  document.querySelector('.company-changes').textContent = data.company.name;
-                  localStorage.setItem('selectedCompanyId', companyId);
-  
-                  return fetch('/set-company-session', {
-                      method: 'POST',
-                      headers: {
-                          'Content-Type': 'application/json',
-                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                      },
-                      body: JSON.stringify({
-                          company_id: companyId,
-                          company_name: companyName
-                      }),
-                  });
-              } else {
-                  console.warn('Company data not found'); 
-                  return Promise.reject(new Error('Company data not found'));
-              }
-          })
-          .then(response => {
-              if (!response.ok) {
-                  return Promise.reject(new Error('Failed to update session: ' + response.statusText));
-              }
-              return response.json();
-          })
-          .then(sessionData => {
-              if (sessionData.success) {
-                  console.log('Session updated with company:', sessionData.company);
-                  window.location.reload();
-              } else {
-                  console.warn('Failed to update session.');
-              }
-          })
-          .catch(error => {
-              console.error('Error:', error.message);
-          });
-  }
+    function changeCompany(companyId, companyName) {
+        if (!companyId) {
+            return;
+        }
+        
+        // Update UI immediately to show selected company name
+        document.querySelector('.company-changes').textContent = companyName;
+        
+        // Call backend to set session data
+        fetch('/set-company-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                company_id: companyId,
+                company_name: companyName
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update session: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(sessionData => {
+            if (sessionData.success) {
+                console.log('Session updated with company:', sessionData.company);
+                // Reload page to ensure all session-dependent data is refreshed
+                window.location.reload();
+            } else {
+                console.warn('Failed to update session.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error.message);
+        });
+    }
 </script>
-
-{{-- <script>
-  function changeCompany(companyId, companyName) {
-      console.log('Selected Company ID:', companyId);
-      if (!companyId) {
-          return;
-      }
-      const url = `/fetch-company-data/${companyId}`; 
-      console.log('Request URL:', url);
-  
-      fetch(url)
-          .then(response => {
-              if (!response.ok) {
-                  return Promise.reject(new Error('Network response was not ok: ' + response.statusText));
-              }
-              return response.json();
-          })
-          .then(data => {
-              if (data && data.company) { 
-                  document.querySelector('.company-changes').textContent = data.company.name;
-                  localStorage.setItem('selectedCompanyId', companyId);
-  
-                  return fetch('/set-company-session', {
-                      method: 'POST',
-                      headers: {
-                          'Content-Type': 'application/json',
-                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                      },
-                      body: JSON.stringify({
-                          company_id: companyId,
-                          company_name: companyName
-                      }),
-                  });
-              } else {
-                  console.warn('Company data not found'); 
-                  return Promise.reject(new Error('Company data not found'));
-              }
-          })
-          .then(response => {
-              if (!response.ok) {
-                  return Promise.reject(new Error('Failed to update session: ' + response.statusText));
-              }
-              return response.json();
-          })
-          .then(sessionData => {
-              if (sessionData.success) {
-                  console.log('Session updated with company:', sessionData.company);
-              } else {
-                  console.warn('Failed to update session.');
-              }
-          })
-          .catch(error => {
-              console.error('Error:', error.message);
-          });
-  
-      // Update the URL with the selected company ID
-      // if (window.location.href.indexOf(`companyData=${companyId}`) === -1) {
-      //     window.location.search = `?companyData=${companyId}`;
-      // }
-  }
-</script> --}}

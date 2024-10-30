@@ -61,15 +61,15 @@ Route::middleware([
             'company_id' => 'required|integer',
             'company_name' => 'required|string',
         ]);
-        
     
         session(['selected_company_id' => $request->company_id]);
         session(['selected_company_name' => $request->company_name]);
+        
+        session()->save();
     
-        session()->save();  // Explicitly save the session
-    
-        return response()->json(['success' => true, 'company' => $request->company_name]);
+        return response()->json(['success' => session()->has('selected_company_id') && session()->has('selected_company_name')]);
     });
+    
     
 
     Route::get('/get-filtered-data', [HomeController::class, 'getFilteredData']);

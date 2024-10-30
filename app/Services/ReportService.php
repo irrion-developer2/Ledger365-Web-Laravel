@@ -18,6 +18,7 @@ class ReportService
         return TallyCompany::where('company_id', $companyId)->pluck('company_guid')->toArray();
     }
     
+    
     public $normalizedNames = [
         'Direct Expenses, Expenses (Direct)' => 'Direct Expenses',
         'Direct Incomes, Income (Direct)' => 'Direct Incomes',

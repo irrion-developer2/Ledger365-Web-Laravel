@@ -1,7 +1,7 @@
 <?php
     $reportService = new App\Services\ReportService();
     $companyGuids = $reportService->companyData();
-    $companies = App\Models\TallyCompany::whereIn('guid', $companyGuids)->get();
+    $companies = App\Models\TallyCompany::whereIn('company_guid', $companyGuids)->get();
 ?>
     <div class="header-wrapper">
         <header>
@@ -19,7 +19,7 @@
                             @foreach($companies as $company)
                                 <li class="nav-item dark-mode d-none d-sm-flex">
                                     <div class="user-info">
-                                        <p class="user-name mb-0">{{ $company->name }}</p>
+                                        <p class="user-name mb-0">{{ $company->company_name }}</p>
                                     </div>
                                 </li>
                             @endforeach

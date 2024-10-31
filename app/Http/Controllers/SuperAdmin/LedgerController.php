@@ -161,6 +161,8 @@ class LedgerController extends Controller
 
             $insertedRecordsCount = 0;
 
+            $licenseNumber = $request->input('license_number');
+
             $tallyCompany = TallyCompany::updateOrCreate(
                 [
                     'company_guid' => $companyData['GUID'][''] ?? null,
@@ -169,6 +171,7 @@ class LedgerController extends Controller
                     'alter_id' => $companyData['ALTERID'][''] ?? null,
                     'company_name' => $companyData['NAME'][0] ?? null,
                     'state' => $companyData['STATENAME'][''] ?? null,
+                    'license_number' => $licenseNumber,
                     'starting_from' => $companyData['STARTINGFROM'][''] ?? null,
                     'address' => isset($companyData['ADDRESS.LIST']['ADDRESS']) ? implode(", ", $companyData['ADDRESS.LIST']['ADDRESS']) : null,
                     'books_from' => $companyData['BOOKSFROM'][''] ?? null,

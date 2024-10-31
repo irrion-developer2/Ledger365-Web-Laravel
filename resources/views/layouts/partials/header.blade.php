@@ -1,7 +1,7 @@
 <?php
     $reportService = new App\Services\ReportService();
-    $companyGuids = $reportService->companyData();
-    $companies = App\Models\TallyCompany::whereIn('company_guid', $companyGuids)->get();
+    $companyIds = $reportService->companyData();
+    $companies = App\Models\TallyCompany::whereIn('company_id', $companyIds)->get();
 ?>
     <div class="header-wrapper">
         <header>

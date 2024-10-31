@@ -134,17 +134,19 @@
                 }
             },
             columns: [
-                {data: 'name', name: 'name',
+                {data: 'ledger_name', name: 'ledger_name',
                     render: function(data, type, row) {
                         var url = '{{ route("customers.show", ":guid") }}';
-                        url = url.replace(':guid', row.guid);
+                        url = url.replace(':guid', row.ledger_guid);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
                 {data: 'party_gst_in', name: 'party_gst_in', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'sales', name: 'sales'},
+                {data: 'sales', name: 'sales', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
                 {data: 'outstanding', name: 'outstanding', render: function(data, type, row) {
                     return data ? data : '-';
                 }},

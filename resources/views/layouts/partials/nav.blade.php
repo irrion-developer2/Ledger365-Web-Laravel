@@ -2,10 +2,10 @@
     $user = auth()->user();
     $userId = $user->id;
 
-    $userCompanyMapping = App\Models\UserCompanyMapping::where('user_id', $userId)->first();
-    $companyId = $userCompanyMapping ? $userCompanyMapping->company_id : null;
+    $userCompanyMappings = App\Models\UserCompanyMapping::where('user_id', $userId)->pluck('company_id')->toArray();
 
-    $companies = App\Models\TallyCompany::where('company_id', $companyId)->get();
+    $companies = App\Models\TallyCompany::whereIn('company_id', $userCompanyMappings)->get();
+
 ?>
 <style>
   .dropdown-item.selected {
@@ -185,7 +185,7 @@
             </li>
             @endif
 
-            @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
+            {{-- @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
                         <div class="parent-icon"><i class="bx bx-buildings"></i></div>
@@ -205,7 +205,31 @@
                         @endforeach
                     </ul>
                 </li>
-            @endif
+            @endif --}}
+
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
+                  <div class="parent-icon"><i class="bx bx-buildings"></i></div>
+                  <div class="menu-title d-flex align-items-center company-changes">
+                      {{ session('selected_company_names', 'Select Companies') }}
+                  </div>
+                  <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
+              </a>
+              <ul class="dropdown-menu">
+                  @foreach($companies as $company)
+                      <li>
+                          <label class="dropdown-item">
+                              {{ $company->company_name }}
+                              <input type="checkbox" class="company-checkbox ms-2" value="{{ $company->company_id }}" 
+                                     data-name="{{ $company->company_name }}" onchange="updateSelectedCompanies()"> 
+                          </label>
+                      </li>
+                  @endforeach
+                  <li>
+                      <button class="btn btn-primary w-100 mt-2" onclick="changeCompanies()">Confirm Selection</button>
+                  </li>
+              </ul>
+          </li>
             
          </ul>
        </div>
@@ -213,6 +237,60 @@
  </nav>
 </div>
 <script>
+  let selectedCompanies = [];
+
+  function updateSelectedCompanies() {
+      selectedCompanies = [];
+      document.querySelectorAll('.company-checkbox:checked').forEach(checkbox => {
+          selectedCompanies.push({
+              id: checkbox.value,
+              name: checkbox.getAttribute('data-name')
+          });
+      });
+
+      const selectedNames = selectedCompanies.map(company => company.name).join(', ');
+      document.querySelector('.company-changes').textContent = selectedNames || 'Select Companies';
+  }
+
+  function changeCompanies() {
+      if (selectedCompanies.length === 0) {
+          alert("Please select at least one company.");
+          return;
+      }
+
+      const companyIds = selectedCompanies.map(company => company.id);
+      const companyNames = selectedCompanies.map(company => company.name).join(', ');
+
+      fetch('/set-company-session', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({
+              company_ids: companyIds,
+              company_names: companyNames
+          })
+      })
+      .then(response => {
+          if (!response.ok) {
+              return response.text().then(text => { throw new Error(text) });
+          }
+          return response.json();
+      })
+      .then(sessionData => {
+          if (sessionData.success) {
+              window.location.reload();
+          } else {
+              console.warn('Failed to update session.');
+          }
+      })
+      .catch(error => {
+          console.error('Error:', error.message);
+      });
+  }
+</script>
+{{-- <script>
     function changeCompany(companyId, companyName) {
         if (!companyId) {
             return;
@@ -252,4 +330,4 @@
             console.error('Error:', error.message);
         });
     }
-</script>
+</script> --}}

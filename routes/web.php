@@ -56,20 +56,22 @@ Route::middleware([
 ]
 )->group(function () {
 
+
+
+
     Route::post('/set-company-session', function (Request $request) {
         $request->validate([
-            'company_id' => 'required|integer',
-            'company_name' => 'required|string',
+            'company_ids' => 'required|array',
+            'company_names' => 'required|string',
         ]);
     
-        session(['selected_company_id' => $request->company_id]);
-        session(['selected_company_name' => $request->company_name]);
+        session(['selected_company_ids' => $request->company_ids]);
+        session(['selected_company_names' => $request->company_names]);
         
-        session()->save();
+        session()->save();  // Ensure session is saved explicitly
     
-        return response()->json(['success' => session()->has('selected_company_id') && session()->has('selected_company_name')]);
+        return response()->json(['success' => true]);
     });
-    
     
 
     Route::get('/get-filtered-data', [HomeController::class, 'getFilteredData']);

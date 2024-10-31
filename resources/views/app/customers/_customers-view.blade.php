@@ -31,7 +31,7 @@
                         <div class="col-lg-12">
                             <div class="row">
                                 <div class="col-lg-6">
-                                    <h4 class="my-1 text-info">{{ $ledger->name }}</h4>
+                                    <h4 class="my-1 text-info">{{ $ledger->ledger_name }}</h4>
                                 </div>
                                 {{-- <div class="col-lg-6 text-end">
                                     <p class="btn btn-outline-danger border-1"><i class='lni lni-warning'></i> Overdue</p>
@@ -117,7 +117,7 @@
             serverSide: true,
             paging: false,
             ajax: {
-                url: "{{ route("customers.vouchers", ["customer" => $ledger->guid]) }}",
+                url: "{{ route("customers.vouchers", ["customer" => $ledger->ledger_guid]) }}",
                 type: 'GET',
                 data: function (d) {
                     d.start_date = startDate;
@@ -133,7 +133,7 @@
                         return '<a href="{{ url('reports/VoucherItem') }}/' + row.tally_voucher_id + '">' + data + '</a>';
                     }
                 },
-                { data: 'voucher_type', name: 'voucher_type', orderable: false },
+                { data: 'voucher_type_name', name: 'voucher_type_name', orderable: false },
                 { data: 'debit', name: 'debit', className: 'text-end', orderable: false },
                 { data: 'credit', name: 'credit', className: 'text-end', orderable: false },
                 { data: 'running_balance', name: 'running_balance', className: 'text-end', orderable: false },

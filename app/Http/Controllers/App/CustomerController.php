@@ -34,25 +34,32 @@ class CustomerController extends Controller
 
     public function getData(Request $request)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
     
         if ($request->ajax()) {
             $startTime = microtime(true);
       
-            $customersQuery = TallyLedger::select('tally_ledgers.company_id', 'tally_ledgers.ledger_guid', 'tally_ledgers.ledger_name', 'tally_ledgers.party_gst_in')
-                ->where('parent', 'Sundry Debtors')
-                ->whereIn('tally_ledgers.company_guid', $companyGuids)
-                ->leftJoin('tally_vouchers', function ($join) {
-                    $join->on('tally_ledgers.guid', '=', 'tally_vouchers.party_ledger_guid')
-                        ->where('tally_vouchers.is_cancelled', 'No')
-                        ->where('tally_vouchers.is_optional', 'No');
-                })
-                ->leftJoin('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
-                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" AND tally_ledgers.guid = tally_voucher_heads.ledger_guid THEN tally_voucher_heads.amount END), 0) as total_sales')
-                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" AND tally_ledgers.guid = tally_voucher_heads.ledger_guid THEN tally_voucher_heads.amount END), 0) as outstanding')
-                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Receipt" AND tally_ledgers.guid = tally_voucher_heads.ledger_guid THEN tally_voucher_heads.amount END), 0) as payment_collection')
-                ->groupBy('tally_ledgers.guid');
-
+            $customersQuery = TallyLedger::select(
+                'tally_ledgers.company_id',
+                'tally_ledgers.ledger_guid',
+                'tally_ledgers.ledger_name',
+                'tally_ledgers.party_gst_in'
+            )
+            ->where('tally_ledgers.parent', 'Sundry Debtors')
+            ->whereIn('tally_ledgers.company_id', $companyIds)
+            ->leftJoin('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+            ->leftJoin('tally_vouchers', function ($join) {
+                $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                    ->where('tally_vouchers.is_cancelled', 0)
+                    ->where('tally_vouchers.is_optional', 0);
+            })
+            ->leftJoin('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+            ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as total_sales')
+            ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as outstanding')
+            ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Receipt" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as payment_collection')
+            ->groupBy('tally_ledgers.ledger_id');
+        
+        
             Log::info("Customer Query");        
             Log::info($this->reportService->getFinalQuery($customersQuery));
 
@@ -231,112 +238,230 @@ class CustomerController extends Controller
 
     public function show($customer)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
-        $ledger = TallyLedger::where('guid', $customer)
-                                ->whereIn('company_guid', $companyGuids)
+        $ledger = TallyLedger::where('ledger_guid', $customer)
+                                ->whereIn('company_id', $companyIds)
                                 ->firstOrFail();
 
         return view('app.customers._customers-view', compact('ledger'));
     }
 
     public function getVoucherEntries($customer, Request $request)
-    {
-        $startTime = microtime(true);
-        
-        \DB::enableQueryLog();
-        $companyGuids = $this->reportService->companyData();
-        
-        $ledger = TallyLedger::where('guid', $customer)
-            ->whereIn('company_guid', $companyGuids)
-            ->firstOrFail();
+{
+    $startTime = microtime(true);
+    \DB::enableQueryLog();
+    $companyIds = $this->reportService->companyData();
+    
+    $ledger = TallyLedger::where('ledger_guid', $customer)
+        ->whereIn('company_id', $companyIds)
+        ->firstOrFail();
 
-        $voucherHeads = TallyVoucher::where('tally_vouchers.party_ledger_guid', $ledger->guid)
-            ->where('tally_vouchers.is_cancelled', '!=', 'Yes')
-            ->where('tally_vouchers.is_optional', '!=', 'Yes')
-            ->join('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
-            ->join('tally_ledgers', 'tally_voucher_heads.ledger_guid', '=', 'tally_ledgers.guid')
-            ->whereNotIn('tally_ledgers.parent', ['Sundry Debtors'])
-            ->orderBy('tally_vouchers.voucher_date', 'asc')
-            ->select('tally_vouchers.id','tally_vouchers.voucher_date','tally_vouchers.voucher_number','tally_vouchers.voucher_type',
-                     'tally_voucher_heads.tally_voucher_id','tally_voucher_heads.ledger_guid','tally_voucher_heads.amount','tally_voucher_heads.entry_type','tally_voucher_heads.ledger_name',
-                    'tally_ledgers.parent', 'tally_ledgers.guid')
-            ->get();
+    // Fetch voucher heads with all necessary joins
+    $voucherHeads = TallyVoucherHead::where('tally_voucher_heads.ledger_id', $ledger->ledger_id)
+        ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+        ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+        ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+        ->orderBy('tally_vouchers.voucher_date', 'asc')
+        ->select(
+            'tally_vouchers.voucher_id',
+            'tally_vouchers.voucher_date',
+            'tally_vouchers.voucher_number',
+            'tally_vouchers.voucher_type_id',
+            'tally_voucher_types.voucher_type_name',
+            'tally_voucher_heads.voucher_id',
+            'tally_voucher_heads.ledger_id',
+            'tally_voucher_heads.amount',
+            'tally_voucher_heads.entry_type',
+            'tally_ledgers.parent',
+            'tally_ledgers.ledger_id',
+            'tally_ledgers.ledger_name' // Ensure ledger_name is included in the query
+        )
+        ->get();
 
-        \Log::info('Query 2: ', \DB::getQueryLog());
-        
-        \Log::info('Query 3: ', \DB::getQueryLog());
+    \Log::info('Query Log: ', \DB::getQueryLog());
 
-        $runningBalance = 0;
-        $openingBalanceAdded = false;
+    $runningBalance = 0;
+    $openingBalanceAdded = false;
 
-        $groupedVouchers = $voucherHeads->groupBy('voucher_number')->map(function ($entries) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
-            $totalAmount = $entries->sum('amount');
+    $groupedVouchers = $voucherHeads->groupBy('voucher_number')->map(function ($entries) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
+        $totalAmount = $entries->sum('amount');
 
-            $openingBalance = floatval($ledger->opening_balance ?? 0);
-            if (!$openingBalanceAdded) {
-                $runningBalance += $openingBalance;
-                $openingBalanceAdded = true; 
-            }
-            $runningBalance += $totalAmount;
-
-            return [
-                'voucher_number' => $entries->first()->voucher_number,
-                'amount' => $totalAmount,
-                'running_balance' => ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance),
-                'voucher_date' => $entries->first()->voucher_date,
-                'voucher_type' => $entries->first()->voucher_type,
-                'ledger_name' => in_array($entries->first()->parent, ['Sales Accounts', 'Bank Accounts']) ? $entries->first()->ledger_name : '',
-            ];
-        })->values();
-
-        // Apply date filters
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        if ($startDate && $endDate) {
-            $groupedVouchers = $groupedVouchers->filter(function ($entry) use ($startDate, $endDate) {
-                $voucherDate = \Carbon\Carbon::parse($entry['voucher_date']);
-                return $voucherDate->between($startDate, $endDate);
-            });
+        $openingBalance = floatval($ledger->opening_balance ?? 0);
+        if (!$openingBalanceAdded) {
+            $runningBalance += $openingBalance;
+            $openingBalanceAdded = true; 
         }
+        $runningBalance += $totalAmount;
 
-        $firstVoucherDate = $groupedVouchers->min('voucher_date');
-        $lastVoucherDate = $groupedVouchers->max('voucher_date');
+        return [
+            'voucher_number' => $entries->first()->voucher_number,
+            'amount' => $totalAmount,
+            'running_balance' => ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance),
+            'voucher_date' => $entries->first()->voucher_date,
+            'voucher_type_name' => $entries->first()->voucher_type_name,
+            'ledger_name' => in_array($entries->first()->parent, ['Sales Accounts', 'Bank Accounts']) ? $entries->first()->ledger_name : '',
+            'entry_type' => $entries->first()->entry_type
+        ];
+    })->values();
 
-        \Log::info('Combined Entries: ', $groupedVouchers->toArray());
-
-        $dataTableResponse = datatables()->of($groupedVouchers)
-            ->addColumn('credit', function ($entry) {
-                return $entry['amount'] < 0 ? indian_format(abs($entry['amount'])) : '0.00';
-            })
-            ->addColumn('debit', function ($entry) {
-                return $entry['amount'] > 0 ? indian_format(abs($entry['amount'])) : '0.00';
-            })
-            ->addColumn('running_balance', function ($entry) {
-                return $entry['running_balance'] ?? "";
-            })
-            ->addColumn('voucher_type', function ($entry) {
-                return $entry['voucher_type'];
-            })
-            ->addColumn('voucher_date', function ($entry) {
-                return \Carbon\Carbon::parse($entry['voucher_date'])->format('d-M-Y');
-            })
-            ->addColumn('ledger_name', function ($entry) {
-                return $entry['ledger_name'];
-            })
-            ->with([
-                'first_voucher_date' => $firstVoucherDate,
-                'last_voucher_date' => $lastVoucherDate
-            ])
-            ->toJson();
-
-        $endTime = microtime(true);
-        $executionTime = $endTime - $startTime;
-
-        \Log::info('Total execution time for CustomerController.getVoucherEntries:', ['time_taken' => $executionTime . ' seconds']);
-        
-        return $dataTableResponse;
+    // Apply date filters
+    $startDate = $request->get('start_date');
+    $endDate = $request->get('end_date');
+    if ($startDate && $endDate) {
+        $groupedVouchers = $groupedVouchers->filter(function ($entry) use ($startDate, $endDate) {
+            $voucherDate = \Carbon\Carbon::parse($entry['voucher_date']);
+            return $voucherDate->between($startDate, $endDate);
+        });
     }
+
+    $firstVoucherDate = $groupedVouchers->min('voucher_date');
+    $lastVoucherDate = $groupedVouchers->max('voucher_date');
+
+    \Log::info('Combined Entries: ', $groupedVouchers->toArray());
+
+    $dataTableResponse = datatables()->of($groupedVouchers)
+        ->addColumn('credit', function ($entry) {
+            return $entry['entry_type'] === 'credit' ? indian_format(abs($entry['amount'])) : '0.00';
+        })
+        ->addColumn('debit', function ($entry) {
+            return $entry['entry_type'] === 'debit' ? indian_format(abs($entry['amount'])) : '0.00';
+        })
+        ->addColumn('running_balance', function ($entry) {
+            return $entry['running_balance'] ?? "";
+        })
+        ->addColumn('voucher_type_name', function ($entry) {
+            return $entry['voucher_type_name'];
+        })
+        ->addColumn('voucher_date', function ($entry) {
+            return \Carbon\Carbon::parse($entry['voucher_date'])->format('d-M-Y');
+        })
+        ->addColumn('ledger_name', function ($entry) {
+            return $entry['ledger_name'];
+        })
+        ->with([
+            'first_voucher_date' => $firstVoucherDate,
+            'last_voucher_date' => $lastVoucherDate
+        ])
+        ->toJson();
+
+    $endTime = microtime(true);
+    $executionTime = $endTime - $startTime;
+
+    \Log::info('Total execution time for CustomerController.getVoucherEntries:', ['time_taken' => $executionTime . ' seconds']);
+    
+    return $dataTableResponse;
+}
+
+
+    // public function getVoucherEntries($customer, Request $request)
+    // {
+    //     $startTime = microtime(true);
+    //     // dd($customer);
+    //     \DB::enableQueryLog();
+    //     $companyIds = $this->reportService->companyData();
+        
+    //     $ledger = TallyLedger::where('ledger_guid', $customer)
+    //         ->whereIn('company_id', $companyIds)
+    //         ->firstOrFail();
+
+    //     $voucherHeads = TallyVoucherHead::where('tally_voucher_heads.ledger_id', $ledger->ledger_id)
+    //         ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+    //         ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+    //         ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+    //         ->orderBy('tally_vouchers.voucher_date', 'asc')
+    //         ->select(
+    //             'tally_vouchers.voucher_id',
+    //             'tally_vouchers.voucher_date',
+    //             'tally_vouchers.voucher_number',
+    //             'tally_vouchers.voucher_type_id',
+    //             'tally_voucher_types.voucher_type_name',
+    //             'tally_voucher_heads.voucher_id',
+    //             'tally_voucher_heads.ledger_id',
+    //             'tally_voucher_heads.amount',
+    //             'tally_voucher_heads.entry_type',
+    //             'tally_ledgers.parent',
+    //             'tally_ledgers.ledger_id',
+    //             'tally_ledgers.ledger_name'
+    //         )
+    //         ->get();
+
+    //         // dd($voucherHeads);
+
+    //     \Log::info('Query 2: ', \DB::getQueryLog());
+        
+    //     \Log::info('Query 3: ', \DB::getQueryLog());
+
+    //     $runningBalance = 0;
+    //     $openingBalanceAdded = false;
+
+    //     $groupedVouchers = $voucherHeads->groupBy('voucher_number')->map(function ($entries) use (&$runningBalance, &$openingBalanceAdded, $ledger) {
+    //         $totalAmount = $entries->sum('amount');
+
+    //         $openingBalance = floatval($ledger->opening_balance ?? 0);
+    //         if (!$openingBalanceAdded) {
+    //             $runningBalance += $openingBalance;
+    //             $openingBalanceAdded = true; 
+    //         }
+    //         $runningBalance += $totalAmount;
+
+    //         return [
+    //             'voucher_number' => $entries->first()->voucher_number,
+    //             'amount' => $totalAmount,
+    //             'running_balance' => ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance),
+    //             'voucher_date' => $entries->first()->voucher_date,
+    //             'voucher_type_name' => $entries->first()->voucher_type_name,
+    //             'ledger_name' => in_array($entries->first()->parent, ['Sales Accounts', 'Bank Accounts']) ? $entries->first()->ledger_name : '',
+    //         ];
+    //     })->values();
+
+    //     // Apply date filters
+    //     $startDate = $request->get('start_date');
+    //     $endDate = $request->get('end_date');
+    //     if ($startDate && $endDate) {
+    //         $groupedVouchers = $groupedVouchers->filter(function ($entry) use ($startDate, $endDate) {
+    //             $voucherDate = \Carbon\Carbon::parse($entry['voucher_date']);
+    //             return $voucherDate->between($startDate, $endDate);
+    //         });
+    //     }
+
+    //     $firstVoucherDate = $groupedVouchers->min('voucher_date');
+    //     $lastVoucherDate = $groupedVouchers->max('voucher_date');
+
+    //     \Log::info('Combined Entries: ', $groupedVouchers->toArray());
+
+    //     $dataTableResponse = datatables()->of($groupedVouchers)
+    //         ->addColumn('credit', function ($entry) {
+    //             return $entry['amount'] < 0 ? indian_format(abs($entry['amount'])) : '0.00';
+    //         })
+    //         ->addColumn('debit', function ($entry) {
+    //             return $entry['amount'] > 0 ? indian_format(abs($entry['amount'])) : '0.00';
+    //         })
+    //         ->addColumn('running_balance', function ($entry) {
+    //             return $entry['running_balance'] ?? "";
+    //         })
+    //         ->addColumn('voucher_type_name', function ($entry) {
+    //             return $entry['voucher_type_name'];
+    //         })
+    //         ->addColumn('voucher_date', function ($entry) {
+    //             return \Carbon\Carbon::parse($entry['voucher_date'])->format('d-M-Y');
+    //         })
+    //         ->addColumn('ledger_name', function ($entry) {
+    //             return $entry['ledger_name'];
+    //         })
+    //         ->with([
+    //             'first_voucher_date' => $firstVoucherDate,
+    //             'last_voucher_date' => $lastVoucherDate
+    //         ])
+    //         ->toJson();
+
+    //     $endTime = microtime(true);
+    //     $executionTime = $endTime - $startTime;
+
+    //     \Log::info('Total execution time for CustomerController.getVoucherEntries:', ['time_taken' => $executionTime . ' seconds']);
+        
+    //     return $dataTableResponse;
+    // }
 
     
 }

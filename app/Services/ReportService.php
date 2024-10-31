@@ -12,10 +12,10 @@ class ReportService
 {
     public function companyData()
     {
-        $companyId = session('selected_company_id');
-        \Log::info('Company ReportService ID Latest:', ['selected_company_id' => $companyId]);            
+        $companyId = session('selected_company_ids');
+        \Log::info('Company ReportService ID Latest:', ['selected_company_ids' => $companyId]);            
 
-        return TallyCompany::where('company_id', $companyId)->pluck('company_guid')->toArray();
+        return TallyCompany::where('company_id', $companyId)->pluck('company_id')->toArray();
     }
     
     

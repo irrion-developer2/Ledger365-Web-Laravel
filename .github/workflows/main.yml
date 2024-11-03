@@ -21,23 +21,25 @@ jobs:
 
       - name: Start SSH agent and add key
         shell: bash
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASSPHRASE }}
         run: |
+          # Start SSH agent
           eval "$(ssh-agent -s)"
-          # Create expect script file
-          cat > add_key.exp << 'EOF'
-          #!/usr/bin/expect -f
+          
+          # Create expect script
+          tee add_key.exp << 'EOL'
+          #!/usr/bin/expect
+          set timeout 20
           spawn ssh-add ~/.ssh/id_rsa
-          expect "Enter passphrase for /home/runner/.ssh/id_rsa:"
-          send "$env(SSH_PASS)\n"
+          expect "Enter passphrase for"
+          send "$env(SSH_PASS)\r"
           expect eof
-          EOF
+          EOL
+          
+          # Set permissions and run
           chmod +x add_key.exp
-          
-          # Install expect
-          sudo apt-get update && sudo apt-get install -y expect
-          
-          # Run expect script with passphrase from secrets
-          SSH_PASS=${{ secrets.SSH_PASSPHRASE }} ./add_key.exp
+          ./add_key.exp
 
       - name: Connect and pull
         shell: bash

@@ -33,7 +33,7 @@ class LedgerController extends Controller
         if ($string) {
             $string = trim($string);
             if (preg_match('/\d+(\.\d+)?/', $string, $matches)) {
-                return (float) $matches[0];
+                return (float)$matches[0];
             }
         }
         return null;
@@ -51,13 +51,13 @@ class LedgerController extends Controller
     private function normalizeEntries($entries)
     {
         if (is_object($entries)) {
-            $entries = (array) $entries;
+            $entries = (array)$entries;
         }
 
         if (is_array($entries)) {
             foreach ($entries as &$entry) {
                 if (is_object($entry)) {
-                    $entry = (array) $entry;
+                    $entry = (array)$entry;
                 }
             }
             return empty($entries) || isset($entries[0]) ? $entries : [$entries];
@@ -75,7 +75,7 @@ class LedgerController extends Controller
         return $date;
     }
 
-    private function findTallyMessage($jsonArray, $path = '') 
+    private function findTallyMessage($jsonArray, $path = '')
     {
         foreach ($jsonArray as $key => $value) {
             $currentPath = $path ? $path . '.' . $key : $key;
@@ -133,10 +133,10 @@ class LedgerController extends Controller
     {
         try {
             $this->validateLicenseNumber($request);
-    
+
             $jsonData = null;
             $fileName = 'tally_company_data_' . date('YmdHis') . '.json';
-    
+
             if ($request->hasFile('uploadFile')) {
                 $uploadedFile = $request->file('uploadFile');
                 $jsonFilePath = storage_path('app/' . $fileName);
@@ -147,12 +147,12 @@ class LedgerController extends Controller
                 $jsonFilePath = storage_path('app/' . $fileName);
                 file_put_contents($jsonFilePath, $jsonData);
             }
-    
+
             $data = json_decode($jsonData, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
             }
-    
+
             if (!isset($data['BODY']['DATA']['TALLYMESSAGE']['COMPANY'])) {
                 throw new \Exception('COMPANY data not found in JSON structure.');
             }
@@ -183,16 +183,16 @@ class LedgerController extends Controller
                     'income_tax_number' => $companyData['INCOMETAXNUMBER'][''] ?? null,
                     'company_number' => $companyData['COMPANYNUMBER'][''] ?? null,
                 ]
-                
+
             );
-    
+
             $insertedRecordsCount++;
 
             return response()->json([
                 'message' => 'Tally Company data processed successfully.',
                 'records_inserted' => $insertedRecordsCount
             ]);
-    
+
         } catch (\Exception $e) {
             Log::error('Error in companyJsonImport function', [
                 'error' => $e->getMessage()
@@ -200,7 +200,7 @@ class LedgerController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
     public function masterJsonImport(Request $request)
     {
         try {
@@ -233,7 +233,7 @@ class LedgerController extends Controller
 
             // $companyGuid = $request->input('company_guid');
             // $companyName = $request->input('company_name');
-            
+
             // if ($companyGuid && $companyName) {
             //     TallyCompany::firstOrCreate(
             //         ['company_guid' => $companyGuid],
@@ -260,7 +260,7 @@ class LedgerController extends Controller
 
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; 
+                        continue;
                     }
 
                     $companyId = $company->company_id;
@@ -297,7 +297,7 @@ class LedgerController extends Controller
                     if (is_array($nameField)) {
                         $nameField = implode(', ', $nameField);
                     }
-                    
+
                     $guid = $groupData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
 
@@ -305,14 +305,14 @@ class LedgerController extends Controller
 
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; 
+                        continue;
                     }
 
                     $companyId = $company->company_id;
 
                     $parent = $groupData['PARENT'] ?? null;
                     $isPrimary = empty($parent);
-            
+
 
                     $tallyLedgerGroup = TallyLedgerGroup::updateOrCreate(
                         ['ledger_group_guid' => $guid],
@@ -326,14 +326,14 @@ class LedgerController extends Controller
                         ]
                     );
 
-                    
+
                     if ($tallyLedgerGroup) {
                         $groupCount++;
                     }
                     if (!$tallyLedgerGroup) {
                         throw new \Exception('Failed to create or update tally ledger group record.');
                     }
-                    
+
                 }
             }
 
@@ -364,7 +364,7 @@ class LedgerController extends Controller
 
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; 
+                        continue;
                     }
 
                     $companyId = $company->company_id;
@@ -379,11 +379,11 @@ class LedgerController extends Controller
                     } else {
                         $languageName = $nameField;
                     }
-            
+
                     $alias1 = $aliases[0] ?? null;
                     $alias2 = $aliases[1] ?? null;
                     $alias3 = $aliases[2] ?? null;
-            
+
                     $parent = $ledgerData['PARENT'] ?? null;
                     $ledgerGroup = TallyLedgerGroup::where('ledger_group_name', $parent)->first();
                     $ledgerGroupId = $ledgerGroup ? $ledgerGroup->ledger_group_id : null;
@@ -444,7 +444,7 @@ class LedgerController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
     public function stockItemJsonImport(Request $request)
     {
         try {
@@ -503,7 +503,7 @@ class LedgerController extends Controller
 
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; 
+                        continue;
                     }
 
                     $companyId = $company->company_id;
@@ -568,7 +568,7 @@ class LedgerController extends Controller
                     if (is_array($nameField)) {
                         $nameField = implode(', ', $nameField);
                     }
-                    
+
                     $guid = $stockGroupData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
 
@@ -576,7 +576,7 @@ class LedgerController extends Controller
 
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; 
+                        continue;
                     }
 
                     $companyId = $company->company_id;
@@ -649,7 +649,7 @@ class LedgerController extends Controller
 
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; 
+                        continue;
                     }
 
                     $companyId = $company->company_id;
@@ -744,12 +744,12 @@ class LedgerController extends Controller
                 }
             }
 
-            return response()->json(['message' => 'Tally stock item data saved successfully.', 
-                                        'units_inserted' => $unitCount,
-                                        'godowns_inserted' => $godownCount,
-                                        'stock_groups_inserted' => $stockGroupCount,
-                                        'stock_items_inserted' => $stockItemCount
-                                    ]);
+            return response()->json(['message' => 'Tally stock item data saved successfully.',
+                'units_inserted' => $unitCount,
+                'godowns_inserted' => $godownCount,
+                'stock_groups_inserted' => $stockGroupCount,
+                'stock_items_inserted' => $stockItemCount
+            ]);
         } catch (\Exception $e) {
             Log::error('Error importing stock items:', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
@@ -760,10 +760,10 @@ class LedgerController extends Controller
     // {
     //     try {
     //         $this->validateLicenseNumber($request);
-    
+
     //         $jsonData = null;
     //         $fileName = 'tally_voucher_type_data_' . date('YmdHis') . '.json';
-    
+
     //         if ($request->hasFile('uploadFile')) {
     //             $uploadedFile = $request->file('uploadFile');
     //             $jsonFilePath = storage_path('app/' . $fileName);
@@ -774,26 +774,26 @@ class LedgerController extends Controller
     //             $jsonFilePath = storage_path('app/' . $fileName);
     //             file_put_contents($jsonFilePath, $jsonData);
     //         }
-    
+
     //         $data = json_decode($jsonData, true);
     //         if (json_last_error() !== JSON_ERROR_NONE) {
     //             throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
     //         }
-    
+
     //         if (!isset($data['BODY']['DATA']['COLLECTION']['VOUCHERTYPE'])) {
     //             throw new \Exception('VOUCHERTYPE data not found in JSON structure.');
     //         }
-    
+
     //         $insertedRecordsCount = 0;
     //         foreach ($data['BODY']['DATA']['COLLECTION']['VOUCHERTYPE'] as $voucherTypeData) {
 
-                
+
     //             $guid = $voucherTypeData['GUID'] ?? null;
     //             $companyGuid = substr($guid, 0, 36);
     //             $company = TallyCompany::where('company_guid', $companyGuid)->first();
     //             if (!$company) {
     //                 Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-    //                 continue; 
+    //                 continue;
     //             }
     //             $companyId = $company->company_id;
 
@@ -817,12 +817,12 @@ class LedgerController extends Controller
     //             );
     //             $insertedRecordsCount++;
     //         }
-    
+
     //         return response()->json([
     //             'message' => 'Tally voucher type data processed successfully.',
     //             'records_inserted' => $insertedRecordsCount
     //         ]);
-    
+
     //     } catch (\Exception $e) {
     //         Log::error('Error in voucherTypeJsonImport function', [
     //             'error' => $e->getMessage()
@@ -832,80 +832,80 @@ class LedgerController extends Controller
     // }
 
     public function voucherTypeJsonImport(Request $request)
-{
-    try {
-        $this->validateLicenseNumber($request);
+    {
+        try {
+            $this->validateLicenseNumber($request);
 
-        $jsonData = null;
-        $fileName = 'tally_voucher_type_data_' . date('YmdHis') . '.json';
+            $jsonData = null;
+            $fileName = 'tally_voucher_type_data_' . date('YmdHis') . '.json';
 
-        if ($request->hasFile('uploadFile')) {
-            $uploadedFile = $request->file('uploadFile');
-            $jsonFilePath = storage_path('app/' . $fileName);
-            $uploadedFile->move(storage_path('app'), $fileName);
-            $jsonData = file_get_contents($jsonFilePath);
-        } else {
-            $jsonData = $request->getContent();
-            $jsonFilePath = storage_path('app/' . $fileName);
-            file_put_contents($jsonFilePath, $jsonData);
-        }
-
-        $data = json_decode($jsonData, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
-        }
-
-        if (!isset($data['BODY']['DATA']['COLLECTION']['VOUCHERTYPE'])) {
-            throw new \Exception('VOUCHERTYPE data not found in JSON structure.');
-        }
-
-        $insertedRecordsCount = 0;
-        foreach ($data['BODY']['DATA']['COLLECTION']['VOUCHERTYPE'] as $voucherTypeData) {
-
-            // Access GUID as a string
-            $guid = $voucherTypeData['GUID'][''] ?? null;
-            if ($guid) {
-                $companyGuid = substr($guid, 0, 36);
-                $company = TallyCompany::where('company_guid', $companyGuid)->first();
-                if (!$company) {
-                    Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                    continue;
-                }
-                $companyId = $company->company_id;
-
-                $tallyVoucherType = TallyVoucherType::updateOrCreate(
-                    [
-                        'voucher_type_guid' => $guid,
-                    ],
-                    [
-                        'company_id' => $companyId,
-                        'alter_id' => $voucherTypeData['ALTERID'][''] ?? null,
-                        'voucher_type_name' => $voucherTypeData['NAME'] ?? null,
-                        'parent' => $voucherTypeData['PARENT'][''] ?? null,
-                        'numbering_method' => $voucherTypeData['NUMBERINGMETHOD'][''] ?? null,
-                        'prevent_duplicate' => isset($voucherTypeData['PREVENTDUPLICATES']) && $voucherTypeData['PREVENTDUPLICATES'][''] === 'Yes',
-                        'use_zero_entries' => isset($voucherTypeData['USEZEROENTRIES']) && $voucherTypeData['USEZEROENTRIES'][''] === 'Yes',
-                        'is_deemed_positive' => isset($voucherTypeData['ISDEEMEDPOSITIVE']) && $voucherTypeData['ISDEEMEDPOSITIVE'][''] === 'Yes',
-                        'affects_stock' => isset($voucherTypeData['AFFECTSSTOCK']) && $voucherTypeData['AFFECTSSTOCK'][''] === 'Yes',
-                        'is_active' => isset($voucherTypeData['ISACTIVE']) && $voucherTypeData['ISACTIVE'][''] === 'Yes',
-                    ]
-                );
-                $insertedRecordsCount++;
+            if ($request->hasFile('uploadFile')) {
+                $uploadedFile = $request->file('uploadFile');
+                $jsonFilePath = storage_path('app/' . $fileName);
+                $uploadedFile->move(storage_path('app'), $fileName);
+                $jsonData = file_get_contents($jsonFilePath);
+            } else {
+                $jsonData = $request->getContent();
+                $jsonFilePath = storage_path('app/' . $fileName);
+                file_put_contents($jsonFilePath, $jsonData);
             }
+
+            $data = json_decode($jsonData, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
+            }
+
+            if (!isset($data['BODY']['DATA']['COLLECTION']['VOUCHERTYPE'])) {
+                throw new \Exception('VOUCHERTYPE data not found in JSON structure.');
+            }
+
+            $insertedRecordsCount = 0;
+            foreach ($data['BODY']['DATA']['COLLECTION']['VOUCHERTYPE'] as $voucherTypeData) {
+
+                // Access GUID as a string
+                $guid = $voucherTypeData['GUID'][''] ?? null;
+                if ($guid) {
+                    $companyGuid = substr($guid, 0, 36);
+                    $company = TallyCompany::where('company_guid', $companyGuid)->first();
+                    if (!$company) {
+                        Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
+                        continue;
+                    }
+                    $companyId = $company->company_id;
+
+                    $tallyVoucherType = TallyVoucherType::updateOrCreate(
+                        [
+                            'voucher_type_guid' => $guid,
+                        ],
+                        [
+                            'company_id' => $companyId,
+                            'alter_id' => $voucherTypeData['ALTERID'][''] ?? null,
+                            'voucher_type_name' => $voucherTypeData['NAME'] ?? null,
+                            'parent' => $voucherTypeData['PARENT'][''] ?? null,
+                            'numbering_method' => $voucherTypeData['NUMBERINGMETHOD'][''] ?? null,
+                            'prevent_duplicate' => isset($voucherTypeData['PREVENTDUPLICATES']) && $voucherTypeData['PREVENTDUPLICATES'][''] === 'Yes',
+                            'use_zero_entries' => isset($voucherTypeData['USEZEROENTRIES']) && $voucherTypeData['USEZEROENTRIES'][''] === 'Yes',
+                            'is_deemed_positive' => isset($voucherTypeData['ISDEEMEDPOSITIVE']) && $voucherTypeData['ISDEEMEDPOSITIVE'][''] === 'Yes',
+                            'affects_stock' => isset($voucherTypeData['AFFECTSSTOCK']) && $voucherTypeData['AFFECTSSTOCK'][''] === 'Yes',
+                            'is_active' => isset($voucherTypeData['ISACTIVE']) && $voucherTypeData['ISACTIVE'][''] === 'Yes',
+                        ]
+                    );
+                    $insertedRecordsCount++;
+                }
+            }
+
+            return response()->json([
+                'message' => 'Tally voucher type data processed successfully.',
+                'records_inserted' => $insertedRecordsCount
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in voucherTypeJsonImport function', [
+                'error' => $e->getMessage()
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        return response()->json([
-            'message' => 'Tally voucher type data processed successfully.',
-            'records_inserted' => $insertedRecordsCount
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Error in voucherTypeJsonImport function', [
-            'error' => $e->getMessage()
-        ]);
-        return response()->json(['error' => $e->getMessage()], 500);
     }
-}
 
 
     public function voucherJsonImport(Request $request)
@@ -953,7 +953,7 @@ class LedgerController extends Controller
                     $company = TallyCompany::where('company_guid', $companyGuid)->first();
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; 
+                        continue;
                     }
                     $companyId = $company->company_id;
 
@@ -978,7 +978,6 @@ class LedgerController extends Controller
                         }
                     }
                     $deliveryNotesStr = implode(', ', $deliveryNotes);
-
 
 
                     $ledgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['LEDGERENTRIES.LIST'] ?? []));
@@ -1020,8 +1019,8 @@ class LedgerController extends Controller
 
                     $voucherType = $voucherData['VOUCHERTYPENAME'] ?? null;
                     $voucherTypeId = TallyVoucherType::where('voucher_type_name', $voucherType)
-                                ->where('company_Id', $companyId)
-                                ->value('voucher_type_id');
+                        ->where('company_Id', $companyId)
+                        ->value('voucher_type_id');
 
                     $tallyVoucher = TallyVoucher::updateOrCreate([
                         'voucher_guid' => $voucherData['GUID'],
@@ -1048,9 +1047,9 @@ class LedgerController extends Controller
                         'bill_lading_no' => $voucherData['BILLOFLADINGNO'] ?? null,
                         'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
                         'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
-                        'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null) 
-                                    ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS']) 
-                                    : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
+                        'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null)
+                            ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'])
+                            : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
                         'consignee_name' => $voucherData['BASICBUYERNAME'] ?? null,
                         'consignee_state_name' => $voucherData['CONSIGNEESTATENAME'] ?? null,
                         'consignee_gstin' => $voucherData['CONSIGNEEGSTIN'] ?? null,
@@ -1064,6 +1063,7 @@ class LedgerController extends Controller
                         'order_ref' => $voucherData['BASICORDERREF'] ?? null,
                         'cost_center_name' => $voucherData['COSTCENTRENAME'] ?? null,
                         'cost_center_amount' => $voucherData['COSTCENTREAMOUNT'] ?? null,
+                        'json_path1' => $jsonFilePath,
                     ]);
 
                     if ($tallyVoucher) {
@@ -1079,23 +1079,23 @@ class LedgerController extends Controller
                     $inventoryEntriesWithId = $this->processInventoryEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? [], $voucherHeadIds, $companyId);
 
                     $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations, $companyId);
-                    
+
                     if (!empty($inventoryEntriesWithId)) {
-                    $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId); 
+                        $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId);
                     } else {
                         Log::info('No inventory entries with ID found; skipping batch allocations.');
                     }
-                    
+
                     $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
                     $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
-                    
+
 
                 }
             }
 
-            return response()->json(['message' => 'Tally Voucher data saved successfully.', 
-                                        'vouchers_processed' => $voucherCount,
-                                    ]);
+            return response()->json(['message' => 'Tally Voucher data saved successfully.',
+                'vouchers_processed' => $voucherCount,
+            ]);
         } catch (\Exception $e) {
             Log::error('Error saving Tally voucher data:', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'Failed to save Tally data', 'message' => $e->getMessage()], 500);
@@ -1226,7 +1226,7 @@ class LedgerController extends Controller
                 'entry_type' => $entry['entry_type'],
                 'ledger_id' => $entry['ledger_id'],
                 'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
-        
+
             ]);
 
             $voucherHeadIds[] = [
@@ -1241,39 +1241,39 @@ class LedgerController extends Controller
     {
         Log::info('Processing Inventory Entries:', ['count' => is_array($inventoryEntries) ? count($inventoryEntries) : 1]);
         Log::info('Available Voucher Head IDs:', ['voucherHeadIds' => $voucherHeadIds]);
-    
+
         if (empty($voucherHeadIds)) {
             Log::error('No voucher_head_id available for inventory entry.');
             return;
         }
-    
+
         $voucherHeadId = $voucherHeadIds[0];
         Log::info('Using Voucher Head ID:', ['voucherHeadId' => $voucherHeadId]);
-    
+
         $inventoryEntries = $this->normalizeEntries($inventoryEntries);
         Log::info('Normalized Inventory Entries:', ['entries' => $inventoryEntries]);
-    
+
         $inventoryEntriesWithId = [];
-    
+
         foreach ($inventoryEntries as $inventoryEntry) {
             $itemName = trim(htmlspecialchars_decode($inventoryEntry['STOCKITEMNAME'] ?? ''));
-    
+
             if (!$itemName) {
                 Log::warning('Skipped inventory entry due to missing STOCKITEMNAME:', ['entry' => $inventoryEntry]);
                 continue;
             }
-    
+
             $itemId = TallyItem::whereRaw('LOWER(item_name) = ?', [strtolower($itemName)])->value('item_id');
-    
+
             if (!$itemId) {
                 Log::error('Item ID not found for stock item:', [
                     'stock_item_name' => $itemName,
                     'attempted_match' => strtolower($itemName),
-                    'inventoryEntry' => $inventoryEntry  
+                    'inventoryEntry' => $inventoryEntry
                 ]);
                 continue;
             }
-    
+
             $rateString = $inventoryEntry['RATE'] ?? null;
             $rate = null;
             $unit = null;
@@ -1287,16 +1287,16 @@ class LedgerController extends Controller
                     $rate = $rateString;
                 }
             }
-    
+
             $unitId = null;
             if ($unit) {
                 $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->value('unit_id');
                 Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
             }
-    
+
             $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
             $actual_qty = $this->extractNumericValue($inventoryEntry['ACTUALQTY'] ?? null);
-    
+
             $igstRate = null;
             if (isset($inventoryEntry['RATEDETAILS.LIST'])) {
                 foreach ($this->ensureArray($inventoryEntry['RATEDETAILS.LIST']) as $rateDetail) {
@@ -1306,7 +1306,7 @@ class LedgerController extends Controller
                     }
                 }
             }
-    
+
             $inventoryData = [
                 'voucher_head_id' => $voucherHeadId,
                 'item_id' => $itemId,  // Ensure item_id is included in the data array
@@ -1327,17 +1327,17 @@ class LedgerController extends Controller
                 'igst_rate' => $igstRate,
                 'gst_hsn_name' => $inventoryEntry['GSTHSNNAME'] ?? null,
             ];
-    
+
             try {
                 $tallyVoucherItem = TallyVoucherItem::create($inventoryData);
-    
+
                 $inventoryEntriesWithId[] = [
                     'voucher_item_id' => $tallyVoucherItem->voucher_item_id,
                     'stock_item_name' => $itemName,
                 ];
-    
+
                 Log::info('Inventory Entry Processed:', ['inventoryData' => $inventoryData]);
-    
+
             } catch (\Exception $e) {
                 Log::error('Error saving inventory entry:', [
                     'stock_item_name' => $itemName,
@@ -1345,7 +1345,7 @@ class LedgerController extends Controller
                 ]);
             }
         }
-    
+
         return $inventoryEntriesWithId;
     }
 
@@ -1360,22 +1360,22 @@ class LedgerController extends Controller
                     if (isset($batch['BATCHNAME'], $batch['AMOUNT'])) {
 
                         $godownId = TallyGodown::select('tally_godowns.godown_id')
-                        ->join('tally_companies', \DB::raw('LEFT(tally_godowns.godown_guid, 36)'), '=', 'tally_companies.company_guid')
-                        ->where('tally_godowns.godown_name', $batch['GODOWNNAME'] ?? null)
-                        ->where('tally_companies.company_id', $companyId) 
-                        ->value('tally_godowns.godown_id');
-                    
+                            ->join('tally_companies', \DB::raw('LEFT(tally_godowns.godown_guid, 36)'), '=', 'tally_companies.company_guid')
+                            ->where('tally_godowns.godown_name', $batch['GODOWNNAME'] ?? null)
+                            ->where('tally_companies.company_id', $companyId)
+                            ->value('tally_godowns.godown_id');
+
 
                         TallyBatchAllocation::updateOrCreate(
                             [
-                            'voucher_item_id' => $inventoryEntries['voucher_item_id'],
-                            'batch_name' => $batch['BATCHNAME'],
-                            'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
-                            'amount' => $batch['AMOUNT'],
-                            'actual_qty' => isset($batch['ACTUALQTY']) ? preg_replace('/[^0-9.]/', '', $batch['ACTUALQTY']) : null,
-                            'billed_qty' => isset($batch['BILLEDQTY']) ? preg_replace('/[^0-9.]/', '', $batch['BILLEDQTY']) : null,                           
-                            'order_no' => $batch['ORDERNO'] ?? null,
-                            'godown_id' => $godownId,
+                                'voucher_item_id' => $inventoryEntries['voucher_item_id'],
+                                'batch_name' => $batch['BATCHNAME'],
+                                'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
+                                'amount' => $batch['AMOUNT'],
+                                'actual_qty' => isset($batch['ACTUALQTY']) ? preg_replace('/[^0-9.]/', '', $batch['ACTUALQTY']) : null,
+                                'billed_qty' => isset($batch['BILLEDQTY']) ? preg_replace('/[^0-9.]/', '', $batch['BILLEDQTY']) : null,
+                                'order_no' => $batch['ORDERNO'] ?? null,
+                                'godown_id' => $godownId,
                             ]
                         );
                         $count++;
@@ -1389,15 +1389,15 @@ class LedgerController extends Controller
     private function processBillAllocationsForVoucher($voucherHeadIds, array $billAllocations)
     {
         Log::info('Processing Bill Allocations', ['voucherHeadIds' => $voucherHeadIds, 'billAllocations' => $billAllocations]);
-        
+
         foreach ($voucherHeadIds as $voucherHead) {
             Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
-    
+
             foreach ($billAllocations as $ledgerName => $bills) {
                 if (is_array($bills)) {
                     foreach ($bills as $bill) {
                         Log::info('Current bill being processed:', ['bill' => $bill]);
-    
+
                         if (is_array($bill)) {
                             try {
                                 if (isset($bill['NAME'], $bill['AMOUNT'])) {
@@ -1429,7 +1429,7 @@ class LedgerController extends Controller
             }
         }
     }
-    
+
     private function processBankAllocationsForVoucher($voucherHeadIds, array $bankAllocations)
     {
         Log::info('Processing Bank Allocations', ['voucherHeadIds' => $voucherHeadIds, 'bankAllocations' => $bankAllocations]);

@@ -19,10 +19,10 @@ return new class extends Migration
 
             $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
-            
+
             $table->unsignedInteger('voucher_type_id')->nullable();
             $table->foreign('voucher_type_id')->references('voucher_type_id')->on('tally_voucher_types');
-          
+
             $table->integer('alter_id')->nullable();
 
             // $table->string('voucher_type',100)->index();
@@ -59,7 +59,8 @@ return new class extends Migration
             $table->string('cost_center_name',100)->nullable();
             $table->decimal('cost_center_amount',15,3)->nullable();
             $table->string('numbering_style',100)->nullable();
-            
+            $table->string('json_path',255)->nullable();
+
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });

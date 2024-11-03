@@ -9,39 +9,36 @@ jobs:
   run_pull:
     name: run pull
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Install SSH key
-      run: |
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        cat <<EOF > ~/.ssh/id_rsa
-        ${{ secrets.SSH_PRIVATE_KEY }}
-        EOF
-        chmod 600 ~/.ssh/id_rsa
+      - name: Install SSH keys
+        run: |
+          # Create the .ssh directory with correct permissions
+          install -m 700 -d ~/.ssh
+          # Write the private key to the id_rsa file
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          # Add the server to known_hosts
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
 
-    - name: Add server to known_hosts
-      run: |
-        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      - name: Start SSH agent and add key with passphrase
+        run: |
+          # Start the SSH agent
+          eval "$(ssh-agent -s)"
+          # Install expect to handle passphrase input
+          sudo apt-get update
+          sudo apt-get install -y expect
+          # Use expect to provide the passphrase to ssh-add
+          expect << EOF
+          spawn ssh-add ~/.ssh/id_rsa
+          expect "Enter passphrase for ~/.ssh/id_rsa:"
+          send "${{ secrets.SSH_PASSPHRASE }}\r"
+          expect eof
+          EOF
 
-    - name: Install expect
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y expect
+      - name: Connect and pull
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull && exit"
 
-    - name: Start SSH Agent and Add Key with Passphrase
-      run: |
-        eval "$(ssh-agent -s)"
-        expect -c "
-        spawn ssh-add ~/.ssh/id_rsa
-        expect \"Enter passphrase for ~/.ssh/id_rsa:\"
-        send \"${{ secrets.SSH_PASSPHRASE }}\r\"
-        expect eof
-        "
-
-    - name: Connect and pull
-      run: |
-        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
-
-    - name: Cleanup
-      run: rm -rf ~/.ssh
+      - name: Cleanup
+        run: rm -rf ~/.ssh

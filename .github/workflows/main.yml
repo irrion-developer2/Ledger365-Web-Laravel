@@ -9,38 +9,41 @@ jobs:
   run_pull:
     name: run pull
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Install SSH keys
+        shell: bash
         run: |
-          # Create the .ssh directory with correct permissions
           install -m 700 -d ~/.ssh
-          # Write the private key to the id_rsa file
-          cat << 'EOF' > ~/.ssh/id_rsa
-          ${{ secrets.SSH_PRIVATE_KEY }}
-          EOF
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          # Add the server to known_hosts
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Start SSH agent and add key with passphrase
+      - name: Start SSH agent and add key
+        shell: bash
         run: |
-          # Start the SSH agent (escape $ to prevent GitHub Actions from misinterpreting it)
-          eval "$$(ssh-agent -s)"
-          # Install expect to handle passphrase input
-          sudo apt-get update
-          sudo apt-get install -y expect
-          # Use expect to provide the passphrase to ssh-add
-          expect <<EOF
+          eval "$(ssh-agent -s)"
+          # Create expect script file
+          cat > add_key.exp << 'EOF'
+          #!/usr/bin/expect -f
           spawn ssh-add ~/.ssh/id_rsa
-          expect "Enter passphrase for ~/.ssh/id_rsa:"
-          send "${{ secrets.SSH_PASSPHRASE }}\r"
+          expect "Enter passphrase for /home/runner/.ssh/id_rsa:"
+          send "$env(SSH_PASS)\n"
           expect eof
           EOF
-      
+          chmod +x add_key.exp
+          
+          # Install expect
+          sudo apt-get update && sudo apt-get install -y expect
+          
+          # Run expect script with passphrase from secrets
+          SSH_PASS=${{ secrets.SSH_PASSPHRASE }} ./add_key.exp
+
       - name: Connect and pull
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
-      
+        shell: bash
+        run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
+
       - name: Cleanup
-        run: rm -rf ~/.ssh
+        if: always()
+        shell: bash
+        run: rm -rf ~/.ssh add_key.exp

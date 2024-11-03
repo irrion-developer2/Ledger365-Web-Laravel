@@ -11,26 +11,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install SSH keys
-        shell: bash
-        run: |
-          install -m 700 -d ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Start SSH agent and add key
+      - name: Deploy to Server
         shell: bash
         env:
           SSH_PASS: ${{ secrets.SSH_PASSPHRASE }}
         run: |
+          # Create .ssh directory with secure permissions
+          install -m 700 -d ~/.ssh
+          
+          # Write private key file with secure permissions
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # Add server to known hosts
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          
           # Start SSH agent
           eval "$(ssh-agent -s)"
-
-          # Install expect first
+          
+          # Install expect package
           sudo apt-get update -q 
-          sudo apt-get install -y expect
-
+          sudo apt-get install -y expect -q
+          
           # Create expect script
           tee add_key.exp << 'EOL'
           #!/usr/bin/expect
@@ -40,16 +42,16 @@ jobs:
           send "$env(SSH_PASS)\r"
           expect eof
           EOL
-
-          # Set permissions and run
+          
+          # Set execute permissions and run expect script
           chmod +x add_key.exp
           ./add_key.exp
-
-      - name: Connect and pull
-        shell: bash
-        run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
+          
+          # Run deployment command
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
 
       - name: Cleanup
         if: always()
         shell: bash
-        run: rm -rf ~/.ssh add_key.exp
+        run: |
+          rm -rf ~/.ssh add_key.exp

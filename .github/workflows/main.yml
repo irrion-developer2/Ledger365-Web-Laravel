@@ -18,35 +18,36 @@ jobs:
         run: |
           # Create .ssh directory with secure permissions
           install -m 700 -d ~/.ssh
-          
+
           # Write private key file with secure permissions
           printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
+
           # Verify key file exists and has content
           if [ ! -s ~/.ssh/id_rsa ]; then
             echo "Error: SSH key file is empty or not created properly"
             exit 1
           fi
-          
+
           # Add server to known hosts
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-          
+
           # Start SSH agent
           eval "$(ssh-agent -s)"
-          
+
           # Install expect package quietly
           DEBIAN_FRONTEND=noninteractive sudo apt-get update -qq
           DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq -y expect > /dev/null
-          
+
           # Create expect script with error handling
           cat > add_key.exp << 'EOL'
           #!/usr/bin/expect -f
           set timeout 30
-          
+
           log_user 1
-          
-          spawn ssh-add ~/.ssh/id_rsa
+
+          set id_rsa_path "$env(HOME)/.ssh/id_rsa"
+          spawn ssh-add $id_rsa_path
           expect {
             "Enter passphrase for" {
               send "$env(SSH_PASS)\r"
@@ -74,19 +75,19 @@ jobs:
             }
           }
           EOL
-          
+
           # Set execute permissions
           chmod +x add_key.exp
-          
+
           # Run expect script
           ./add_key.exp
-          
+
           # Verify SSH agent has identity
           ssh-add -l || {
             echo "Error: No identities found in SSH agent"
             exit 1
           }
-          
+
           # Run deployment command with timeout
           timeout 60 ssh -o StrictHostKeyChecking=no \
                         -o ConnectTimeout=10 \
@@ -95,7 +96,7 @@ jobs:
                         "cd ${{ secrets.WORK_DIR }} && \
                          git checkout ${{ secrets.MAIN_BRANCH }} && \
                          git pull"
-      
+
       - name: Cleanup
         if: always()
         shell: bash

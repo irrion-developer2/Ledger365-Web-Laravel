@@ -14,93 +14,48 @@ jobs:
       - name: Deploy to Server
         shell: bash
         env:
-          SSH_PASS: ${{ secrets.SSH_PASSPHRASE }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          WORK_DIR: ${{ secrets.WORK_DIR }}
+          MAIN_BRANCH: ${{ secrets.MAIN_BRANCH }}
         run: |
           # Create .ssh directory with secure permissions
           install -m 700 -d ~/.ssh
-          
+
           # Write private key file with secure permissions
-          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          printf "%s\n" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
+
           # Verify key file exists and has content
           if [ ! -s ~/.ssh/id_rsa ]; then
             echo "Error: SSH key file is empty or not created properly"
             exit 1
           fi
-          
+
           # Add server to known hosts
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-          
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
           # Start SSH agent
           eval "$(ssh-agent -s)"
-          export SSH_AUTH_SOCK
-          
-          # Confirm SSH_AUTH_SOCK is set
-          echo "SSH_AUTH_SOCK is $SSH_AUTH_SOCK"
-          
-          # Install expect package quietly
-          DEBIAN_FRONTEND=noninteractive sudo apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq -y expect > /dev/null
-          
-          # Create expect script with error handling
-          cat > add_key.exp << 'EOL'
-          #!/usr/bin/expect -f
-          set timeout 30
-          
-          log_user 1
-          
-          set id_rsa_path "$env(HOME)/.ssh/id_rsa"
-          spawn ssh-add $id_rsa_path
-          expect {
-            "Enter passphrase for" {
-              send "$env(SSH_PASS)\r"
-              expect {
-                "Identity added" {
-                  exit 0
-                }
-                timeout {
-                  send_user "Error: Timeout waiting for key addition\n"
-                  exit 1
-                }
-                eof {
-                  send_user "Error: Unexpected EOF\n"
-                  exit 1
-                }
-              }
-            }
-            timeout {
-              send_user "Error: Timeout waiting for passphrase prompt\n"
-              exit 1
-            }
-            eof {
-              send_user "Error: Unexpected EOF\n"
-              exit 1
-            }
-          }
-          EOL
-          
-          # Set execute permissions
-          chmod +x add_key.exp
-          
-          # Run expect script
-          ./add_key.exp
-          
+
+          # Add private key to SSH agent (no passphrase needed)
+          ssh-add ~/.ssh/id_rsa
+
           # Verify SSH agent has identity
           ssh-add -l || {
             echo "Error: No identities found in SSH agent"
             exit 1
           }
-          
-          # Run deployment command with timeout and verbose logging
-          timeout 60 ssh -v -o StrictHostKeyChecking=no \
-                        -o IdentitiesOnly=yes \
-                        -o ConnectTimeout=10 \
-                        -o ServerAliveInterval=10 \
-                        ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-                        "cd ${{ secrets.WORK_DIR }} && \
-                         git checkout ${{ secrets.MAIN_BRANCH }} && \
-                         git pull"
+
+          # Run deployment command with verbose logging
+          ssh -v -o StrictHostKeyChecking=no \
+                -o ConnectTimeout=10 \
+                -o ServerAliveInterval=10 \
+                "$SSH_USER@$SSH_HOST" \
+                "cd '$WORK_DIR' && \
+                 git checkout '$MAIN_BRANCH' && \
+                 git pull"
 
       - name: Cleanup
         if: always()
@@ -109,4 +64,4 @@ jobs:
           # Kill SSH agent
           eval "$(ssh-agent -k)" || true
           # Remove sensitive files
-          rm -rf ~/.ssh add_key.exp
+          rm -rf ~/.ssh

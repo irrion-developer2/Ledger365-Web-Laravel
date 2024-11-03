@@ -26,7 +26,11 @@ jobs:
         run: |
           # Start SSH agent
           eval "$(ssh-agent -s)"
-          
+
+          # Install expect first
+          sudo apt-get update -q 
+          sudo apt-get install -y expect
+
           # Create expect script
           tee add_key.exp << 'EOL'
           #!/usr/bin/expect
@@ -36,7 +40,7 @@ jobs:
           send "$env(SSH_PASS)\r"
           expect eof
           EOL
-          
+
           # Set permissions and run
           chmod +x add_key.exp
           ./add_key.exp

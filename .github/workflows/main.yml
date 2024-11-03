@@ -20,7 +20,6 @@ jobs:
           install -m 700 -d ~/.ssh
           
           # Write private key file with secure permissions
-          # Using printf to ensure proper newline handling
           printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
@@ -45,11 +44,7 @@ jobs:
           #!/usr/bin/expect -f
           set timeout 30
           
-          # Trap errors
-          trap {
-            puts "Error: Script failed"
-            exit 1
-          } SIGTERM SIGINT
+          log_user 1
           
           spawn ssh-add ~/.ssh/id_rsa
           expect {
@@ -57,25 +52,24 @@ jobs:
               send "$env(SSH_PASS)\r"
               expect {
                 "Identity added" {
-                  # Success case
                   exit 0
                 }
                 timeout {
-                  puts "Error: Timeout waiting for key addition"
+                  send_user "Error: Timeout waiting for key addition\n"
                   exit 1
                 }
                 eof {
-                  puts "Error: Unexpected EOF"
+                  send_user "Error: Unexpected EOF\n"
                   exit 1
                 }
               }
             }
             timeout {
-              puts "Error: Timeout waiting for passphrase prompt"
+              send_user "Error: Timeout waiting for passphrase prompt\n"
               exit 1
             }
             eof {
-              puts "Error: Unexpected EOF"
+              send_user "Error: Unexpected EOF\n"
               exit 1
             }
           }
@@ -101,7 +95,7 @@ jobs:
                         "cd ${{ secrets.WORK_DIR }} && \
                          git checkout ${{ secrets.MAIN_BRANCH }} && \
                          git pull"
-
+      
       - name: Cleanup
         if: always()
         shell: bash

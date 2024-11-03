@@ -20,38 +20,93 @@ jobs:
           install -m 700 -d ~/.ssh
           
           # Write private key file with secure permissions
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          # Using printf to ensure proper newline handling
+          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
+          # Verify key file exists and has content
+          if [ ! -s ~/.ssh/id_rsa ]; then
+            echo "Error: SSH key file is empty or not created properly"
+            exit 1
+          fi
+          
           # Add server to known hosts
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
           
           # Start SSH agent
           eval "$(ssh-agent -s)"
           
-          # Install expect package
-          sudo apt-get update -q 
-          sudo apt-get install -y expect -q
+          # Install expect package quietly
+          DEBIAN_FRONTEND=noninteractive sudo apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq -y expect > /dev/null
           
-          # Create expect script
-          tee add_key.exp << 'EOL'
-          #!/usr/bin/expect
-          set timeout 20
+          # Create expect script with error handling
+          cat > add_key.exp << 'EOL'
+          #!/usr/bin/expect -f
+          set timeout 30
+          
+          # Trap errors
+          trap {
+            puts "Error: Script failed"
+            exit 1
+          } SIGTERM SIGINT
+          
           spawn ssh-add ~/.ssh/id_rsa
-          expect "Enter passphrase for"
-          send "$env(SSH_PASS)\r"
-          expect eof
+          expect {
+            "Enter passphrase for" {
+              send "$env(SSH_PASS)\r"
+              expect {
+                "Identity added" {
+                  # Success case
+                  exit 0
+                }
+                timeout {
+                  puts "Error: Timeout waiting for key addition"
+                  exit 1
+                }
+                eof {
+                  puts "Error: Unexpected EOF"
+                  exit 1
+                }
+              }
+            }
+            timeout {
+              puts "Error: Timeout waiting for passphrase prompt"
+              exit 1
+            }
+            eof {
+              puts "Error: Unexpected EOF"
+              exit 1
+            }
+          }
           EOL
           
-          # Set execute permissions and run expect script
+          # Set execute permissions
           chmod +x add_key.exp
+          
+          # Run expect script
           ./add_key.exp
           
-          # Run deployment command
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
+          # Verify SSH agent has identity
+          ssh-add -l || {
+            echo "Error: No identities found in SSH agent"
+            exit 1
+          }
+          
+          # Run deployment command with timeout
+          timeout 60 ssh -o StrictHostKeyChecking=no \
+                        -o ConnectTimeout=10 \
+                        -o ServerAliveInterval=10 \
+                        ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+                        "cd ${{ secrets.WORK_DIR }} && \
+                         git checkout ${{ secrets.MAIN_BRANCH }} && \
+                         git pull"
 
       - name: Cleanup
         if: always()
         shell: bash
         run: |
+          # Kill SSH agent
+          eval "$(ssh-agent -k)" || true
+          # Remove sensitive files
           rm -rf ~/.ssh add_key.exp

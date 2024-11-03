@@ -15,9 +15,9 @@ jobs:
       run: |
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
-        cat << 'EOF' > ~/.ssh/id_rsa
-${{ secrets.SSH_PRIVATE_KEY }}
-EOF
+        cat <<EOF > ~/.ssh/id_rsa
+        ${{ secrets.SSH_PRIVATE_KEY }}
+        EOF
         chmod 600 ~/.ssh/id_rsa
 
     - name: Add server to known_hosts

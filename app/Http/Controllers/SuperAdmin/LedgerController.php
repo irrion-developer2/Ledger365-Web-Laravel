@@ -1063,7 +1063,7 @@ class LedgerController extends Controller
                         'order_ref' => $voucherData['BASICORDERREF'] ?? null,
                         'cost_center_name' => $voucherData['COSTCENTRENAME'] ?? null,
                         'cost_center_amount' => $voucherData['COSTCENTREAMOUNT'] ?? null,
-                        'json_path1' => $jsonFilePath,
+                        'json_path' => $jsonFilePath,
                     ]);
 
                     if ($tallyVoucher) {

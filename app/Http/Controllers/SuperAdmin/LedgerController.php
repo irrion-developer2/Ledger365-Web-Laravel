@@ -247,6 +247,7 @@ class LedgerController extends Controller
             $currencyCount = 0;
             $groupCount = 0;
             $ledgerCount = 0;
+            $companyIds = [];
 
             foreach ($messages as $message) {
                 if (isset($message['CURRENCY'])) {
@@ -309,6 +310,7 @@ class LedgerController extends Controller
                     }
 
                     $companyId = $company->company_id;
+                    $companyIds[$companyId] = true;
 
                     $parent = $groupData['PARENT'] ?? null;
                     $isPrimary = empty($parent);
@@ -334,6 +336,25 @@ class LedgerController extends Controller
                         throw new \Exception('Failed to create or update tally ledger group record.');
                     }
 
+                }
+            }
+
+            // After processing all groups, update the primary_group field
+            Log::info('Updating primary_group field for all groups');
+            foreach (array_keys($companyIds) as $companyId) {
+                $groups = TallyLedgerGroup::where('company_id', $companyId)->get();
+                Log::info($companyId . ' - Found ' . count($groups) . ' groups');
+                // Build associative array of groups by name
+                $groupsByName = [];
+                foreach ($groups as $group) {
+                    $groupsByName[$group->ledger_group_name] = $group;
+                }
+
+                foreach ($groups as $group) {
+                    $primaryGroupName = $this->getPrimaryGroup($group, $groupsByName);
+                    $group->primary_group = $primaryGroupName;
+                    $group->save();
+                    Log::info('Updated primary_group for group', ['group_id' => $group->id, 'primary_group' => $primaryGroupName]);
                 }
             }
 
@@ -443,6 +464,25 @@ class LedgerController extends Controller
             Log::error('Error importing data: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    private function getPrimaryGroup($group, $groupsByName)
+    {
+        $visited = [];
+        while ($group->parent) {
+            if (isset($visited[$group->ledger_group_name])) {
+                // Circular reference detected
+                break;
+            }
+            $visited[$group->ledger_group_name] = true;
+
+            if (!isset($groupsByName[$group->parent])) {
+                // Parent group not found
+                break;
+            }
+            $group = $groupsByName[$group->parent];
+        }
+        return $group->ledger_group_name;
     }
 
     public function stockItemJsonImport(Request $request)

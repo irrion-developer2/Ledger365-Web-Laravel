@@ -205,6 +205,8 @@ class LedgerController extends Controller
     {
         try {
 
+            Log::info('masterJsonImport function called');
+
             $this->validateLicenseNumber($request);
 
             $jsonData = null;
@@ -249,10 +251,11 @@ class LedgerController extends Controller
             $ledgerCount = 0;
             $companyIds = [];
 
+
             foreach ($messages as $message) {
                 if (isset($message['CURRENCY'])) {
                     $currencyData = $message['CURRENCY'];
-                    Log::info('Currency Data:', ['currencyData' => $currencyData]);
+                    // Log::info('Currency Data:', ['currencyData' => $currencyData]);
 
                     $guid = $currencyData['GUID'] ?? null;
                     $companyGuid = substr($guid, 0, 36);
@@ -292,7 +295,7 @@ class LedgerController extends Controller
             foreach ($messages as $message) {
                 if (isset($message['GROUP'])) {
                     $groupData = $message['GROUP'];
-                    Log::info('Group Data:', ['groupData' => $groupData]);
+                    // Log::info('Group Data:', ['groupData' => $groupData]);
 
                     $nameField = $groupData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? null;
                     if (is_array($nameField)) {

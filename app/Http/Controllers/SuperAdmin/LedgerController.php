@@ -1105,8 +1105,8 @@ class LedgerController extends Controller
     private function processLedgerEntries(array $voucherData, TallyVoucher $tallyVoucher, $companyId)
     {
         $ledgerEntries = array_merge(
-            $this->ensureArray($voucherData['LEDGERENTRIES.LIST'] ?? []),
-            $this->ensureArray($voucherData['ALLLEDGERENTRIES.LIST'] ?? [])
+            $this->normalizeEntries($voucherData['LEDGERENTRIES.LIST'] ?? []),
+            $this->normalizeEntries($voucherData['ALLLEDGERENTRIES.LIST'] ?? [])
         );
 
         $voucherHeadIds = [];
@@ -1119,6 +1119,17 @@ class LedgerController extends Controller
             $ledgerId = TallyLedger::where('ledger_name', $ledgerName)
                 ->where('company_id', $companyId)
                 ->value('ledger_id');
+
+            if (!$ledgerId) {
+                Log::error('Ledger not found', [
+                    'ledger_name' => $ledgerName,
+                    'company_id' => $companyId,
+                    'voucher_id' => $tallyVoucher->voucher_id ?? null,
+                    'ledger_entry' => $ledgerEntry
+                ]);
+                // Optionally, you can throw an exception or create the ledger here
+                // throw new \Exception("Ledger not found: $ledgerName for company_id: $companyId");
+            }
 
             $ledgerHeadData = [
                 'voucher_id' => $tallyVoucher->voucher_id,

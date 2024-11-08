@@ -23,7 +23,7 @@ return new class extends Migration
             $table->foreign('ledger_id')->references('ledger_id')->on('tally_ledgers');
 
             $table->boolean('is_party_ledger')->default(false);
-            $table->decimal('amount', 15, 3);
+            $table->decimal('amount', 15, 3)->default(0);
             $table->string('entry_type',10);
             $table->boolean('is_deemed_positive')->default(false);
 

@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('godown_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
             $table->integer('alter_id')->nullable();
             $table->string('parent',100)->nullable();
-            $table->string('godown_name',100)->nullable();
-            
+            $table->string('godown_name',100);
+
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });

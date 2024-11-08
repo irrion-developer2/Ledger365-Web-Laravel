@@ -32,7 +32,7 @@ class LedgerController extends Controller
     {
         if ($string) {
             $string = trim($string);
-            if (preg_match('/\d+(\.\d+)?/', $string, $matches)) {
+            if (preg_match('/-?\d+(\.\d+)?/', $string, $matches)) {
                 return (float)$matches[0];
             }
         }

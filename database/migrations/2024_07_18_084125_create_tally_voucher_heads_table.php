@@ -18,15 +18,15 @@ return new class extends Migration
 
             $table->unsignedInteger('voucher_id');
             $table->foreign('voucher_id')->references('voucher_id')->on('tally_vouchers')->onDelete('cascade');
-         
+
             $table->unsignedInteger('ledger_id');
             $table->foreign('ledger_id')->references('ledger_id')->on('tally_ledgers');
-            
-            $table->boolean('is_party_ledger')->default(false);  
-            $table->decimal('amount', 15, 3)->nullable(); 
-            $table->string('entry_type',10)->nullable();
-            $table->boolean('is_deemed_positive')->default(false); 
-            
+
+            $table->boolean('is_party_ledger')->default(false);
+            $table->decimal('amount', 15, 3);
+            $table->string('entry_type',10);
+            $table->boolean('is_deemed_positive')->default(false);
+
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });

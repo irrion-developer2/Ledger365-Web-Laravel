@@ -64,15 +64,15 @@ Route::middleware([
             'company_ids' => 'required|array',
             'company_names' => 'required|string',
         ]);
-    
+
         session(['selected_company_ids' => $request->company_ids]);
         session(['selected_company_names' => $request->company_names]);
-        
+
         session()->save();  // Ensure session is saved explicitly
-    
+
         return response()->json(['success' => true]);
     });
-    
+
 
     Route::get('/get-filtered-data', [HomeController::class, 'getFilteredData']);
 
@@ -190,7 +190,7 @@ Route::middleware([
 
         Route::resource('users', UserController::class);
         Route::post('/update-user-status', [UserController::class, 'updateStatus'])->name('update.user.status');
-        
+
         Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
         Route::get('/users/{users}/get-data', [UserController::class, 'getData'])->name('users-company.get-data');
 

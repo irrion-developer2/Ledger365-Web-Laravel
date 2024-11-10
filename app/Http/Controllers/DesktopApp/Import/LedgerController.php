@@ -1,30 +1,27 @@
 <?php
 
-namespace App\Http\Controllers\SuperAdmin;
+namespace App\Http\Controllers\DesktopApp\Import;
 
 use App\Http\Controllers\Controller;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Request;
-use App\Models\TallyLicense;
+use App\Models\TallyBankAllocation;
+use App\Models\TallyBatchAllocation;
+use App\Models\TallyBillAllocation;
 use App\Models\TallyCompany;
 use App\Models\TallyCurrency;
-use App\Models\TallyLedgerGroup;
-use App\Models\TallyLedger;
+use App\Models\TallyGodown;
 use App\Models\TallyItem;
 use App\Models\TallyItemGroup;
+use App\Models\TallyLedger;
+use App\Models\TallyLedgerGroup;
+use App\Models\TallyLicense;
 use App\Models\TallyUnit;
-use App\Models\TallyGodown;
 use App\Models\TallyVoucher;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyVoucherItem;
 use App\Models\TallyVoucherType;
-use App\Models\TallyBillAllocation;
-use App\Models\TallyBatchAllocation;
-use App\Models\TallyBankAllocation;
-use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class LedgerController extends Controller
 {

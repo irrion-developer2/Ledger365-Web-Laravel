@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\DesktopApp\Import\CompanyImportController;
+use App\Http\Controllers\DesktopApp\Import\LedgerController;
+use App\Http\Controllers\SuperAdmin\TallyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SuperAdmin\TallyController;
-use App\Http\Controllers\SuperAdmin\LedgerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,9 +21,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/license_check', [LedgerController::class, 'licenseCheckJsonImport'])->name('license.import');
+Route::post('/companies', [CompanyImportController::class, 'import'])->name('companies.import');
 
-Route::post('/companies', [LedgerController::class, 'companyJsonImport'])->name('company.import');
+Route::post('/license_check', [LedgerController::class, 'licenseCheckJsonImport'])->name('license.import');
 
 Route::post('/master', [LedgerController::class, 'masterJsonImport'])->name('master.import');
 

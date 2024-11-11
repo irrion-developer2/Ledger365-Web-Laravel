@@ -159,7 +159,7 @@
                 { data: 'voucher_date', name: 'voucher_date', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                { data: 'party_ledger_name', name: 'party_ledger_name', render: function(data, type, row) {
+                { data: 'ledger_name', name: 'ledger_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 { data: 'voucher_number', name: 'voucher_number' ,
@@ -169,7 +169,7 @@
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
-                { data: 'voucher_type', name: 'voucher_type' , render: function(data, type, row) {
+                { data: 'voucher_type_name', name: 'voucher_type_name' , render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 { data: 'buyer_name', name: 'buyer_name' , render: function(data, type, row) {

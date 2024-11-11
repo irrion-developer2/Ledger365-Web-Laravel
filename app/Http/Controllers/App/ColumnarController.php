@@ -40,11 +40,26 @@ class ColumnarController extends Controller
         if ($request->ajax()) {
             
             $columnars = TallyVoucher::join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                ->join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+                ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
                 ->where('tally_voucher_types.voucher_type_name', 'Sales')
                 ->where('tally_vouchers.is_cancelled', 0)
                 ->where('tally_vouchers.is_optional', 0)
                 ->whereIn('tally_vouchers.company_id', $companyIds)
-                ->select('tally_vouchers.*')
+                ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id AND tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount END), 0) as gross_total')
+                ->select(
+                    'tally_vouchers.voucher_date',
+                    'tally_vouchers.voucher_number',
+                    'tally_vouchers.buyer_name',
+                    'tally_vouchers.buyer_addr',
+                    'tally_vouchers.gst_registration_type',
+                    'tally_vouchers.buyer_gstin',
+                    'tally_vouchers.place_of_supply',
+                    'tally_voucher_types.voucher_type_name',
+                    'tally_ledgers.ledger_name',
+                    'tally_ledgers.state',
+                    'tally_ledgers.country',
+                )
                 ->get();
 
             // dd($columnars);
@@ -89,20 +104,23 @@ class ColumnarController extends Controller
 
             return DataTables::of($columnars)
                 ->addIndexColumn()
-                ->addColumn('state', function ($data) use ($companyIds){
-                    $ledger = TallyLedger::where('ledger_id', $data->ledger_id)
-                        ->whereIn('company_id', $companyIds)
-                        ->first();
+                // ->addColumn('gross_total', function ($data) use ($companyIds){
+                //     $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //     ->where('entry_type', 'debit')
+                //     ->where('ledger_name', $data->party_ledger_name)
+                //     ->get();
+                //     $totalHeadAmount = $amtHead->sum('amount');
 
-                    return $ledger ? $ledger->state : '-';
-                })
-                ->addColumn('country', function ($data) use ($companyIds){
-                    $ledger = TallyLedger::where('ledger_id', $data->ledger_id)
-                        ->whereIn('company_id', $companyIds)
-                        ->first();
+                //     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //     ->where('entry_type', 'debit')
+                //     ->where('ledger_name', $data->party_ledger_name)
+                //     ->get();
+                //     $totalAccHeadAmount = $amtAccHead->sum('amount');
 
-                    return $ledger ? $ledger->country : '-';
-                })
+                //     $totalAmount = $totalHeadAmount - $totalAccHeadAmount;
+
+                //     return number_format(abs($totalAmount), 3);
+                // })
                 // ->addColumn('qty', function ($data) use ($companyIds){
                 //     $qtyItems = TallyVoucherItem::where('tally_voucher_id', $data->id)->get();
                 //     $totalQty = $qtyItems->sum('billed_qty');
@@ -133,23 +151,6 @@ class ColumnarController extends Controller
                 //     $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
 
                 //     return number_format($totalAmount, 3);
-                // })
-                // ->addColumn('gross_total', function ($data) use ($companyIds){
-                //     $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                //     ->where('entry_type', 'debit')
-                //     ->where('ledger_name', $data->party_ledger_name)
-                //     ->get();
-                //     $totalHeadAmount = $amtHead->sum('amount');
-
-                //     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                //     ->where('entry_type', 'debit')
-                //     ->where('ledger_name', $data->party_ledger_name)
-                //     ->get();
-                //     $totalAccHeadAmount = $amtAccHead->sum('amount');
-
-                //     $totalAmount = $totalHeadAmount - $totalAccHeadAmount;
-
-                //     return number_format(abs($totalAmount), 3);
                 // })
                 // ->addColumn('rate_unit', function ($data) use ($companyIds){
                 //     $rateItems = TallyVoucherItem::where('tally_voucher_id', $data->id)->get();

@@ -118,10 +118,12 @@ Route::middleware([
         Route::get('reports/CashBank', [ReportCashBankController::class, 'index'])->name('reports.CashBank');
         Route::get('reports/CashBank/{CashBank}', [ReportCashBankController::class, 'AllCashBankReports'])->name('reports.CashBank.details');
         Route::get('reports/CashBank/data/{cashBankId}', [ReportCashBankController::class, 'getCashBankData'])->name('reports.CashBank.data');
-
+        
         Route::get('reports/PaymentRegister', [ReportPaymentRegisterController::class, 'index'])->name('reports.PaymentRegister');
+        Route::get('/PaymentRegister/get-data', [ReportPaymentRegisterController::class, 'getData'])->name('PaymentRegister.get-data');
 
         Route::get('reports/ReceiptRegister', [ReportReceiptRegisterController::class, 'index'])->name('reports.ReceiptRegister');
+        Route::get('/ReceiptRegister/get-data', [ReportReceiptRegisterController::class, 'getData'])->name('ReceiptRegister.get-data');
 
         Route::get('reports/VoucherHead/{VoucherHead}', [ReportController::class, 'AllVoucherHeadReports'])->name('reports.VoucherHead');
         Route::get('reports/VoucherHead/data/{VoucherHeadId}', [ReportController::class, 'getVoucherHeadData'])->name('reports.VoucherHead.data');

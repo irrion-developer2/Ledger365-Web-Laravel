@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 use App\Services\ReportService;
-use App\DataTables\SuperAdmin\SalesDataTable;
 
 class SalesController extends Controller
 {
@@ -29,27 +28,53 @@ class SalesController extends Controller
         $this->reportService = $reportService;
     }
 
-    public function index(SalesDataTable $dataTable)
+    public function index()
     {
-        return $dataTable->render('app.sales.index');
+        return view('app.sales.index');
     }
     
     public function getData(Request $request)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
     
         if ($request->ajax()) {
             $startTime = microtime(true);
       
-            $salesQuery = TallyVoucher::select('tally_vouchers.id', 'tally_vouchers.company_guid', 'tally_vouchers.voucher_type', 'tally_vouchers.party_ledger_name', 'tally_vouchers.voucher_date', 'tally_vouchers.voucher_number', 'tally_vouchers.place_of_supply')
-            ->where('voucher_type', 'Sales')
-            ->where('tally_vouchers.is_cancelled', 'No')
-            ->where('tally_vouchers.is_optional', 'No')
-            ->whereIn('tally_vouchers.company_guid', $companyGuids)
-            ->leftJoin('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
-            ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" AND tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END), 0) as total_debit')
-            ->groupBy('tally_vouchers.id','tally_vouchers.company_guid', 'tally_vouchers.voucher_type', 'tally_vouchers.party_ledger_name', 'tally_vouchers.voucher_date', 'tally_vouchers.voucher_number', 'tally_vouchers.place_of_supply');
+            $salesQuery = TallyVoucher::select(
+                        'tally_vouchers.voucher_id',
+                        'tally_vouchers.company_id',
+                        'tally_vouchers.voucher_type_id',
+                        'tally_voucher_types.voucher_type_name',
+                        'tally_ledgers.ledger_name',
+                        'tally_vouchers.voucher_date',
+                        'tally_vouchers.voucher_number',
+                        'tally_vouchers.place_of_supply'
+                    )
+                    ->where('tally_voucher_types.voucher_type_name', 'Sales')
+                    ->where('tally_vouchers.is_cancelled', 'No')
+                    ->where('tally_vouchers.is_optional', 'No')
+                    ->whereIn('tally_vouchers.company_id', $companyIds)
+                    ->leftJoin('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+                    ->leftJoin('tally_voucher_types', function($join) {
+                        $join->on('tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                            ->on('tally_vouchers.company_id', '=', 'tally_voucher_types.company_id');
+                    })
+                    ->leftJoin('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+                    ->selectRaw('
+                        COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END), 0) as total_debit
+                    ')
+                    ->groupBy(
+                        'tally_vouchers.voucher_id',
+                        'tally_vouchers.company_id',
+                        'tally_vouchers.voucher_type_id',
+                        'tally_voucher_types.voucher_type_name',
+                        'tally_ledgers.ledger_name',
+                        'tally_vouchers.voucher_date',
+                        'tally_vouchers.voucher_number',
+                        'tally_vouchers.place_of_supply'
+                    );
 
+            
             Log::info("Sales Query");        
             Log::info($this->reportService->getFinalQuery($salesQuery));
 

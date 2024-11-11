@@ -796,81 +796,6 @@ class LedgerController extends Controller
         }
     }
 
-    // public function voucherTypeJsonImport(Request $request)
-    // {
-    //     try {
-    //         $this->validateLicenseNumber($request);
-
-    //         $jsonData = null;
-    //         $fileName = 'tally_voucher_type_data_' . date('YmdHis') . '.json';
-
-    //         if ($request->hasFile('uploadFile')) {
-    //             $uploadedFile = $request->file('uploadFile');
-    //             $jsonFilePath = storage_path('app/' . $fileName);
-    //             $uploadedFile->move(storage_path('app'), $fileName);
-    //             $jsonData = file_get_contents($jsonFilePath);
-    //         } else {
-    //             $jsonData = $request->getContent();
-    //             $jsonFilePath = storage_path('app/' . $fileName);
-    //             file_put_contents($jsonFilePath, $jsonData);
-    //         }
-
-    //         $data = json_decode($jsonData, true);
-    //         if (json_last_error() !== JSON_ERROR_NONE) {
-    //             throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
-    //         }
-
-    //         if (!isset($data['BODY']['DATA']['COLLECTION']['VOUCHERTYPE'])) {
-    //             throw new \Exception('VOUCHERTYPE data not found in JSON structure.');
-    //         }
-
-    //         $insertedRecordsCount = 0;
-    //         foreach ($data['BODY']['DATA']['COLLECTION']['VOUCHERTYPE'] as $voucherTypeData) {
-
-
-    //             $guid = $voucherTypeData['GUID'] ?? null;
-    //             $companyGuid = substr($guid, 0, 36);
-    //             $company = TallyCompany::where('company_guid', $companyGuid)->first();
-    //             if (!$company) {
-    //                 Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-    //                 continue;
-    //             }
-    //             $companyId = $company->company_id;
-
-
-    //             $tallyVoucherType = TallyVoucherType::updateOrCreate(
-    //                 [
-    //                     'voucher_type_guid' => $voucherTypeData['GUID'][''] ?? null,
-    //                 ],
-    //                 [
-    //                     'company_id' => $companyId,
-    //                     'alter_id' => $voucherTypeData['ALTERID'][''] ?? null,
-    //                     'voucher_type_name' => $voucherTypeData['NAME'] ?? null,
-    //                     'parent' => $voucherTypeData['PARENT'][''] ?? null,
-    //                     'numbering_method' => $voucherTypeData['NUMBERINGMETHOD'][''] ?? null,
-    //                     'prevent_duplicate' => isset($voucherTypeData['PREVENTDUPLICATES']) && $voucherTypeData['PREVENTDUPLICATES'][''] === 'Yes',
-    //                     'use_zero_entries' => isset($voucherTypeData['USEZEROENTRIES']) && $voucherTypeData['USEZEROENTRIES'][''] === 'Yes',
-    //                     'is_deemed_positive' => isset($voucherTypeData['ISDEEMEDPOSITIVE']) && $voucherTypeData['ISDEEMEDPOSITIVE'][''] === 'Yes',
-    //                     'affects_stock' => isset($voucherTypeData['AFFECTSSTOCK']) && $voucherTypeData['AFFECTSSTOCK'][''] === 'Yes',
-    //                     'is_active' => isset($voucherTypeData['ISACTIVE']) && $voucherTypeData['ISACTIVE'][''] === 'Yes',
-    //                 ]
-    //             );
-    //             $insertedRecordsCount++;
-    //         }
-
-    //         return response()->json([
-    //             'message' => 'Tally voucher type data processed successfully.',
-    //             'records_inserted' => $insertedRecordsCount
-    //         ]);
-
-    //     } catch (\Exception $e) {
-    //         Log::error('Error in voucherTypeJsonImport function', [
-    //             'error' => $e->getMessage()
-    //         ]);
-    //         return response()->json(['error' => $e->getMessage()], 500);
-    //     }
-    // }
-
     public function voucherTypeJsonImport(Request $request)
     {
         try {
@@ -946,7 +871,6 @@ class LedgerController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
 
     public function voucherJsonImport(Request $request)
     {
@@ -1233,38 +1157,6 @@ class LedgerController extends Controller
         }
         return array_values($ledgerEntries);
     }
-
-    // private function processAccountingAllocations(array $entries, $companyId)
-    // {
-    //     $ledgerEntries = [];
-
-    //     foreach ($entries as $entry) {
-    //         if (isset($entry['LEDGERNAME'], $entry['AMOUNT'])) {
-    //             $ledgerName = htmlspecialchars_decode($entry['LEDGERNAME']);
-    //             $amount = $entry['AMOUNT'];
-    //             $entryType = $amount < 0 ? "debit" : "credit";
-
-    //             $ledgerId = TallyLedger::where('ledger_name', $ledgerName)
-    //                 ->where('company_Id', $companyId)
-    //                 ->value('ledger_id');
-
-    //             if (!$ledgerId) {
-    //                 Log::error('Ledger GUID not found in database for ledger: ' . $ledgerName);
-    //                 continue;
-    //             }
-
-    //             $ledgerEntries[$ledgerName] = [
-    //                 'amount' => $amount,
-    //                 'entry_type' => $entryType,
-    //                 'ledger_id' => $ledgerId,
-    //                 'is_deemed_positive' => isset($entry['ISDEEMEDPOSITIVE']) && $entry['ISDEEMEDPOSITIVE'] === 'Yes',
-    //             ];
-    //         } else {
-    //             Log::error('Missing or invalid LEDGERNAME or AMOUNT in LEDGERENTRIES.LIST entry: ' . json_encode($entry));
-    //         }
-    //     }
-    //     return array_values($ledgerEntries);
-    // }
 
     private function processAccountingAllocationForVoucher($voucherId, array $entries)
     {

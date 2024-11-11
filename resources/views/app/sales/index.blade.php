@@ -122,7 +122,7 @@
                 }
             },
             columns: [
-                {data: 'party_ledger_name', name: 'party_ledger_name'},
+                {data: 'ledger_name', name: 'ledger_name'},
                 {data: 'gst_in', name: 'gst_in', render: function(data, type, row) {
                     return data ? data : '-';
                 }},

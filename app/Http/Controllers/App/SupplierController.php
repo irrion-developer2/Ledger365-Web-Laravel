@@ -32,24 +32,30 @@ class SupplierController extends Controller
     
     public function getData(Request $request)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
     
         if ($request->ajax()) {
             $startTime = microtime(true);
       
-            $suppliersQuery = TallyLedger::select('tally_ledgers.company_guid', 'tally_ledgers.guid', 'tally_ledgers.name', 'tally_ledgers.party_gst_in')
-                ->where('parent', 'Sundry Creditors')
-                ->whereIn('tally_ledgers.company_guid', $companyGuids)
+            $suppliersQuery = TallyLedger::select(
+                    'tally_ledgers.company_id',
+                    'tally_ledgers.ledger_guid',
+                    'tally_ledgers.ledger_name',
+                    'tally_ledgers.party_gst_in'
+                )
+                ->where('tally_ledgers.parent', 'Sundry Creditors')
+                ->whereIn('tally_ledgers.company_id', $companyIds)
+                ->leftJoin('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
                 ->leftJoin('tally_vouchers', function ($join) {
-                    $join->on('tally_ledgers.guid', '=', 'tally_vouchers.party_ledger_guid')
-                        ->where('tally_vouchers.is_cancelled', 'No')
-                        ->where('tally_vouchers.is_optional', 'No');
+                    $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                        ->where('tally_vouchers.is_cancelled', 0)
+                        ->where('tally_vouchers.is_optional', 0);
                 })
-                ->leftJoin('tally_voucher_heads', 'tally_vouchers.id', '=', 'tally_voucher_heads.tally_voucher_id')
-                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Purchase" AND tally_ledgers.guid = tally_voucher_heads.ledger_guid THEN tally_voucher_heads.amount END), 0) as total_purchase')
-                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Purchase" AND tally_ledgers.guid = tally_voucher_heads.ledger_guid THEN tally_voucher_heads.amount END), 0) as outstanding')
-                ->selectRaw('COALESCE(SUM(CASE WHEN tally_vouchers.voucher_type = "Payment" AND tally_ledgers.guid = tally_voucher_heads.ledger_guid THEN tally_voucher_heads.amount END), 0) as payment_collection')
-                ->groupBy('tally_ledgers.guid');
+                ->leftJoin('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Purchase" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as total_purchase')
+                ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Purchase" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as outstanding')
+                ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Payment" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as payment_collection')
+                ->groupBy('tally_ledgers.ledger_id');
 
             Log::info("Supplier Query");        
             Log::info($this->reportService->getFinalQuery($suppliersQuery));

@@ -49,7 +49,7 @@
                         </div>
                         <div class="col-lg-2">
                             <form id="voucherTypeForm">
-                                <select id="voucher_type" name="voucher_type" class="form-select">
+                                <select id="voucher_type_name" name="voucher_type_name" class="form-select">
                                     <option value="">All</option>
                                     <option value="Sales">Sale</option>
                                     <option value="Purchase">Purchase</option>
@@ -110,7 +110,7 @@
         var startDate = urlParams.get('start_date');
         var endDate = urlParams.get('end_date');
         var customDateRange = urlParams.get('custom_date_range');
-        var voucherType = urlParams.get('voucher_type');
+        var voucherType = urlParams.get('voucher_type_name');
 
         if (!startDate || !endDate) {
             var today = new Date();
@@ -135,21 +135,21 @@
                     d.start_date = startDate;
                     d.end_date = endDate;
                     d.custom_date_range = customDateRange;
-                    d.voucher_type = voucherType;
+                    d.voucher_type_name = voucherType;
                 }
             },
             columns: [
                 {data: 'voucher_date', name: 'voucher_date'},
-                {data: 'party_ledger_name', name: 'party_ledger_name', render: function(data, type, row) {
+                {data: 'ledger_name', name: 'ledger_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'voucher_type', name: 'voucher_type', render: function(data, type, row) {
+                {data: 'voucher_type_name', name: 'voucher_type_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'voucher_number', name: 'voucher_number',
                     render: function(data, type, row) {
                         var url = '{{ route("reports.VoucherItem", ":id") }}';
-                        url = url.replace(':id', row.id);
+                        url = url.replace(':id', row.voucher_id);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
@@ -234,11 +234,11 @@
         });
 
         
-        const voucherTypeSelect = document.getElementById('voucher_type');
+        const voucherTypeSelect = document.getElementById('voucher_type_name');
         voucherTypeSelect.addEventListener('change', function() {
             let voucherType = this.value;
             let url = new URL(window.location.href);
-            url.searchParams.set('voucher_type', voucherType);
+            url.searchParams.set('voucher_type_name', voucherType);
             window.location.href = url.toString();
         });
 

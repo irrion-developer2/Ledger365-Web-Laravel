@@ -65,7 +65,7 @@
                            <div class="d-flex align-items-center">
                                <div>
                                    <p class="mb-0 text-secondary">Payables</p>
-                                   <h4 class="my-1 text-warning">&#8377 {{ indian_format(abs($payableCreditNote)) }}
+                                   <h4 class="my-1 text-warning">&#8377 {{ indian_format(abs($payables)) }}
                                    </h4>
                                </div>
                                <div class="widgets-icons-2 rounded-circle bg-gradient-orange text-white ms-auto">

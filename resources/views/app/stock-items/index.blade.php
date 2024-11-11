@@ -96,7 +96,7 @@
             },
             columns: [
                 // {data: 'id', name: 'id'},
-                {data: 'name', name: 'name',
+                {data: 'item_name', name: 'item_name',
                     render: function(data, type, row) {
                         var url = '{{ route("StockItem.items", ":id") }}';
                         url = url.replace(':id', row.id);
@@ -121,17 +121,11 @@
                 {data: 'stockonhand_opening_balance', name: 'stockonhand_opening_balance', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                // {data: 'avg_rate', name: 'avg_rate', render: function(data, type, row) {
-                //     return data ? data : '-';
-                // }},
                 {data: 'stockonhand_opening_value', name: 'stockonhand_opening_value', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                // {data: 'voucher_date', name: 'voucher_date', render: function(data, type, row) {
-                //     return data ? data : '-';
-                // }},
             ],
-            footerCallback: function (row, data, start, end, display) {
+            {{--  footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
                 var StockHandBalanceToTotal = 5;
                 var StockHandValueToTotal = 7;
@@ -145,7 +139,7 @@
 
                 $(api.column(StockHandBalanceToTotal).footer()).html(number_format(Math.abs(StockHandBalancetotal), 2));
                 $(api.column(StockHandValueToTotal).footer()).html(number_format(Math.abs(StockHandValuetotal), 2));
-            },
+            },  --}}
             search: {
                 orthogonal: {
                     search: 'plain'

@@ -27,40 +27,44 @@ class HomeController extends Controller
 
     public function index()
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
         $user = User::count();
         $role = auth()->user()->role;
 
         /* cashBankAmount */
-        $cashBank = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
-                    ->where('ledger_group_name', 'Bank Accounts')
-                    ->first();
+        $cashBank = TallyLedgerGroup::where('ledger_group_name', 'Bank Accounts')->whereIn('company_id', $companyIds)->first();
+        $cashBankName = $cashBank ? $cashBank->ledger_group_name : 'Bank Accounts';
+        $cashBankId = $cashBank ? $cashBank->ledger_group_id : null;
 
-        $cashBankName = $cashBank ? $cashBank->name : 'Bank Accounts';
-
-        $cashBankLedgerIds = TallyLedger::where('parent', $cashBankName)
-                            ->whereIn('company_guid', $companyGuids)
-                            ->pluck('guid');
-
-        $cashBankAmount = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
-        // ->whereIn('tally_voucher_heads.ledger_guid', $cashBankLedgerIds)
-        ->whereIn('tally_vouchers.company_guid', $companyGuids)
-        ->sum('tally_voucher_heads.amount');
-
+        $cashBankAmount = TallyVoucherHead::whereIn('ledger_id', function($query) use ($cashBankId, $companyIds) {
+            $query->select('ledger_id')
+                ->from('tally_ledgers')
+                ->where('ledger_group_id', $cashBankId)
+                ->whereIn('company_id', $companyIds);
+        })->sum('amount');
         /* cashBankAmount */
 
         /* Inventory Amount */
-        // $stockItemVoucherBalance = $this->reportService->calculateStockValue($companyGuids);
+        // $stockItemVoucherBalance = $this->reportService->calculateStockValue($companyIds);
         /* Inventory Amount */
 
          /* Payables */
-        $payableCreditNote = $this->calculatePayableCreditNote($companyGuids);
+         $payable = TallyLedgerGroup::where('ledger_group_name', 'Sundry Creditors')->whereIn('company_id', $companyIds)->first();
+         $payableName = $payable ? $payable->ledger_group_name : 'Sundry Creditors';
+         $payableId = $payable ? $payable->ledger_group_id : null;
+ 
+         $payables = TallyVoucherHead::whereIn('ledger_id', function($query) use ($payableId, $companyIds) {
+             $query->select('ledger_id')
+                 ->from('tally_ledgers')
+                 ->where('ledger_group_id', $payableId)
+                 ->whereIn('company_id', $companyIds);
+         })->sum('amount');
          /* Payables */
 
         /* Sales Receipt chart */
         $startDate = now()->startOfMonth();
         $endDate = now();
-        $chartData = $this->chartSaleReceipt($companyGuids, $startDate, $endDate);
+        $chartData = $this->chartSaleReceipt($companyIds, $startDate, $endDate);
         $chartSaleAmt = abs(array_sum($chartData['sales']));
         $chartReceiptAmt = abs(array_sum($chartData['receipts']));
         $lastMonthsTotal = $this->getLastMonthsTotal($chartData);
@@ -69,20 +73,21 @@ class HomeController extends Controller
         /* Sales Receipt chart */
 
         /* pie chart */
-        $pieChartData = $this->getPieChartData($companyGuids);
+        $pieChartData = $this->getPieChartData($companyIds);
         $pieChartDataTotal = $pieChartData['total'];
         $pieChartDataOverall = $pieChartData['data'];
         /* pie chart */
 
         /* Cash Amount */
-        $cashGroup = TallyLedgerGroup::where('name', 'Cash-in-Hand')->whereIn('company_guid', $companyGuids)->first();
-        $cashName = $cashGroup ? $cashGroup->name : 'Cash-in-Hand';
+        $cashGroup = TallyLedgerGroup::where('ledger_group_name', 'Cash-in-Hand')->whereIn('company_id', $companyIds)->first();
+        $cashName = $cashGroup ? $cashGroup->ledger_group_name : 'Cash-in-Hand';
+        $cashGroupId = $cashGroup ? $cashGroup->ledger_group_id : null;
 
-        $cashAmount = TallyVoucherHead::whereIn('ledger_guid', function($query) use ($cashName, $companyGuids) {
-            $query->select('guid')
+        $cashAmount = TallyVoucherHead::whereIn('ledger_id', function($query) use ($cashGroupId, $companyIds) {
+            $query->select('ledger_id')
                 ->from('tally_ledgers')
-                ->where('parent', $cashName)
-                ->whereIn('company_guid', $companyGuids);
+                ->where('ledger_group_id', $cashGroupId)
+                ->whereIn('company_id', $companyIds);
         })->sum('amount');
         /* Cash Amount */
 
@@ -90,20 +95,20 @@ class HomeController extends Controller
         if ($role == 'Administrative') {
             return view('dashboard', compact('user'));
         } elseif ($role == 'Owner' || $role == 'Employee') {
-            return view('users-dashboard', compact('user','cashBankAmount','cashAmount','payableCreditNote','chartSaleAmt','chartReceiptAmt','chartData','lastMonthsTotal','pieChartDataOverall','pieChartDataTotal'));
+            return view('users-dashboard', compact('user','cashBankAmount','cashAmount','payables','chartSaleAmt','chartReceiptAmt','chartData','lastMonthsTotal','pieChartDataOverall','pieChartDataTotal'));
         }
         abort(403, 'Unauthorized action.');
     }
 
-    public function getPieChartData($companyGuids)
+    public function getPieChartData($companyIds)
     {
         $pieChartData = DB::table('tally_ledgers as tl')
-            ->leftJoin('tally_voucher_heads as tvh', 'tl.guid', '=', 'tvh.ledger_guid')
-            ->select('tl.name', DB::raw('COALESCE(SUM(tvh.amount), 0) AS total_amount'))
+            ->leftJoin('tally_voucher_heads as tvh', 'tl.ledger_id', '=', 'tvh.ledger_id')
+            ->select('tl.ledger_name', DB::raw('COALESCE(SUM(tvh.amount), 0) AS total_amount'))
             ->where('tl.parent', 'Sundry Debtors')
-            ->whereIn('tl.company_guid', $companyGuids)
-            ->groupBy('tl.name')
-            ->pluck('total_amount', 'name');
+            ->whereIn('tl.company_id', $companyIds)
+            ->groupBy('tl.ledger_name')
+            ->pluck('total_amount', 'ledger_name');
 
         $pieChartDataArray = $pieChartData->toArray();
 
@@ -140,27 +145,10 @@ class HomeController extends Controller
         ];
     }
 
-    private function calculatePayableCreditNote($companyGuids)
-    {
-        $CreditAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_id', '=', 'tally_vouchers.party_ledger_id')
-                ->where('tally_vouchers.voucher_type', 'credit note')
-                ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                ->sum('tally_voucher_heads.amount');
-
-        $DebitAmount = TallyVoucher::join('tally_voucher_heads', 'tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
-                ->where('tally_vouchers.voucher_type', 'debit note')
-                ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                ->sum('tally_voucher_heads.amount');
-
-        $total = $CreditAmount + $DebitAmount;
-
-        return $total;
-    }
-
     public function getFilteredData(Request $request)
     {
         $filter = $request->get('filter', 'this_year');
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
         switch ($filter) {
             case 'this_month':
@@ -190,7 +178,7 @@ class HomeController extends Controller
                 break;
         }
 
-        $chartData = $this->chartSaleReceipt($companyGuids, $startDate, $endDate);
+        $chartData = $this->chartSaleReceipt($companyIds, $startDate, $endDate);
 
         return response()->json([
             'chartData' => $chartData,
@@ -199,50 +187,60 @@ class HomeController extends Controller
         ]);
     }
 
-    private function chartSaleReceipt($companyGuids, $startDate, $endDate)
+    private function chartSaleReceipt($companyIds, $startDate, $endDate)
     {
         $salesData = [];
         $receiptData = [];
-
+    
         $period = \Carbon\CarbonPeriod::create($startDate, '1 month', $endDate);
-
+    
         foreach ($period as $date) {
             $monthName = $date->format('F');
             $month = $date->month;
-
-            \Log::info("Querying data for month: $monthName, Company GUIDs: " . json_encode($companyGuids));
-
+    
+            \Log::info("Querying data for month: $monthName, Company IDs: " . json_encode($companyIds));
+    
+            // Total Sales
             $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
-                    $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
-                         ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
-                })
-                ->where('tally_vouchers.voucher_type', 'Sales')
-                ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                ->whereMonth('tally_vouchers.voucher_date', $month)
-                ->whereYear('tally_vouchers.voucher_date', $date->year)
-                ->sum('tally_voucher_heads.amount');
-
+                                $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id');
+                            })
+                            ->join('tally_voucher_types', function($join) {
+                                $join->on('tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                                     ->on('tally_vouchers.company_id', '=', 'tally_voucher_types.company_id');
+                            })
+                            ->where('tally_voucher_types.voucher_type_name', 'Sales')
+                            ->whereIn('tally_vouchers.company_id', $companyIds)
+                            ->whereMonth('tally_vouchers.voucher_date', $month)
+                            ->whereYear('tally_vouchers.voucher_date', $date->year)
+                            ->sum('tally_voucher_heads.amount');
+    
             \Log::info("Total Sales for $monthName: $totalSales");
-
+    
+            // Total Receipts
             $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
-                    $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
-                         ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
-                })
-                ->where('tally_vouchers.voucher_type', 'Receipt')
-                ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                ->whereMonth('tally_vouchers.voucher_date', $month)
-                ->whereYear('tally_vouchers.voucher_date', $date->year) // Ensure the year matches
-                ->sum('tally_voucher_heads.amount');
-
+                                $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id');
+                            })
+                            ->join('tally_voucher_types', function($join) {
+                                $join->on('tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                                     ->on('tally_vouchers.company_id', '=', 'tally_voucher_types.company_id');
+                            })
+                            ->where('tally_voucher_types.voucher_type_name', 'Receipt')
+                            ->whereIn('tally_vouchers.company_id', $companyIds)
+                            ->whereMonth('tally_vouchers.voucher_date', $month)
+                            ->whereYear('tally_vouchers.voucher_date', $date->year)
+                            ->sum('tally_voucher_heads.amount');
+    
             \Log::info("Total Receipts for $monthName: $totalReceipts");
-
+    
+            // Store data in arrays
             $salesData[$monthName] = $totalSales;
             $receiptData[$monthName] = $totalReceipts;
         }
-
+    
         return [
             'sales' => $salesData,
             'receipts' => $receiptData,
         ];
     }
+    
 }

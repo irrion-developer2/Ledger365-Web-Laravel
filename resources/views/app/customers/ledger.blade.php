@@ -119,10 +119,10 @@
                 }
             },
             columns: [
-                {data: 'name', name: 'name',
+                {data: 'ledger_name', name: 'ledger_name',
                     render: function(data, type, row) {
                         var url = '{{ route("customers.show", ":guid") }}';
-                        url = url.replace(':guid', row.guid);
+                        url = url.replace(':guid', row.ledger_guid);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },

@@ -95,24 +95,33 @@ class ReportController extends Controller
 
     public function AllVoucherItemReports($voucherItemId)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
-        $voucherItem = TallyVoucher::whereIn('company_guid', $companyGuids)
+        $voucherItem = TallyVoucher::whereIn('company_id', $companyIds)
                                 ->findOrFail($voucherItemId);
 
-        $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)
-                                        ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                                        ->whereNot('tally_vouchers.is_optional', 'Yes')
-                                        ->whereIn('company_guid', $companyGuids)
-                                        ->get();
+
+        $voucherItemName = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                        ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id') // Corrected join to tally_ledgers
+                        ->where('tally_vouchers.is_cancelled', '!=', 'Yes')
+                        ->where('tally_vouchers.is_optional', '!=', 'Yes')
+                        ->whereIn('tally_vouchers.company_id', $companyIds)
+                        ->get();
+            
+                            // dd($voucherItemName);
+        // $voucherItemName = TallyVoucher::where('party_ledger_name', $voucherItem->party_ledger_name)
+        //                                 ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+        //                                 ->whereNot('tally_vouchers.is_optional', 'Yes')
+        //                                 ->whereIn('company_id', $companyIds)
+        //                                 ->get();
 
         $saleReceiptItem = $voucherItemName->filter(function ($item) use ($voucherItem) {
             return $item->voucher_type !== $voucherItem->voucher_type;
         })->first();
 
         if ($saleReceiptItem) {
-            $voucherHeadsSaleReceipt = TallyVoucherHead::where('tally_voucher_id', $saleReceiptItem->id)
-                ->where('ledger_name', $saleReceiptItem->party_ledger_name)
+            $voucherHeadsSaleReceipt = TallyVoucherHead::where('voucher_id', $saleReceiptItem->voucher_id)
+                ->where('ledger_name', $saleReceiptItem->ledger_name)
                 ->get();
         } else {
             $voucherHeadsSaleReceipt = collect();
@@ -132,7 +141,7 @@ class ReportController extends Controller
             $bankAcc = collect();
         }
 
-        $ledgerData = TallyLedger::where('name', $voucherItem->party_ledger_name)->whereIn('company_guid', $companyGuids)->get();
+        $ledgerData = TallyLedger::where('ledger_name', $voucherItem->ledger_name)->whereIn('company_id', $companyIds)->get();
         if ($ledgerData instanceof \Illuminate\Support\Collection) {
             $ledgerItem = $ledgerData->first();
         } else {
@@ -145,12 +154,12 @@ class ReportController extends Controller
         $dueDate = $voucherDate->copy()->addDays($creditPeriod);
         // dd($dueDate);
 
-        $voucherHeadsName = TallyVoucherHead::where('tally_voucher_id', $voucherItemId)->get();
+        $voucherHeadsName = TallyVoucherHead::where('voucher_id', $voucherItemId)->get();
             $successfulAllocations = [];
             foreach ($voucherHeadsName as $voucherHead) {
-                $id = $voucherHead->id;
+                $id = $voucherHead->voucher_head_id;
 
-                $bankAllocations = TallyBankAllocation::where('head_id', $id)->get();
+                $bankAllocations = TallyBankAllocation::where('voucher_head_id', $id)->get();
                 if ($bankAllocations->isNotEmpty()) {
                     $successfulAllocations[] = [
                         'voucher_head' => $voucherHead,
@@ -173,7 +182,7 @@ class ReportController extends Controller
         $totalCountLinkHeads = $voucherHeadsSaleReceipt->count();
         $subtotalsamount = $voucherItems->sum('amount');
 
-        $menuItems = TallyVoucher::whereIn('company_guid', $companyGuids)
+        $menuItems = TallyVoucher::whereIn('company_id', $companyIds)
                     ->whereNot('tally_vouchers.is_cancelled', 'Yes')
                     ->whereNot('tally_vouchers.is_optional', 'Yes')
                     ->get();

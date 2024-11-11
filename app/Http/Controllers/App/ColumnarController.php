@@ -35,13 +35,19 @@ class ColumnarController extends Controller
 
     public function getData(Request $request)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
         if ($request->ajax()) {
-            $columnars = TallyVoucher::where('voucher_type', 'Sales')
-                ->whereNot('is_cancelled', 'Yes')
-                ->whereNot('is_optional', 'Yes')
-                ->whereIn('company_guid', $companyGuids);
+            
+            $columnars = TallyVoucher::join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                ->where('tally_voucher_types.voucher_type_name', 'Sales')
+                ->where('tally_vouchers.is_cancelled', 0)
+                ->where('tally_vouchers.is_optional', 0)
+                ->whereIn('tally_vouchers.company_id', $companyIds)
+                ->select('tally_vouchers.*')
+                ->get();
+
+            // dd($columnars);
 
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
@@ -81,235 +87,228 @@ class ColumnarController extends Controller
                 $columnars->whereBetween('voucher_date', [$startDate, $endDate]);
             }
 
-            if ($request->has('voucher_type')) {
-                $voucherType = $request->input('voucher_type');
-                if ($voucherType) {
-                    $columnars->where('voucher_type', $voucherType);
-                }
-            }
-
             return DataTables::of($columnars)
                 ->addIndexColumn()
-                ->addColumn('state', function ($data) use ($companyGuids){
-                    $ledger = TallyLedger::where('guid', $data->ledger_guid)
-                        ->whereIn('company_guid', $companyGuids)
+                ->addColumn('state', function ($data) use ($companyIds){
+                    $ledger = TallyLedger::where('ledger_id', $data->ledger_id)
+                        ->whereIn('company_id', $companyIds)
                         ->first();
 
                     return $ledger ? $ledger->state : '-';
                 })
-                ->addColumn('country', function ($data) use ($companyGuids){
-                    $ledger = TallyLedger::where('guid', $data->ledger_guid)
-                        ->whereIn('company_guid', $companyGuids)
+                ->addColumn('country', function ($data) use ($companyIds){
+                    $ledger = TallyLedger::where('ledger_id', $data->ledger_id)
+                        ->whereIn('company_id', $companyIds)
                         ->first();
 
                     return $ledger ? $ledger->country : '-';
                 })
-                ->addColumn('qty', function ($data) use ($companyGuids){
-                    $qtyItems = TallyVoucherItem::where('tally_voucher_id', $data->id)->get();
-                    $totalQty = $qtyItems->sum('billed_qty');
+                // ->addColumn('qty', function ($data) use ($companyIds){
+                //     $qtyItems = TallyVoucherItem::where('tally_voucher_id', $data->id)->get();
+                //     $totalQty = $qtyItems->sum('billed_qty');
 
-                    return $totalQty > 0 ? number_format($totalQty, 3) : '0.00';
-                })
-                ->addColumn('taxable_value', function ($data) use ($companyGuids){
-                    $excludedLedgerNames = is_array($data->party_ledger_name)
-                        ? $data->party_ledger_name
-                        : explode(',', $data->party_ledger_name);
-                    $excludedLedgerNames = array_filter(array_map('trim', $excludedLedgerNames));
-
-
-                    $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
-                        $query->whereIn('parent', ['Sales Accounts']);
-                        // $query->whereNotIn('ledger_name', $excludedLedgerNames);
-                    })
-                    ->get();
-                    $totalHeadAmount = $amtHead->sum('amount');
-                    $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
-                        $query->whereIn('parent', ['Sales Accounts']);
-                    })
-                    ->get();
-                    $totalAccHeadAmount = $amtAccHead->sum('amount');
-
-                    $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
-
-                    return number_format($totalAmount, 3);
-                })
-                ->addColumn('gross_total', function ($data) use ($companyGuids){
-                    $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                    ->where('entry_type', 'debit')
-                    ->where('ledger_name', $data->party_ledger_name)
-                    ->get();
-                    $totalHeadAmount = $amtHead->sum('amount');
-
-                    $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                    ->where('entry_type', 'debit')
-                    ->where('ledger_name', $data->party_ledger_name)
-                    ->get();
-                    $totalAccHeadAmount = $amtAccHead->sum('amount');
-
-                    $totalAmount = $totalHeadAmount - $totalAccHeadAmount;
-
-                    return number_format(abs($totalAmount), 3);
-                })
-                ->addColumn('rate_unit', function ($data) use ($companyGuids){
-                    $rateItems = TallyVoucherItem::where('tally_voucher_id', $data->id)->get();
-                    $totalRate = $rateItems->sum('rate');
-
-                    return $totalRate > 0 ? number_format($totalRate, 3) : '0.00';
-                })
-                ->addColumn('duties_taxes', function ($data) {
-                    $ledgerHeads = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                        ->whereHas('ledger', function ($query) {
-                            $query->where('parent', 'Indirect Expenses');
-                        })
-                        ->get();
-                    $ledgerAccAllHeads = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                        ->get();
-                    $ledgerData = [];
-
-                    foreach ($ledgerHeads as $ledgerHead) {
-                        $ledgerData[] = $ledgerHead->ledger_name;
-                    }
-
-                    foreach ($ledgerAccAllHeads as $ledgerAccHead) {
-                        $ledgerData[] = $ledgerAccHead->ledger_name;
-                    }
-                    $ledgerData = array_unique($ledgerData);
-
-                    return !empty($ledgerData) ? implode(', ', $ledgerData) : 'N/A';
-                    return 'N/A';
-                })
-                ->addColumn('duties_taxes_amount', function ($data) {
-                    $excludedLedgerNames = is_array($data->party_ledger_name)
-                        ? $data->party_ledger_name
-                        : explode(',', $data->party_ledger_name);
-                    $excludedLedgerNames = array_filter(array_map('trim', $excludedLedgerNames));
-
-                    $ledgerHeads = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                        ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
-                            $query->whereNotIn('ledger_name', $excludedLedgerNames);
-                        })
-                        ->get();
-
-                    $ledgerAccAllHeads = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                        ->get();
-
-                    $ledgerData = [];
-                    $ledgerSums = [];
-
-                    foreach ($ledgerHeads as $ledgerHead) {
-                        $name = $ledgerHead->ledger_name;
-                        $amount = $ledgerHead->amount;
-
-                        if (!isset($ledgerSums[$name])) {
-                            $ledgerSums[$name] = 0;
-                        }
-                        $ledgerSums[$name] += $amount;
-                    }
-
-                    foreach ($ledgerAccAllHeads as $ledgerAccHead) {
-                        $name = $ledgerAccHead->ledger_name;
-                        $amount = $ledgerAccHead->amount;
-
-                        if (!isset($ledgerSums[$name])) {
-                            $ledgerSums[$name] = 0;
-                        }
-                        $ledgerSums[$name] += $amount;
-                    }
-
-                    $output = [];
-                    foreach ($ledgerSums as $name => $sum) {
-                        $output[] = $name . ': ' . number_format($sum, 3);
-                    }
-
-                    return !empty($output) ? implode(', ', $output) : 'N/A';
-                })
-                ->addColumn('igst', function ($data) use ($companyGuids){
-                    $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) {
-                        $query->whereIn('gst_duty_head', ['IGST']);
-                    })
-                    ->get();
-                    $totalHeadAmount = $amtHead->sum('amount');
-
-                    $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) {
-                        $query->whereIn('gst_duty_head', ['IGST']);
-                    })
-                    ->get();
-                    $totalAccHeadAmount = $amtAccHead->sum('amount');
-
-                    $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
-
-                    return number_format(abs($totalAmount), 3);
-                })
-                ->addColumn('sgst', function ($data) use ($companyGuids){
-                    $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) {
-                        $query->whereIn('gst_duty_head', ['SGST/UTGST']);
-                    })
-                    ->get();
-                    $totalHeadAmount = $amtHead->sum('amount');
-
-                    $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) {
-                        $query->whereIn('gst_duty_head', ['SGST/UTGST']);
-                    })
-                    ->get();
-                    $totalAccHeadAmount = $amtAccHead->sum('amount');
-
-                    $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
-
-                    return number_format(abs($totalAmount), 3);
-                })
-                ->addColumn('cgst', function ($data) use ($companyGuids){
-                    $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) {
-                        $query->whereIn('gst_duty_head', ['CGST']);
-                    })
-                    ->get();
-                    $totalHeadAmount = $amtHead->sum('amount');
-
-                    $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) {
-                        $query->whereIn('gst_duty_head', ['CGST']);
-                    })
-                    ->get();
-                    $totalAccHeadAmount = $amtAccHead->sum('amount');
-
-                    $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
-
-                    return number_format(abs($totalAmount), 3);
-                })
-                ->addColumn('round_off', function ($data) use ($companyGuids){
-                    $excludedLedgerNames = is_array($data->party_ledger_name)
-                        ? $data->party_ledger_name
-                        : explode(',', $data->party_ledger_name);
-                    $excludedLedgerNames = array_filter(array_map('trim', $excludedLedgerNames));
+                //     return $totalQty > 0 ? number_format($totalQty, 3) : '0.00';
+                // })
+                // ->addColumn('taxable_value', function ($data) use ($companyIds){
+                //     $excludedLedgerNames = is_array($data->party_ledger_name)
+                //         ? $data->party_ledger_name
+                //         : explode(',', $data->party_ledger_name);
+                //     $excludedLedgerNames = array_filter(array_map('trim', $excludedLedgerNames));
 
 
-                    $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
-                        $query->whereIn('parent', ['Indirect Expenses']);
-                        $query->whereNotIn('ledger_name', $excludedLedgerNames);
-                    })
-                    ->get();
-                    $totalHeadAmount = $amtHead->sum('amount');
+                //     $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
+                //         $query->whereIn('parent', ['Sales Accounts']);
+                //         // $query->whereNotIn('ledger_name', $excludedLedgerNames);
+                //     })
+                //     ->get();
+                //     $totalHeadAmount = $amtHead->sum('amount');
+                //     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
+                //         $query->whereIn('parent', ['Sales Accounts']);
+                //     })
+                //     ->get();
+                //     $totalAccHeadAmount = $amtAccHead->sum('amount');
 
-                    // dd($amtHead);
-                    $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
-                    ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
-                        $query->whereIn('parent', ['Indirect Expenses'])
-                        ->whereNotIn('ledger_name', $excludedLedgerNames);
-                    })
-                    ->get();
-                    $totalAccHeadAmount = $amtAccHead->sum('amount');
+                //     $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
 
-                    $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
+                //     return number_format($totalAmount, 3);
+                // })
+                // ->addColumn('gross_total', function ($data) use ($companyIds){
+                //     $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //     ->where('entry_type', 'debit')
+                //     ->where('ledger_name', $data->party_ledger_name)
+                //     ->get();
+                //     $totalHeadAmount = $amtHead->sum('amount');
 
-                    return number_format($totalAmount, 3);
-                })
+                //     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //     ->where('entry_type', 'debit')
+                //     ->where('ledger_name', $data->party_ledger_name)
+                //     ->get();
+                //     $totalAccHeadAmount = $amtAccHead->sum('amount');
+
+                //     $totalAmount = $totalHeadAmount - $totalAccHeadAmount;
+
+                //     return number_format(abs($totalAmount), 3);
+                // })
+                // ->addColumn('rate_unit', function ($data) use ($companyIds){
+                //     $rateItems = TallyVoucherItem::where('tally_voucher_id', $data->id)->get();
+                //     $totalRate = $rateItems->sum('rate');
+
+                //     return $totalRate > 0 ? number_format($totalRate, 3) : '0.00';
+                // })
+                // ->addColumn('duties_taxes', function ($data) {
+                //     $ledgerHeads = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //         ->whereHas('ledger', function ($query) {
+                //             $query->where('parent', 'Indirect Expenses');
+                //         })
+                //         ->get();
+                //     $ledgerAccAllHeads = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //         ->get();
+                //     $ledgerData = [];
+
+                //     foreach ($ledgerHeads as $ledgerHead) {
+                //         $ledgerData[] = $ledgerHead->ledger_name;
+                //     }
+
+                //     foreach ($ledgerAccAllHeads as $ledgerAccHead) {
+                //         $ledgerData[] = $ledgerAccHead->ledger_name;
+                //     }
+                //     $ledgerData = array_unique($ledgerData);
+
+                //     return !empty($ledgerData) ? implode(', ', $ledgerData) : 'N/A';
+                //     return 'N/A';
+                // })
+                // ->addColumn('duties_taxes_amount', function ($data) {
+                //     $excludedLedgerNames = is_array($data->party_ledger_name)
+                //         ? $data->party_ledger_name
+                //         : explode(',', $data->party_ledger_name);
+                //     $excludedLedgerNames = array_filter(array_map('trim', $excludedLedgerNames));
+
+                //     $ledgerHeads = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //         ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
+                //             $query->whereNotIn('ledger_name', $excludedLedgerNames);
+                //         })
+                //         ->get();
+
+                //     $ledgerAccAllHeads = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //         ->get();
+
+                //     $ledgerData = [];
+                //     $ledgerSums = [];
+
+                //     foreach ($ledgerHeads as $ledgerHead) {
+                //         $name = $ledgerHead->ledger_name;
+                //         $amount = $ledgerHead->amount;
+
+                //         if (!isset($ledgerSums[$name])) {
+                //             $ledgerSums[$name] = 0;
+                //         }
+                //         $ledgerSums[$name] += $amount;
+                //     }
+
+                //     foreach ($ledgerAccAllHeads as $ledgerAccHead) {
+                //         $name = $ledgerAccHead->ledger_name;
+                //         $amount = $ledgerAccHead->amount;
+
+                //         if (!isset($ledgerSums[$name])) {
+                //             $ledgerSums[$name] = 0;
+                //         }
+                //         $ledgerSums[$name] += $amount;
+                //     }
+
+                //     $output = [];
+                //     foreach ($ledgerSums as $name => $sum) {
+                //         $output[] = $name . ': ' . number_format($sum, 3);
+                //     }
+
+                //     return !empty($output) ? implode(', ', $output) : 'N/A';
+                // })
+                // ->addColumn('igst', function ($data) use ($companyIds){
+                //     $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) {
+                //         $query->whereIn('gst_duty_head', ['IGST']);
+                //     })
+                //     ->get();
+                //     $totalHeadAmount = $amtHead->sum('amount');
+
+                //     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) {
+                //         $query->whereIn('gst_duty_head', ['IGST']);
+                //     })
+                //     ->get();
+                //     $totalAccHeadAmount = $amtAccHead->sum('amount');
+
+                //     $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
+
+                //     return number_format(abs($totalAmount), 3);
+                // })
+                // ->addColumn('sgst', function ($data) use ($companyIds){
+                //     $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) {
+                //         $query->whereIn('gst_duty_head', ['SGST/UTGST']);
+                //     })
+                //     ->get();
+                //     $totalHeadAmount = $amtHead->sum('amount');
+
+                //     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) {
+                //         $query->whereIn('gst_duty_head', ['SGST/UTGST']);
+                //     })
+                //     ->get();
+                //     $totalAccHeadAmount = $amtAccHead->sum('amount');
+
+                //     $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
+
+                //     return number_format(abs($totalAmount), 3);
+                // })
+                // ->addColumn('cgst', function ($data) use ($companyIds){
+                //     $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) {
+                //         $query->whereIn('gst_duty_head', ['CGST']);
+                //     })
+                //     ->get();
+                //     $totalHeadAmount = $amtHead->sum('amount');
+
+                //     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) {
+                //         $query->whereIn('gst_duty_head', ['CGST']);
+                //     })
+                //     ->get();
+                //     $totalAccHeadAmount = $amtAccHead->sum('amount');
+
+                //     $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
+
+                //     return number_format(abs($totalAmount), 3);
+                // })
+                // ->addColumn('round_off', function ($data) use ($companyIds){
+                //     $excludedLedgerNames = is_array($data->party_ledger_name)
+                //         ? $data->party_ledger_name
+                //         : explode(',', $data->party_ledger_name);
+                //     $excludedLedgerNames = array_filter(array_map('trim', $excludedLedgerNames));
+
+
+                //     $amtHead = TallyVoucherHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
+                //         $query->whereIn('parent', ['Indirect Expenses']);
+                //         $query->whereNotIn('ledger_name', $excludedLedgerNames);
+                //     })
+                //     ->get();
+                //     $totalHeadAmount = $amtHead->sum('amount');
+
+                //     // dd($amtHead);
+                //     $amtAccHead = TallyVoucherAccAllocationHead::where('tally_voucher_id', $data->id)
+                //     ->whereHas('ledger', function ($query) use ($excludedLedgerNames) {
+                //         $query->whereIn('parent', ['Indirect Expenses'])
+                //         ->whereNotIn('ledger_name', $excludedLedgerNames);
+                //     })
+                //     ->get();
+                //     $totalAccHeadAmount = $amtAccHead->sum('amount');
+
+                //     $totalAmount = $totalHeadAmount + $totalAccHeadAmount;
+
+                //     return number_format($totalAmount, 3);
+                // })
                 ->make(true);
         }
     }

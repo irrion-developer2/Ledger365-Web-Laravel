@@ -320,7 +320,6 @@
         .then(sessionData => {
             if (sessionData.success) {
                 console.log('Session updated with company:', sessionData.company);
-                // Reload page to ensure all session-dependent data is refreshed
                 window.location.reload();
             } else {
                 console.warn('Failed to update session.');

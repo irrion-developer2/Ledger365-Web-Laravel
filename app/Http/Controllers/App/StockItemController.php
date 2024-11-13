@@ -54,6 +54,35 @@ class StockItemController extends Controller
 
             $dataTable = DataTables::of($stockItems)
                 ->addIndexColumn()
+                ->addColumn('stockonhand_opening_balance', function ($entry) {
+                                    $openingBalance = $entry->opening_balance;
+                
+                                    $stockItemVoucherSaleBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                                    ->whereHas('tallyVoucher', function ($query) {
+                                        $query->where('voucher_type', 'Sales');
+                                    })->sum('billed_qty');
+                        
+                                    $stockItemVoucherPurchaseBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                                        ->whereHas('tallyVoucher', function ($query) {
+                                            $query->where('voucher_type', 'Purchase');
+                                        })->sum('billed_qty');
+                                    $stockItemVoucherCreditNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                                        ->whereHas('tallyVoucher', function ($query) {
+                                            $query->where('voucher_type', 'Credit Note');
+                                        })->sum('billed_qty');
+                            
+                                    $stockItemVoucherDebitNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
+                                        ->whereHas('tallyVoucher', function ($query) {
+                                            $query->where('voucher_type', 'Debit Note');
+                                        })->sum('billed_qty');
+                
+                                    $stockItemVoucherBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
+                
+                
+                                    $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
+                
+                                    return $stockOnHandBalance;
+                                })
                 ->make(true);
 
                 $endTime = microtime(true);

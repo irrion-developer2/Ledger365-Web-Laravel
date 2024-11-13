@@ -64,11 +64,11 @@
                     <div class="email-navigation" style="height: 530px;">
                         <div class="list-group list-group-flush">
                             @foreach($menuItems as $item)
-                                <a href="{{ route('reports.VoucherItem', ['VoucherItem' => $item->id]) }}" class="list-group-item d-flex align-items-center {{ request()->route('VoucherItem') == $item->id ? 'active' : '' }}" style="border-top: none;">
+                                <a href="{{ route('reports.VoucherItem', ['VoucherItem' => $item->voucher_id]) }}" class="list-group-item d-flex align-items-center {{ request()->route('VoucherItem') == $item->voucher_id ? 'active' : '' }}" style="border-top: none;">
                                     <i class='bx {{ $item->icon ?? 'bx-default-icon' }} me-3 font-20'></i>
                                     <div class="voucher-details">
                                         <div class="voucher-number">{{ $item->voucher_number }}</div>
-                                        <div class="voucher-type font-10">{{ $item->voucher_type }} | {{ \Carbon\Carbon::parse($item->voucher_date)->format('j F Y') }}</div>
+                                        <div class="voucher-type font-10">{{ $item->voucher_type_name }} | {{ \Carbon\Carbon::parse($item->voucher_date)->format('j F Y') }}</div>
                                     </div>
                                     @if(isset($item->badge))
                                         <span class="badge bg-primary rounded-pill ms-auto">{{ $item->badge }}</span>
@@ -88,7 +88,9 @@
                 
 
                 <div class="d-flex align-items-center">
-                    <h4 class="my-1 text-info">{{ $voucherItem->party_ledger_name }} | {{ $voucherItem->voucher_type }}</h4>
+                    <h4 class="my-1 text-info">
+                        {{ $voucherItemName->first()->ledger_name ?? 'N/A' }} | {{ $voucherItem->voucher_type_name }}
+                    </h4>
                 </div>
 
                 <div class="ms-auto d-flex align-items-center">
@@ -97,7 +99,7 @@
                             <li class="nav-item" role="presentation">
                                 <a class="nav-link active" data-bs-toggle="tab" href="#voucherType" role="tab" aria-selected="true">
                                     <div class="d-flex align-items-center">
-                                        <div class="tab-title">{{ $voucherItem->voucher_type }}</div>
+                                        <div class="tab-title">{{ $voucherItem->voucher_type_name }}</div>
                                     </div>
                                 </a>
                             </li>
@@ -129,7 +131,7 @@
                                 <div class="card radius-10 border-start border-0 border-4 border-info">
                                     <div class="card-body p-1">
 
-                                        @if($voucherItem->voucher_type == 'Receipt')
+                                        @if($voucherItem->voucher_type_name == 'Receipt')
                                             <div class="row p-2">
                                                 <div class="col-lg-10" style="padding: 12px;background: #eee;border-bottom-left-radius: 15px;border-top-left-radius: 15px;">
                                                     <div class="row">
@@ -140,14 +142,8 @@
                                                         <div class="col-lg-2">
                                                             <p class="mb-0 font-13">Amount</p>
                                                             <h6>
-                                                                @php
-                                                                    $filteredVoucherHeads = $voucherHeads->filter(function ($voucherHead) use ($voucherItem) {
-                                                                        return $voucherHead->ledger_name === $voucherItem->party_ledger_name;
-                                                                    });
-                                                                @endphp
-
-                                                                @foreach($filteredVoucherHeads as $gstVoucherHead)
-                                                                    {{ number_format(abs($gstVoucherHead->amount), 2) }}
+                                                                @foreach($gstVoucherHeads as $gstVoucherHead)
+                                                                    ₹{{ indian_format(abs($gstVoucherHead->amount)) }}
                                                                 @endforeach
                                                             </h6>
                                                         </div>
@@ -187,13 +183,7 @@
                                                         <div class="col-lg-3">
                                                             <p class="mb-0 font-13">Amount</p>
                                                             <h6>
-                                                                @php
-                                                                    $filteredVoucherHeads = $voucherHeads->filter(function ($voucherHead) use ($voucherItem) {
-                                                                        return $voucherHead->ledger_name === $voucherItem->party_ledger_name;
-                                                                    });
-                                                                @endphp
-
-                                                                @foreach($filteredVoucherHeads as $gstVoucherHead)
+                                                                @foreach($gstVoucherHeads as $gstVoucherHead)
                                                                     ₹{{ number_format(abs($gstVoucherHead->amount), 2) }}
                                                                 @endforeach
                                                             </h6>
@@ -226,8 +216,6 @@
                         <div class="col-lg-12 px-2">
                             <div class="col">
                                 <!--end breadcrumb-->
-
-                               {{-- @dd($saleReceiptItem); --}}
                             
 			
                                 <input type="hidden" id="totalCreditAmount" value="{{ $pendingVoucherHeads->where('entry_type', 'credit')->sum('amount') }}">
@@ -237,7 +225,7 @@
 
                                 <div class="tab-content py-3">
                                     <div class="tab-pane fade show active" id="voucherType" role="tabpanel">
-                                        @if(!in_array($voucherItem->voucher_type, ['Sales', 'Purchase', 'Credit Note', 'Debit Note']))
+                                        @if(!in_array($voucherItem->voucher_type_name, ['Sales', 'Purchase', 'Credit Note', 'Debit Note']))
                                             @include('app.reports.partials._invoiceT')
                                         @else
                                             @include('app.reports.partials._invoice')
@@ -283,7 +271,10 @@
         document.getElementById('totalPendingAmount').innerText = formattedPendingAmount;
 
         // Get the given amount from Blade template
-        const givenAmount = parseFloat(`{{ number_format(abs($gstVoucherHead->amount), 2) }}`.replace(/,/g, ''));
+        @php
+            $specificAmount = $voucherHeads->sum('amount');
+        @endphp
+        const givenAmount = parseFloat(`{{ number_format(abs($specificAmount), 2) }}`.replace(/,/g, ''));
         
         console.log('Given Amount:', givenAmount);
         console.log('Total Pending Amount:', totalPendingAmount);

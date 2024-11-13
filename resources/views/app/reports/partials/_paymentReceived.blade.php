@@ -35,10 +35,10 @@
                 { data: 'voucher_date', name: 'voucher_date' },
                 { data: 'voucher_number', name: 'voucher_number' ,
                     render: function(data, type, row) {
-                        return '<a href="{{ url('reports/VoucherItem') }}/' + row.id + '">' + data + '</a>';
+                        return '<a href="{{ url('reports/VoucherItem') }}/' + row.voucher_id + '">' + data + '</a>';
                     } 
                 },
-                { data: 'voucher_type', name: 'voucher_type' },
+                { data: 'voucher_type_name', name: 'voucher_type_name' },
                 {
                     data: 'amount', name: 'amount', className: 'text-end',
                     render: function(data, type, row) {

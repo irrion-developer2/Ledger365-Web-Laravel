@@ -872,6 +872,7 @@ class LedgerController extends Controller
         }
     }
 
+    
     public function voucherJsonImport(Request $request)
     {
         try {
@@ -917,7 +918,7 @@ class LedgerController extends Controller
                     $company = TallyCompany::where('company_guid', $companyGuid)->first();
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue;
+                        continue; 
                     }
                     $companyId = $company->company_id;
 
@@ -942,6 +943,7 @@ class LedgerController extends Controller
                         }
                     }
                     $deliveryNotesStr = implode(', ', $deliveryNotes);
+
 
 
                     $ledgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['LEDGERENTRIES.LIST'] ?? []));
@@ -983,52 +985,59 @@ class LedgerController extends Controller
 
                     $voucherType = $voucherData['VOUCHERTYPENAME'] ?? null;
                     $voucherTypeId = TallyVoucherType::where('voucher_type_name', $voucherType)
-                        ->where('company_Id', $companyId)
-                        ->value('voucher_type_id');
+                                ->where('company_Id', $companyId)
+                                ->value('voucher_type_id');
 
-                    $tallyVoucher = TallyVoucher::updateOrCreate([
-                        'voucher_guid' => $voucherData['GUID'],
-                        'company_id' => $companyId,
-                        'voucher_type_id' => $voucherTypeId,
-                        // 'voucher_type' => $voucherData['VOUCHERTYPENAME'] ?? null,
-                        'is_cancelled' => isset($voucherData['ISCANCELLED']) && $voucherData['ISCANCELLED'] === 'Yes',
-                        'is_optional' => isset($voucherData['ISOPTIONAL']) && $voucherData['ISOPTIONAL'] === 'Yes',
-                        'alter_id' => $voucherData['ALTERID'] ?? null,
-                        'voucher_number' => $voucherData['VOUCHERNUMBER'] ?? null,
-                        'voucher_date' => $voucherData['DATE'] ?? null,
-                        'reference_date' => !empty($voucherData['REFERENCEDATE']) ? $voucherData['REFERENCEDATE'] : null,
-                        'reference_no' => $voucherData['REFERENCE'] ?? null,
-                        'place_of_supply' => $voucherData['PLACEOFSUPPLY'] ?? null,
-                        'country_of_residense' => $voucherData['COUNTRYOFRESIDENCE'] ?? null,
-                        'gst_registration_type' => $voucherData['GSTREGISTRATIONTYPE'] ?? null,
-                        'numbering_style' => $voucherData['NUMBERINGSTYLE'] ?? null,
-                        'narration' => $voucherData['NARRATION'] ?? null,
-                        'order_no' => $voucherData['INVOICEORDERLIST.LIST']['BASICPURCHASEORDERNO'] ?? null,
-                        'order_date' => $voucherData['INVOICEORDERLIST.LIST']['BASICORDERDATE'] ?? null,
-                        'ship_doc_no' => $voucherData['BASICSHIPDOCUMENTNO'] ?? null,
-                        'ship_by' => $voucherData['BASICSHIPPEDBY'] ?? null,
-                        'final_destination' => $voucherData['BASICFINALDESTINATION'] ?? null,
-                        'bill_lading_no' => $voucherData['BILLOFLADINGNO'] ?? null,
-                        'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
-                        'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
-                        'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null)
-                            ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'])
-                            : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
-                        'consignee_name' => $voucherData['BASICBUYERNAME'] ?? null,
-                        'consignee_state_name' => $voucherData['CONSIGNEESTATENAME'] ?? null,
-                        'consignee_gstin' => $voucherData['CONSIGNEEGSTIN'] ?? null,
-                        'consignee_addr' => $consigneeAddressList,
-                        'buyer_name' => $voucherData['BASICBUYERNAME'] ?? null,
-                        'buyer_addr' => $buyerAddressList,
-                        'delivery_notes' => $deliveryNotesStr,
-                        'delivery_dates' => json_encode($formattedShippingDates),
-                        'due_date_payment' => $voucherData['BASICDUEDATEOFPYMT'] ?? null,
-                        'buyer_gstin' => $voucherData['PARTYGSTIN'] ?? null,
-                        'order_ref' => $voucherData['BASICORDERREF'] ?? null,
-                        'cost_center_name' => $voucherData['COSTCENTRENAME'] ?? null,
-                        'cost_center_amount' => $voucherData['COSTCENTREAMOUNT'] ?? null,
-                        'json_path' => $jsonFilePath,
-                    ]);
+                    Log::info('jsonFilePath Data:', ['jsonFilePath' => $jsonFilePath]);
+
+                    $tallyVoucher = TallyVoucher::updateOrCreate(
+                        [
+                            'voucher_guid' => $voucherData['GUID'],
+                            'company_id' => $companyId              
+                        ],
+                        
+                        [
+                            'voucher_type_id' => $voucherTypeId,
+                            // 'voucher_type' => $voucherData['VOUCHERTYPENAME'] ?? null,
+                            'is_cancelled' => isset($voucherData['ISCANCELLED']) && $voucherData['ISCANCELLED'] === 'Yes',
+                            'is_optional' => isset($voucherData['ISOPTIONAL']) && $voucherData['ISOPTIONAL'] === 'Yes',
+                            'alter_id' => $voucherData['ALTERID'] ?? null,
+                            'voucher_number' => $voucherData['VOUCHERNUMBER'] ?? null,
+                            'voucher_date' => $voucherData['DATE'] ?? null,
+                            'reference_date' => !empty($voucherData['REFERENCEDATE']) ? $voucherData['REFERENCEDATE'] : null,
+                            'reference_no' => $voucherData['REFERENCE'] ?? null,
+                            'place_of_supply' => $voucherData['PLACEOFSUPPLY'] ?? null,
+                            'country_of_residense' => $voucherData['COUNTRYOFRESIDENCE'] ?? null,
+                            'gst_registration_type' => $voucherData['GSTREGISTRATIONTYPE'] ?? null,
+                            'numbering_style' => $voucherData['NUMBERINGSTYLE'] ?? null,
+                            'narration' => $voucherData['NARRATION'] ?? null,
+                            'order_no' => $voucherData['INVOICEORDERLIST.LIST']['BASICPURCHASEORDERNO'] ?? null,
+                            'order_date' => $voucherData['INVOICEORDERLIST.LIST']['BASICORDERDATE'] ?? null,
+                            'ship_doc_no' => $voucherData['BASICSHIPDOCUMENTNO'] ?? null,
+                            'ship_by' => $voucherData['BASICSHIPPEDBY'] ?? null,
+                            'final_destination' => $voucherData['BASICFINALDESTINATION'] ?? null,
+                            'bill_lading_no' => $voucherData['BILLOFLADINGNO'] ?? null,
+                            'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
+                            'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
+                            'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null) 
+                                        ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS']) 
+                                        : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
+                            'consignee_name' => $voucherData['BASICBUYERNAME'] ?? null,
+                            'consignee_state_name' => $voucherData['CONSIGNEESTATENAME'] ?? null,
+                            'consignee_gstin' => $voucherData['CONSIGNEEGSTIN'] ?? null,
+                            'consignee_addr' => $consigneeAddressList,
+                            'buyer_name' => $voucherData['BASICBUYERNAME'] ?? null,
+                            'buyer_addr' => $buyerAddressList,
+                            'delivery_notes' => $deliveryNotesStr,
+                            'delivery_dates' => json_encode($formattedShippingDates),
+                            'due_date_payment' => $voucherData['BASICDUEDATEOFPYMT'] ?? null,
+                            'buyer_gstin' => $voucherData['PARTYGSTIN'] ?? null,
+                            'order_ref' => $voucherData['BASICORDERREF'] ?? null,
+                            'cost_center_name' => $voucherData['COSTCENTRENAME'] ?? null,
+                            'cost_center_amount' => $voucherData['COSTCENTREAMOUNT'] ?? null,
+                            'json_path' => $jsonFilePath,
+                        ]
+                    );
 
                     if ($tallyVoucher) {
                         $voucherCount++;
@@ -1043,28 +1052,221 @@ class LedgerController extends Controller
                     $inventoryEntriesWithId = $this->processInventoryEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? [], $voucherHeadIds, $companyId);
 
                     $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations, $companyId);
-
+                    
                     if (!empty($inventoryEntriesWithId)) {
-                        $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId);
+                    $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId); 
                     } else {
                         Log::info('No inventory entries with ID found; skipping batch allocations.');
                     }
-
+                    
                     $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
                     $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
-
+                    
 
                 }
             }
 
-            return response()->json(['message' => 'Tally Voucher data saved successfully.',
-                'vouchers_processed' => $voucherCount,
-            ]);
+            return response()->json(['message' => 'Tally Voucher data saved successfully.', 
+                                        'vouchers_processed' => $voucherCount,
+                                    ]);
         } catch (\Exception $e) {
             Log::error('Error saving Tally voucher data:', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'Failed to save Tally data', 'message' => $e->getMessage()], 500);
         }
     }
+    // public function voucherJsonImport(Request $request)
+    // {
+    //     try {
+
+    //         $this->validateLicenseNumber($request);
+
+    //         $jsonData = null;
+    //         $fileName = 'tally_voucher_data_' . date('YmdHis') . '.json';
+
+    //         if ($request->hasFile('uploadFile')) {
+    //             $uploadedFile = $request->file('uploadFile');
+    //             $jsonFilePath = storage_path('app/' . $fileName);
+
+    //             $uploadedFile->move(storage_path('app'), $fileName);
+    //             $jsonData = file_get_contents($jsonFilePath);
+
+    //         } else {
+    //             $jsonData = $request->getContent();
+    //             $jsonFilePath = storage_path('app/' . $fileName);
+    //             file_put_contents($jsonFilePath, $jsonData);
+    //         }
+
+    //         $data = json_decode($jsonData, true);
+
+    //         $result = $this->findTallyMessage($data);
+
+    //         if ($result === null) {
+    //             throw new \Exception('TALLYMESSAGE key not found in the JSON data.');
+    //         }
+
+    //         $messagesPath = $result['path'];
+    //         $messages = $result['value'];
+
+    //         $voucherCount = 0;
+
+    //         foreach ($messages as $message) {
+    //             if (isset($message['VOUCHER'])) {
+    //                 $voucherData = $message['VOUCHER'];
+    //                 // Log::info('VOUCHER Data:', ['voucherData' => $voucherData]);
+
+    //                 $guid = $voucherData['GUID'] ?? null;
+    //                 $companyGuid = substr($guid, 0, 36);
+    //                 $company = TallyCompany::where('company_guid', $companyGuid)->first();
+    //                 if (!$company) {
+    //                     Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
+    //                     continue;
+    //                 }
+    //                 $companyId = $company->company_id;
+
+    //                 $consigneeAddressList = $voucherData['BASICBUYERADDRESS.LIST']['BASICBUYERADDRESS'] ?? null;
+    //                 if (is_array($consigneeAddressList)) {
+    //                     $consigneeAddressList = implode(', ', $consigneeAddressList);
+    //                 }
+
+    //                 $buyerAddressList = $voucherData['ADDRESS.LIST']['ADDRESS'] ?? null;
+    //                 if (is_array($buyerAddressList)) {
+    //                     $buyerAddressList = implode(', ', $buyerAddressList);
+    //                 }
+
+    //                 $invoiceDelNotes = is_array($voucherData['INVOICEDELNOTES.LIST'] ?? null) ? $voucherData['INVOICEDELNOTES.LIST'] : [];
+    //                 $deliveryNotes = [];
+    //                 $formattedShippingDates = [];
+    //                 foreach ($invoiceDelNotes as $note) {
+    //                     if (isset($note['BASICSHIPDELIVERYNOTE']) && isset($note['BASICSHIPPINGDATE'])) {
+    //                         $formattedDate = $this->convertToDesiredDateFormat($note['BASICSHIPPINGDATE']);
+    //                         $formattedShippingDates[] = $formattedDate;
+    //                         $deliveryNotes[] = $note['BASICSHIPDELIVERYNOTE'];
+    //                     }
+    //                 }
+    //                 $deliveryNotesStr = implode(', ', $deliveryNotes);
+
+
+    //                 $ledgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['LEDGERENTRIES.LIST'] ?? []));
+    //                 $allLedgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['ALLLEDGERENTRIES.LIST'] ?? []));
+    //                 $combinedLedgerEntries = array_merge($ledgerEntries, $allLedgerEntries);
+
+
+    //                 $inventoryEntries = $this->normalizeEntries($this->ensureArray($voucherData['ALLINVENTORYENTRIES.LIST'] ?? []));
+    //                 $accountingAllocations = [];
+    //                 foreach ($inventoryEntries as $inventoryEntry) {
+    //                     if (isset($inventoryEntry['ACCOUNTINGALLOCATIONS.LIST'])) {
+    //                         $accountingAllocations = array_merge($accountingAllocations, $this->normalizeEntries($inventoryEntry['ACCOUNTINGALLOCATIONS.LIST']));
+    //                     }
+    //                 }
+    //                 $accountingAllocations = $this->processAccountingAllocations($accountingAllocations, $companyId);
+
+
+    //                 $batchAllocations = [];
+    //                 foreach ($inventoryEntries as $inventoryEntry) {
+    //                     if (isset($inventoryEntry['BATCHALLOCATIONS.LIST'])) {
+    //                         $batchAllocations[$inventoryEntry['STOCKITEMNAME']] = $this->normalizeEntries($inventoryEntry['BATCHALLOCATIONS.LIST']);
+    //                     }
+    //                 }
+
+
+    //                 $billAllocations = [];
+    //                 foreach ($combinedLedgerEntries as $ledgerEntry) {
+    //                     if (isset($ledgerEntry['BILLALLOCATIONS.LIST'])) {
+    //                         $billAllocations[$ledgerEntry['LEDGERNAME']] = $this->normalizeEntries($ledgerEntry['BILLALLOCATIONS.LIST']);
+    //                     }
+    //                 }
+
+    //                 $bankAllocations = [];
+    //                 foreach ($combinedLedgerEntries as $ledgerEntry) {
+    //                     if (isset($ledgerEntry['BANKALLOCATIONS.LIST'])) {
+    //                         $bankAllocations[$ledgerEntry['LEDGERNAME']] = $this->normalizeEntries($ledgerEntry['BANKALLOCATIONS.LIST']);
+    //                     }
+    //                 }
+
+    //                 $voucherType = $voucherData['VOUCHERTYPENAME'] ?? null;
+    //                 $voucherTypeId = TallyVoucherType::where('voucher_type_name', $voucherType)
+    //                     ->where('company_Id', $companyId)
+    //                     ->value('voucher_type_id');
+
+    //                 $tallyVoucher = TallyVoucher::updateOrCreate([
+    //                     'voucher_guid' => $voucherData['GUID'],
+    //                     'company_id' => $companyId,
+    //                     'voucher_type_id' => $voucherTypeId,
+    //                     // 'voucher_type' => $voucherData['VOUCHERTYPENAME'] ?? null,
+    //                     'is_cancelled' => isset($voucherData['ISCANCELLED']) && $voucherData['ISCANCELLED'] === 'Yes',
+    //                     'is_optional' => isset($voucherData['ISOPTIONAL']) && $voucherData['ISOPTIONAL'] === 'Yes',
+    //                     'alter_id' => $voucherData['ALTERID'] ?? null,
+    //                     'voucher_number' => $voucherData['VOUCHERNUMBER'] ?? null,
+    //                     'voucher_date' => $voucherData['DATE'] ?? null,
+    //                     'reference_date' => !empty($voucherData['REFERENCEDATE']) ? $voucherData['REFERENCEDATE'] : null,
+    //                     'reference_no' => $voucherData['REFERENCE'] ?? null,
+    //                     'place_of_supply' => $voucherData['PLACEOFSUPPLY'] ?? null,
+    //                     'country_of_residense' => $voucherData['COUNTRYOFRESIDENCE'] ?? null,
+    //                     'gst_registration_type' => $voucherData['GSTREGISTRATIONTYPE'] ?? null,
+    //                     'numbering_style' => $voucherData['NUMBERINGSTYLE'] ?? null,
+    //                     'narration' => $voucherData['NARRATION'] ?? null,
+    //                     'order_no' => $voucherData['INVOICEORDERLIST.LIST']['BASICPURCHASEORDERNO'] ?? null,
+    //                     'order_date' => $voucherData['INVOICEORDERLIST.LIST']['BASICORDERDATE'] ?? null,
+    //                     'ship_doc_no' => $voucherData['BASICSHIPDOCUMENTNO'] ?? null,
+    //                     'ship_by' => $voucherData['BASICSHIPPEDBY'] ?? null,
+    //                     'final_destination' => $voucherData['BASICFINALDESTINATION'] ?? null,
+    //                     'bill_lading_no' => $voucherData['BILLOFLADINGNO'] ?? null,
+    //                     'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
+    //                     'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
+    //                     'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null)
+    //                         ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'])
+    //                         : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
+    //                     'consignee_name' => $voucherData['BASICBUYERNAME'] ?? null,
+    //                     'consignee_state_name' => $voucherData['CONSIGNEESTATENAME'] ?? null,
+    //                     'consignee_gstin' => $voucherData['CONSIGNEEGSTIN'] ?? null,
+    //                     'consignee_addr' => $consigneeAddressList,
+    //                     'buyer_name' => $voucherData['BASICBUYERNAME'] ?? null,
+    //                     'buyer_addr' => $buyerAddressList,
+    //                     'delivery_notes' => $deliveryNotesStr,
+    //                     'delivery_dates' => json_encode($formattedShippingDates),
+    //                     'due_date_payment' => $voucherData['BASICDUEDATEOFPYMT'] ?? null,
+    //                     'buyer_gstin' => $voucherData['PARTYGSTIN'] ?? null,
+    //                     'order_ref' => $voucherData['BASICORDERREF'] ?? null,
+    //                     'cost_center_name' => $voucherData['COSTCENTRENAME'] ?? null,
+    //                     'cost_center_amount' => $voucherData['COSTCENTREAMOUNT'] ?? null,
+    //                     'json_path' => $jsonFilePath,
+    //                 ]);
+
+    //                 if ($tallyVoucher) {
+    //                     $voucherCount++;
+    //                 }
+
+    //                 if (!$tallyVoucher) {
+    //                     throw new \Exception('Failed to create or update tally Voucher record.');
+    //                 }
+
+    //                 $voucherHeadIds = $this->processLedgerEntries($voucherData, $tallyVoucher, $companyId);
+
+    //                 $inventoryEntriesWithId = $this->processInventoryEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? [], $voucherHeadIds, $companyId);
+
+    //                 $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations, $companyId);
+
+    //                 if (!empty($inventoryEntriesWithId)) {
+    //                     $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId);
+    //                 } else {
+    //                     Log::info('No inventory entries with ID found; skipping batch allocations.');
+    //                 }
+
+    //                 $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
+    //                 $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
+
+
+    //             }
+    //         }
+
+    //         return response()->json(['message' => 'Tally Voucher data saved successfully.',
+    //             'vouchers_processed' => $voucherCount,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Error saving Tally voucher data:', ['error' => $e->getMessage()]);
+    //         return response()->json(['status' => 'Failed to save Tally data', 'message' => $e->getMessage()], 500);
+    //     }
+    // }
 
     private function processLedgerEntries(array $voucherData, TallyVoucher $tallyVoucher, $companyId)
     {

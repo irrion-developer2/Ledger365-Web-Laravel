@@ -276,6 +276,7 @@ class CustomerController extends Controller
                         ->select([
                             'tally_vouchers.voucher_date',
                             'tally_vouchers.voucher_number',
+                            'tally_vouchers.voucher_id',
                             'tally_voucher_heads.entry_type',
                             'tally_voucher_heads.amount',
                             'tally_voucher_types.voucher_type_name',
@@ -289,8 +290,6 @@ class CustomerController extends Controller
                                     ) AS counterpart_ledger_name")
                         ])
                         ->get();
-
-        // dd($voucherHeads);
 
         \Log::info('Query Log: ', \DB::getQueryLog());
 
@@ -309,6 +308,7 @@ class CustomerController extends Controller
 
             return [
                 'voucher_number' => $entries->first()->voucher_number,
+                'voucher_id' => $entries->first()->voucher_id,
                 'amount' => $totalAmount,
                 'running_balance' => ($runningBalance == 0 || empty($runningBalance)) ? '0.00' : indian_format($runningBalance),
                 'voucher_date' => $entries->first()->voucher_date,

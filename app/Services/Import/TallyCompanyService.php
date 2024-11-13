@@ -87,5 +87,4 @@ class TallyCompanyService
         }
     }
 
-    // Private methods for data extraction and processing
 }

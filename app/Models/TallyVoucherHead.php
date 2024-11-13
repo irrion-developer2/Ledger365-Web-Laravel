@@ -29,6 +29,6 @@ class TallyVoucherHead extends Model
 
     public function ledger()
     {
-        return $this->belongsTo(TallyLedger::class, 'ledger_guid', 'guid');
+        return $this->belongsTo(TallyLedger::class, 'ledger_id', 'ledger_id');
     }
 }

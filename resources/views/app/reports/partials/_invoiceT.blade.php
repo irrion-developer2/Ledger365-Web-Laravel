@@ -12,7 +12,7 @@
                             <div class="col company-details">
                                 @foreach($companies as $company)
                                     <h2 class="name">
-                                        <a href="javascript:;">{{ $company->name }}</a>
+                                        <a href="javascript:;">{{ $company->company_name }}</a>
                                     </h2>
                                     <div>State Name : {{ $company->state }}</div>
                                 @endforeach
@@ -27,7 +27,7 @@
                                 </div>
                             </div>
                             <div class="col invoice-to text-center">
-                                <div class="email"><b>{{ $voucherItem->voucher_type }} Voucher</b>
+                                <div class="email"><b>{{ $voucherItem->voucher_type_name }} Voucher</b>
                                 </div>
                             </div>
                             <div class="col invoice-details">
@@ -64,7 +64,7 @@
                                     {{ $ledger->ledger_name }}<br>
                                 @endforeach
                                 @foreach ($bankAcc as $ledgerData)
-                                    {{ $ledgerData->ledger->tax_type ?? 'No ledger found' }}
+                                    {{ $ledgerData->tax_type ?? 'No ledger found' }}
                                 @endforeach
                                 @foreach ($bankAcc as $ledger)
                                     <span style="margin-left: 40%;"><b>₹ {{ number_format(abs($ledger->amount), 2) }}</b></span><br>

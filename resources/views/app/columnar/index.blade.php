@@ -165,7 +165,7 @@
                 { data: 'voucher_number', name: 'voucher_number' ,
                     render: function(data, type, row) {
                         var url = '{{ route("sales.items", ":id") }}';
-                        url = url.replace(':id', row.id);
+                        url = url.replace(':id', row.voucher_id);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
@@ -215,7 +215,7 @@
                     name: 'Product View',
                     render: function(data, type, row) {
                         var url = '{{ route("sales.items", ":id") }}';
-                        url = url.replace(':id', row.id);
+                        url = url.replace(':id', row.voucher_id);
 
                         return '<button class="btn btn-primary btn-sm" onclick="window.location.href=\'' + url + '\'">Product View</button>';
                     }

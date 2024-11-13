@@ -130,7 +130,7 @@
                 { data: 'ledger_name', name: 'ledger_name',orderable: false },
                 { data: 'voucher_number', name: 'voucher_number', orderable: false,
                     render: function(data, type, row) {
-                        return '<a href="{{ url('reports/VoucherItem') }}/' + row.tally_voucher_id + '">' + data + '</a>';
+                        return '<a href="{{ url('reports/VoucherItem') }}/' + row.voucher_id + '">' + data + '</a>';
                     }
                 },
                 { data: 'voucher_type_name', name: 'voucher_type_name', orderable: false },

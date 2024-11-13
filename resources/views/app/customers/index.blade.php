@@ -21,6 +21,7 @@
                 </div>
             </div>
 
+            
             <div class="card">
                 <div class="card-body">
                     <div class="d-lg-flex align-items-center gap-2">
@@ -35,6 +36,11 @@
                                 </div>
                             </form>
                         </div>
+
+                        <div class="col-lg-3">
+                            <input type="text" class="daterange form-control" />
+                        </div>
+
                         <div class="col-lg-2">
                             <form id="customDateForm">
                                 <select id="custom_date_range" name="custom_date_range" class="form-select">
@@ -104,6 +110,22 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
+
+<script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+
+<script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+
+<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+
+
+
+<script type="text/javascript">
+	$('.daterange').daterangepicker();
+</script>
+
+
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
@@ -194,6 +216,7 @@
         const dateRangeInput = document.querySelector(".date-range");
         flatpickr(dateRangeInput, {
             mode: "range",
+            showMonths: 2,
             altInput: true,
             altFormat: "F j, Y",
             dateFormat: "Y-m-d",

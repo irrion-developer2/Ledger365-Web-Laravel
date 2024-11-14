@@ -53,7 +53,7 @@ class CustomerController extends Controller
             })
             ->leftJoin('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
             ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as total_sales')
-            ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as outstanding')
+            ->selectRaw('COALESCE(SUM(CASE WHEN tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as outstanding')
             ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Receipt" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as payment_collection')
             ->groupBy('tally_ledgers.ledger_id');
         

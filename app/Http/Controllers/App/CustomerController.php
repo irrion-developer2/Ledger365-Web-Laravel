@@ -328,6 +328,8 @@ class CustomerController extends Controller
             });
         }
 
+
+        $totalInvoices = $voucherHeads->count();
         $firstVoucherDate = $groupedVouchers->min('voucher_date');
         $lastVoucherDate = $groupedVouchers->max('voucher_date');
 
@@ -354,7 +356,8 @@ class CustomerController extends Controller
             })
             ->with([
                 'first_voucher_date' => $firstVoucherDate,
-                'last_voucher_date' => $lastVoucherDate
+                'last_voucher_date' => $lastVoucherDate,
+                'total_invoices' => $totalInvoices
             ])
             ->toJson();
 

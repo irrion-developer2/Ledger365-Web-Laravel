@@ -38,8 +38,9 @@ class ColumnarController extends Controller
         $companyIds = $this->reportService->companyData();
 
         if ($request->ajax()) {
-            
-            $columnars = TallyVoucher::join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+            $startTime = microtime(true);
+
+            $columnarsQuery = TallyVoucher::join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
                 ->join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
                 ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
                 ->where('tally_voucher_types.voucher_type_name', 'Sales')
@@ -60,16 +61,17 @@ class ColumnarController extends Controller
                     'tally_ledgers.ledger_id',
                     'tally_ledgers.state',
                     'tally_ledgers.country',
-                )
-                ->get();
+                );
 
             // dd($columnars);
 
+            Log::info("Columnar Query");        
+            Log::info($this->reportService->getFinalQuery($columnarsQuery));
+
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
-
             $customDateRange = $request->get('custom_date_range');
-
+    
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -96,14 +98,26 @@ class ColumnarController extends Controller
                         $startDate = now()->subYear()->startOfYear()->toDateString();
                         $endDate = now()->subYear()->endOfYear()->toDateString();
                         break;
+                    case 'all':
+                        break;
                 }
             }
-
             if ($startDate && $endDate) {
-                $columnars->whereBetween('voucher_date', [$startDate, $endDate]);
+                $columnarsQuery->whereBetween('tally_vouchers.voucher_date', [$startDate, $endDate]);
             }
+    
+            $columnars = $columnarsQuery->get();
 
-            return DataTables::of($columnars)
+            Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
+            Log::info('Start date:', ['startDate' => $startDate]);
+            Log::info('End date:', ['endDate' => $endDate]);
+    
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for ColumnarController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+    
+
+            $dataTable = DataTables::of($columnars)
                 ->addIndexColumn()
                 ->addColumn('gross_total', function ($data) use ($companyIds){
 
@@ -179,6 +193,12 @@ class ColumnarController extends Controller
                     return indian_format($totalAmount, 3);
                 })
                 ->make(true);
+
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for ColumnarController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+    
+            return $dataTable;
         }
     }
 

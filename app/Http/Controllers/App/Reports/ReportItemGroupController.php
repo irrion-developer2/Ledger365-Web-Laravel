@@ -33,117 +33,131 @@ class ReportItemGroupController extends Controller
 
     public function getData(Request $request)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
         if ($request->ajax()) {
-            $query = TallyItem::select('tally_items.*')
-                ->join('tally_voucher_items', 'tally_items.name', '=', 'tally_voucher_items.stock_item_name')
-                ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
-                ->groupBy('tally_items.id')
-                ->havingRaw('SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" THEN tally_voucher_items.amount ELSE 0 END) > 0')
-                ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                ->whereNot('tally_vouchers.is_optional', 'Yes')
-                ->whereIn('tally_vouchers.company_guid', $companyGuids)
-                ->get();
+            $startTime = microtime(true);
 
-            return DataTables::of($query)
+            $itemsQuery = TallyItem::leftJoin('tally_voucher_items', 'tally_items.item_id', '=', 'tally_voucher_items.item_id')
+                ->leftJoin('tally_voucher_heads', 'tally_voucher_items.voucher_head_id', '=', 'tally_voucher_heads.voucher_head_id')
+                ->leftJoin('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                ->leftJoin('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                ->leftJoin('tally_ledgers', function($join) {
+                    $join->on('tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+                        ->where('tally_voucher_heads.is_party_ledger', '=', 1);
+                })
+                ->where('tally_vouchers.is_cancelled', 0)
+                ->where('tally_vouchers.is_optional', 0)
+                ->whereIn('tally_items.company_id', $companyIds)
+                ->selectRaw('
+                    tally_items.item_id, 
+                    tally_items.item_name, 
+                    tally_items.parent, 
+                    SUM(CASE 
+                            WHEN tally_voucher_types.voucher_type_name = "sales" THEN tally_voucher_items.amount 
+                            WHEN tally_voucher_types.voucher_type_name = "credit note" THEN tally_voucher_items.amount 
+                            ELSE 0 
+                        END) AS total_sales,
+                    SUM(CASE 
+                            WHEN tally_voucher_types.voucher_type_name = "sales" THEN tally_voucher_items.billed_qty 
+                            WHEN tally_voucher_types.voucher_type_name = "credit note" THEN tally_voucher_items.billed_qty 
+                            ELSE 0 
+                        END) AS qty_sold, 
+                    COUNT(DISTINCT CASE 
+                        WHEN tally_voucher_types.voucher_type_name IN ("sales", "credit note") 
+                        THEN tally_ledgers.ledger_id 
+                        ELSE NULL 
+                    END) AS customer_count,
+                    AVG(CASE 
+                        WHEN tally_voucher_types.voucher_type_name = "sales" THEN tally_voucher_items.rate 
+                        WHEN tally_voucher_types.voucher_type_name = "credit note" THEN tally_voucher_items.rate 
+                        ELSE NULL 
+                    END) AS avg_sales
+                ')
+                ->groupBy('tally_items.item_id', 'tally_items.item_name', 'tally_items.parent');
+
+            
+            Log::info("Customer Query");        
+            Log::info($this->reportService->getFinalQuery($itemsQuery));
+
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+            $customDateRange = $request->get('custom_date_range');
+
+            if ($customDateRange) {
+                switch ($customDateRange) {
+                    case 'this_month':
+                        $startDate = now()->startOfMonth()->toDateString();
+                        $endDate = now()->endOfMonth()->toDateString();
+                        break;
+                    case 'last_month':
+                        $startDate = now()->subMonth()->startOfMonth()->toDateString();
+                        $endDate = now()->subMonth()->endOfMonth()->toDateString();
+                        break;
+                    case 'this_quarter':
+                        $startDate = now()->firstOfQuarter()->toDateString();
+                        $endDate = now()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'prev_quarter':
+                        $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
+                        $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'this_year':
+                        $startDate = now()->startOfYear()->toDateString();
+                        $endDate = now()->endOfYear()->toDateString();
+                        break;
+                    case 'prev_year':
+                        $startDate = now()->subYear()->startOfYear()->toDateString();
+                        $endDate = now()->subYear()->endOfYear()->toDateString();
+                        break;
+                    case 'all':
+                        break;
+                }
+            }
+
+            if ($startDate && $endDate) {
+                $itemsQuery->whereBetween('tally_vouchers.voucher_date', [$startDate, $endDate]);
+            }
+
+            $items = $itemsQuery->get();
+
+            Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
+            Log::info('Start date:', ['startDate' => $startDate]);
+            Log::info('End date:', ['endDate' => $endDate]);
+
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for ReportItemGroupController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+
+            $dataTable = DataTables::of($items)
                 ->addIndexColumn()
                 ->addColumn('total_sales', function ($data) {
-
-                    $stockItemVoucherSaleItem = TallyVoucherItem::where('stock_item_name', $data->name)
-                        ->whereHas('tallyVoucher', function ($query) {
-                            $query->where('voucher_type', 'Sales');
-                        })
-                        ->sum('amount');
-
-                    $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $data->name)
-                        ->whereHas('tallyVoucher', function ($query) {
-                            $query->where('voucher_type', 'Credit Note');
-                        })
-                        ->sum('amount');
-
-                    $totalSales = $stockItemVoucherSaleItem + $stockItemVoucherCreditNoteItem;
-
-                    return number_format($totalSales, 2);
-                })
-                ->addColumn('qty_sold', function ($data) {
-
-                    $stockItemVoucherSaleItem = TallyVoucherItem::where('stock_item_name', $data->name)
-                        ->whereHas('tallyVoucher', function ($query) {
-                            $query->where('voucher_type', 'Sales');
-                        })
-                        ->sum('billed_qty');
-
-                    $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $data->name)
-                        ->whereHas('tallyVoucher', function ($query) {
-                            $query->where('voucher_type', 'Credit Note');
-                        })
-                        ->sum('billed_qty');
-
-                    $qtySold = $stockItemVoucherSaleItem - $stockItemVoucherCreditNoteItem;
-
-                    $unit = $data->unit ?? $data->pluck('unit')->filter()->first();
-
-                    return number_format($qtySold, 2) . ' ' . $unit;
-                })
-                ->addColumn('customer_count', function ($data) {
-
-                    $stockItemVoucherSaleItem = TallyVoucherItem::where('stock_item_name', $data->name)
-                        ->whereHas('tallyVoucher', function ($query) {
-                            $query->where('voucher_type', 'Sales');
-                        })
-                        ->count();
-
-                    $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $data->name)
-                        ->whereHas('tallyVoucher', function ($query) {
-                            $query->where('voucher_type', 'Credit Note');
-                        })
-                        ->count();
-                        
-
-                    $CustomerCount = $stockItemVoucherSaleItem - $stockItemVoucherCreditNoteItem;
-
-                    return number_format($CustomerCount, 2);
+                    return indian_format($data->total_sales);
                 })
                 ->addColumn('avg_sales', function ($data) {
-
-                    $stockItemVoucherSaleItem = TallyVoucherItem::where('stock_item_name', $data->name)
-                        ->whereHas('tallyVoucher', function ($query) {
-                            $query->where('voucher_type', 'Sales');
-                        })
-                        ->orderByDesc('id')
-                        ->value('rate');
-
-                    $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $data->name)
-                        ->whereHas('tallyVoucher', function ($query) {
-                            $query->where('voucher_type', 'Credit Note');
-                        })
-                        ->sum('rate');
-
-                    $totalSales = $stockItemVoucherSaleItem - $stockItemVoucherCreditNoteItem;
-
-                    return number_format($stockItemVoucherSaleItem, 2);
+                    return indian_format($data->avg_sales);
+                })
+                ->addColumn('qty_sold', function ($data) {
+                    return indian_format($data->qty_sold);
                 })
                 ->make(true);
+
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for ReportItemGroupController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+
+            return $dataTable;
         }
     }
 
-
     public function AllItemGroupLedgerReports($itemGroupLedgerId)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
-        $itemGroupLedger = TallyItem::whereIn('company_guid', $companyGuids)->findOrFail($itemGroupLedgerId);
+        $itemGroupLedger = TallyItem::whereIn('company_id', $companyIds)->findOrFail($itemGroupLedgerId);
 
-        $menuItems = TallyItem::select('tally_items.*')
-                    ->join('tally_voucher_items', 'tally_items.name', '=', 'tally_voucher_items.stock_item_name')
-                    ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
-                    ->groupBy('tally_items.id')
-                    ->havingRaw('SUM(CASE WHEN tally_vouchers.voucher_type = "Sales" THEN tally_voucher_items.amount ELSE 0 END) > 0')
-                    ->orderBy('tally_items.name', 'asc') 
-                    ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-                    ->whereNot('tally_vouchers.is_optional', 'Yes')
-                    ->whereIn('tally_items.company_guid', $companyGuids)
+        $menuItems = TallyItem::select('tally_items.item_id', 'tally_items.item_name')
+                    ->whereIn('tally_items.company_id', $companyIds)
                     ->get();
 
 
@@ -154,15 +168,16 @@ class ReportItemGroupController extends Controller
         ]);
     }
 
-
     public function ledgergetData($itemGroupLedgerId)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
         
-        $itemGroupLedger = TallyItem::whereIn('company_guid', $companyGuids)
+        $itemGroupLedger = TallyItem::whereIn('company_id', $companyIds)
                                     ->findOrFail($itemGroupLedgerId);
                                     
         $itemGroupLedgerName = $itemGroupLedger->name;
+
+        dd($itemGroupLedgerId);
 
         $query = TallyLedger::whereHas('tallyVouchers', function ($query) use ($itemGroupLedgerName) {
                 $query->whereIn('voucher_type', ['Sales', 'Credit Note'])

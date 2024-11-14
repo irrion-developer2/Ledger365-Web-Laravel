@@ -31,9 +31,9 @@
                     <div class="email-navigation" style="height: 530px;">
                         <div class="list-group list-group-flush">
                             @foreach($menuItems as $item)
-                                <a href="{{ route('reports.CustomerGroupLedger', ['CustomerGroupLedger' => $item->id]) }}" class="list-group-item d-flex align-items-center {{ request()->route('CustomerGroupLedger') == $item->id ? 'active' : '' }}" style="border-top: none;">
+                                <a href="{{ route('reports.CustomerGroupLedger', ['CustomerGroupLedger' => $item->ledger_group_id]) }}" class="list-group-item d-flex align-items-center {{ request()->route('CustomerGroupLedger') == $item->ledger_group_id ? 'active' : '' }}" style="border-top: none;">
                                     <i class='bx {{ $item->icon ?? 'bx-default-icon' }} me-3 font-20'></i>
-                                    <span>{{ $item->name }}</span>
+                                    <span>{{ $item->ledger_group_name }}</span>
                                     @if(isset($item->badge))
                                         <span class="badge bg-primary rounded-pill ms-auto">{{ $item->badge }}</span>
                                     @endif
@@ -48,7 +48,7 @@
                 
                 <div class="d-flex align-items-center">
                     <div class="">
-                        <h4 class="my-1 text-info">{{ $customerGroupLedger->name }} </h4>
+                        <h4 class="my-1 text-info">{{ $customerGroupLedger->ledger_group_name }} </h4>
                     </div>
                 </div>
                
@@ -110,77 +110,7 @@
 	new PerfectScrollbar('.email-list');
 </script>
 @include('layouts.includes.datatable-js-css')
-{{-- <script>
-    $(document).ready(function() {
-        $('#customer-group-ledger-datatable').DataTable({
-            processing: true,
-            serverSide: true,
-            paging: false,
-            searching: true,
-            ajax: '{{ route('reports.CustomerGroupLedger.data', $customerGroupLedgerId) }}',
-            columns: [
-                {
-                    data: 'name',
-                    name: 'name',
-                    render: function(data, type, row) {
-                        var url = '{{ route("reports.VoucherHead", ":guid") }}';
-                        url = url.replace(':guid', row.guid);
-                        return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
-                    }
-                },
-                { data: 'total_sales', name: 'total_sales', className: 'text-end' },
-                { data: 'percentage', name: 'percentage', className: 'text-end' },  // Adjusted to new column
-                { data: 'total_count', name: 'total_count', className: 'text-end' },
-                { data: 'avg_sales', name: 'avg_sales', className: 'text-end' },
-                // { data: 'sales_count', name: 'sales_count', className: 'text-end' }
-            ],
-            footerCallback: function(row, data, start, end, display) {
-                var api = this.api();
-
-                // Calculate totals
-                var totalSales = api.column(1, { page: 'current' }).data().reduce(function(a, b) {
-                    return (parseFloat(a) || 0) + (parseFloat(b) || 0);
-                }, 0);
-
-                var totalPercentage = api.column(2, { page: 'current' }).data().reduce(function(a, b) {
-                    return (parseFloat(a) || 0) + (parseFloat(b) || 0);
-                }, 0);
-
-                var totalCount = api.column(3, { page: 'current' }).data().reduce(function(a, b) {
-                    return (parseFloat(a) || 0) + (parseFloat(b) || 0);
-                }, 0);
-
-                var totalAvgSales = api.column(4, { page: 'current' }).data().reduce(function(a, b) {
-                    return (parseFloat(a) || 0) + (parseFloat(b) || 0);
-                }, 0);
-
-                var totalSalesCount = data.reduce(function(total, item) {
-                    return total + (parseInt(item.sales_count, 10) || 0);
-                }, 0);
-
-                var AvgSales = totalSalesCount > 0 ? totalSales / totalSalesCount : 0;
-
-                // Update footer
-                $(api.column(3).footer()).html(Math.abs(totalCount).toFixed(2));
-                $(api.column(1).footer()).html(Math.abs(totalSales).toFixed(2));
-                $(api.column(2).footer()).html(Math.abs(totalPercentage / data.length).toFixed(2) + '%'); // Average percentage
-                $(api.column(4).footer()).html(Math.abs(AvgSales).toFixed(2));
-
-                // Update percentage column
-                api.column(2).nodes().each(function(cell, i) {
-                    var rowData = api.row(i).data();
-                    var percentage = totalSales > 0 ? (parseFloat(rowData.total_sales) / totalSales * 100).toFixed(2) : '0.00';
-                    $(cell).html(percentage + '%');
-                });
-            },
-            initComplete: function() {
-                var searchInput = $('#customer-group-ledger-table_filter input[type="search"]');
-                searchInput.attr('placeholder', 'Search by name');
-            }
-        });
-    });
-</script> --}}
-
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
     $(document).ready(function() {
 
@@ -200,8 +130,8 @@
             },
             columns: [
                 {
-                    data: 'name',
-                    name: 'name',
+                    data: 'ledger_name',
+                    name: 'ledger_name',
                     render: function(data, type, row) {
                         var url = '{{ route("reports.VoucherHead", ":guid") }}';
                         url = url.replace(':guid', row.guid);
@@ -243,10 +173,10 @@
 
                 var AvgSales = totalSalesCount > 0 ? Saletotal / totalSalesCount : 0;
 
-                $(api.column(SaleToTotal).footer()).html(number_format(Math.abs(Saletotal), 2));
-                $(api.column(QtySoldToTotal).footer()).html(number_format(Math.abs(QtySoldtotal), 2));
+                $(api.column(SaleToTotal).footer()).html(jsIndianFormat(Math.abs(Saletotal), 2));
+                $(api.column(QtySoldToTotal).footer()).html(jsIndianFormat(Math.abs(QtySoldtotal), 2));
                 $(api.column(2).footer()).html(Math.abs(totalPercentage / data.length).toFixed(2) + '%'); // Average percentage
-                $(api.column(AvgSaleToTotal).footer()).html(number_format(Math.abs(AvgSales), 2));
+                $(api.column(AvgSaleToTotal).footer()).html(jsIndianFormat(Math.abs(AvgSales), 2));
             },
             search: {
                 orthogonal: {
@@ -257,14 +187,6 @@
 
         function sanitizeNumber(value) {
             return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
-        }
-
-        function number_format(number, decimals) {
-            if (isNaN(number)) return 0;
-            number = parseFloat(number).toFixed(decimals);
-            var parts = number.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            return parts.join('.');
         }
     });
 </script>

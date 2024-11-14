@@ -27,6 +27,7 @@ class ReportPaymentRegisterController extends Controller
         return view ('app.reports.paymentRegister.index');
     }
 
+
     public function getData(Request $request)
     {
         $companyIds = $this->reportService->companyData();
@@ -55,8 +56,8 @@ class ReportPaymentRegisterController extends Controller
                         $join->on('tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id');
                     })
                     ->where('tally_voucher_types.voucher_type_name', 'Payment')
-                    ->where('tally_vouchers.is_optional', '!=', 1)
-                    ->where('tally_vouchers.is_cancelled', '!=', 1)
+                    ->where('tally_vouchers.is_optional', 0)
+                    ->where('tally_vouchers.is_cancelled', 0)
                     ->whereIn('tally_vouchers.company_id', $companyIds)
                     ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END) as total_credit')
                     ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as total_debit')
@@ -120,13 +121,6 @@ class ReportPaymentRegisterController extends Controller
                 $vouchers->whereBetween('voucher_date', [$startDate, $endDate]);
             }
 
-            if ($request->has('voucher_type_name')) {
-                $voucherType = $request->get('voucher_type_name');
-                if ($voucherType) {
-                    $vouchers->where('voucher_type_name', $voucherType);
-                    Log::info('Voucher Type Filter Applied:', ['voucher_type_name' => $voucherType]);
-                }
-            }
 
             $dataTable = DataTables::of($vouchers)
                 ->addIndexColumn()

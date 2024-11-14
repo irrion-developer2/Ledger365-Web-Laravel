@@ -1,8 +1,8 @@
 @extends("layouts.main")
 @section('title', __('Ledger View | PreciseCA'))
 @section("style")
-<link href="{{ url('assets/plugins/datatable/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+    <link href="{{ url('assets/plugins/datatable/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
+    <link href="https://unpkg.com/vue2-datepicker@3.10.2/index.css" rel="stylesheet">
 @endsection
 @section("wrapper")
     <div class="page-wrapper">
@@ -33,9 +33,6 @@
                                 <div class="col-lg-6">
                                     <h4 class="my-1 text-info">{{ $ledger->ledger_name }}</h4>
                                 </div>
-                                {{-- <div class="col-lg-6 text-end">
-                                    <p class="btn btn-outline-danger border-1"><i class='lni lni-warning'></i> Overdue</p>
-                                </div> --}}
                             </div>
                         </div>
 
@@ -44,7 +41,8 @@
                                 <div class="row">
                                     <div class="col-lg-3">
                                         <p class="mb-0 font-13">Total Invoices</p>
-                                        <h6><h6 id="totalInvoices">0</h6></h6>
+                                        {{--  <h6><h6 id="totalInvoices">0</h6></h6>  --}}
+                                        <h6>@{{ totalInvoices }}</h6> 
                                     </div>
                                     <div class="col-lg-3">
                                         <p class="mb-0 font-13">Opening Balance</p>
@@ -98,169 +96,154 @@
 @section("script")
 <script src="{{ url('assets/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ url('assets/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+<script src="https://unpkg.com/vue2-datepicker@3.10.2/index.min.js"></script>
 <script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 
 <script>
     $(document).ready(function() {
-        var urlParams = new URLSearchParams(window.location.search);
-        var startDate = urlParams.get('start_date');
-        var endDate = urlParams.get('end_date');
+        Vue.component('date-picker', window.DatePicker.default || window.DatePicker);
 
-        function formatDateForDisplay(date) {
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            return new Date(date).toLocaleDateString(undefined, options);
-        }
-
-        var table = $('#voucherEntriesTable').DataTable({
-            processing: true,
-            serverSide: true,
-            paging: false,
-            ajax: {
-                url: "{{ route("customers.vouchers", ["customer" => $ledger->ledger_guid]) }}",
-                type: 'GET',
-                data: function (d) {
-                    d.start_date = startDate;
-                    d.end_date = endDate;   
-                }
+        new Vue({
+            el: '#vue-datepicker-app',
+            data: {
+                dateRange: [],
+                tableInitialized: false,
+                firstVoucherDate: null,
+                lastVoucherDate: null,
+                totalInvoices: 0
             },
-            order: [],
-            columns: [
-                { data: 'voucher_date', name: 'voucher_date',orderable: false },
-                { data: 'ledger_name', name: 'ledger_name',orderable: false },
-                { data: 'voucher_number', name: 'voucher_number', orderable: false,
-                    render: function(data, type, row) {
-                        return '<a href="{{ url('reports/VoucherItem') }}/' + row.voucher_id + '">' + data + '</a>';
+            methods: {
+                resetDateRange() {
+                    this.dateRange = [this.firstVoucherDate, this.lastVoucherDate];
+                    this.updateURL();
+                    this.reloadTableData();
+                },
+                updateURL() {
+                    const url = new URL(window.location.href);
+                    if (this.dateRange.length === 2) {
+                        url.searchParams.set('start_date', this.dateRange[0]);
+                        url.searchParams.set('end_date', this.dateRange[1]);
+                    } else {
+                        url.searchParams.delete('start_date');
+                        url.searchParams.delete('end_date');
+                    }
+                    window.history.pushState({}, '', url.toString());
+                },
+                reloadTableData() {
+                    if (this.tableInitialized) {
+                        console.log("Reloading DataTable...");
+                        $('#voucherEntriesTable').DataTable().ajax.reload(null, false);
                     }
                 },
-                { data: 'voucher_type_name', name: 'voucher_type_name', orderable: false },
-                { data: 'debit', name: 'debit', className: 'text-end', orderable: false },
-                { data: 'credit', name: 'credit', className: 'text-end', orderable: false },
-                { data: 'running_balance', name: 'running_balance', className: 'text-end', orderable: false },
-            ],
-            initComplete: function(settings, json) {
-                $('#totalInvoices').text(json.recordsTotal);
-                var defaultStartDate = json.first_voucher_date;
-                var defaultEndDate = json.last_voucher_date;
-
-                if (!startDate && !endDate) {
-                    startDate = defaultStartDate;
-                    endDate = defaultEndDate;
-                    dateRangeInput._flatpickr.setDate([startDate, endDate], false); 
+                fetchTotalInvoices() {
+                    if (this.tableInitialized) {
+                        $('#voucherEntriesTable').DataTable().ajax.reload(null, (json) => {
+                            this.totalInvoices = json.total_invoices || 0;
+                            console.log("Total Invoices Updated:", this.totalInvoices);
+                        });
+                    }
                 }
             },
-            footerCallback: function(row, data, start, end, display) {
-                var api = this.api();
-
-                // Function to remove commas from amounts and parse as float
-                function parseAmount(value) {
-                    if (typeof value === 'string') {
-                        return parseFloat(value.replace(/,/g, '')) || 0;
+            watch: {
+                dateRange(newRange) {
+                    if (newRange.length === 2) {
+                        this.updateURL();
+                        this.fetchTotalInvoices(); 
                     }
-                    return parseFloat(value) || 0;
                 }
+            },
+            mounted() {
+                const vm = this;
+                $('#voucherEntriesTable').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    paging: false,
+                    ajax: {
+                        url: "{{ route("customers.vouchers", ["customer" => $ledger->ledger_guid]) }}",
+                        type: 'GET',
+                        data: function(d) {
+                            if (vm.dateRange.length === 2) {
+                                d.start_date = vm.dateRange[0];
+                                d.end_date = vm.dateRange[1];
+                            }
+                        },
+                        dataSrc: function(json) {
+                            // Initialize date picker with date range from server
+                            vm.firstVoucherDate = json.first_voucher_date;
+                            vm.lastVoucherDate = json.last_voucher_date;
+                            vm.totalInvoices = json.total_invoices;
+                            console.log("Initial Total Invoices:", vm.totalInvoices);
+                            if (!vm.dateRange.length) {
+                                vm.dateRange = [vm.firstVoucherDate, vm.lastVoucherDate];
+                            }
+                            return json.data;
+                        }
+                    },
+                    order: [],
+                    columns: [
+                        { data: 'voucher_date', name: 'voucher_date', orderable: false },
+                        { data: 'ledger_name', name: 'ledger_name', orderable: false },
+                        { data: 'voucher_number', name: 'voucher_number', orderable: false, render: function(data, type, row) {
+                            return '<a href="{{ url('reports/VoucherItem') }}/' + row.voucher_id + '">' + data + '</a>';
+                        }},
+                        { data: 'voucher_type_name', name: 'voucher_type_name', orderable: false },
+                        { data: 'debit', name: 'debit', className: 'text-end', orderable: false },
+                        { data: 'credit', name: 'credit', className: 'text-end', orderable: false },
+                        { data: 'running_balance', name: 'running_balance', className: 'text-end', orderable: false },
+                    ],
+                    footerCallback: function(row, data, start, end, display) {
+                        var api = this.api();
 
-                // Calculate total debit
-                var totalDebit = api.column(4).data().reduce(function(a, b) {
-                    a = parseAmount(a);
-                    b = parseAmount(b);
-                    return a + b;
-                }, 0);
+                        function parseAmount(value) {
+                            if (typeof value === 'string') {
+                                return parseFloat(value.replace(/,/g, '')) || 0;
+                            } else if (typeof value === 'number') {
+                                return value;
+                            } else {
+                                return 0;
+                            }
+                        }
 
-                // Calculate total credit
-                var totalCredit = api.column(5).data().reduce(function(a, b) {
-                    a = parseAmount(a);
-                    b = parseAmount(b);
-                    return a + b;
-                }, 0);
+                        var totalDebit = api.column(4).data().reduce(function(a, b) {
+                            return parseAmount(a) + parseAmount(b);
+                        }, 0);
 
-                // Calculate total running balance
-                var totalRunningBalance = 0;
-                var runningBalance = 0;
-                api.rows().every(function(rowIdx) {
-                    var rowData = this.data();
-                    var debit = parseAmount(rowData.debit);
-                    var credit = parseAmount(rowData.credit);
-                    runningBalance += credit - debit;
+                        var totalCredit = api.column(5).data().reduce(function(a, b) {
+                            return parseAmount(a) + parseAmount(b);
+                        }, 0);
+
+                        var totalRunningBalance = 0;
+                        api.rows().every(function(rowIdx) {
+                            var rowData = this.data();
+                            totalRunningBalance += parseAmount(rowData.credit) - parseAmount(rowData.debit);
+                        });
+
+                        $(api.column(4).footer()).html(jsIndianFormat(totalDebit));
+                        $(api.column(5).footer()).html(jsIndianFormat(totalCredit));
+                        $('#totalDebit').text(jsIndianFormat(totalDebit));
+                        $('#totalCredit').text(jsIndianFormat(totalCredit));
+
+                        var firstRowRunningBalance = parseAmount(data[0]?.running_balance || '0');
+                        var firstRowAmount = data.length > 0 && data[0].amount
+                            ? parseAmount(data[0].amount)
+                            : 0;
+                            
+                        var OeningB = firstRowRunningBalance - firstRowAmount;
+
+                        var lastRowRunningBalance = parseAmount(data[data.length - 1]?.running_balance || '0');
+
+                        $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
+                        $('#openingBalance').text(jsIndianFormat(OeningB));
+                        $('#outstanding').text(jsIndianFormat(lastRowRunningBalance));
+                        $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
+                    }
                 });
 
-                totalRunningBalance = runningBalance;
-
-                // Update footer
-                $(api.column(4).footer()).html(jsIndianFormat(totalDebit));
-                $(api.column(5).footer()).html(jsIndianFormat(totalCredit));
-                $('#totalDebit').text(jsIndianFormat(totalDebit));
-                $('#totalCredit').text(jsIndianFormat(totalCredit));
-
-                // Handle opening balance
-                var openingBalance = 0;
-                if (data.length > 0 && data[0].opening_balance) {
-                    openingBalance = parseAmount(data[0].opening_balance);
-                }
-
-                var firstRowRunningBalance = data.length > 0 && data[0].running_balance
-                    ? parseAmount(data[0].running_balance)
-                    : 0;
-
-                var firstRowAmount = data.length > 0 && data[0].amount
-                    ? parseAmount(data[0].amount)
-                    : 0;
-
-                var OeningB = firstRowRunningBalance - firstRowAmount;
-
-
-                var lastRowRunningBalance = data.length > 0 && data[data.length - 1].running_balance
-                    ? parseAmount(data[data.length - 1].running_balance)
-                    : 0;
-
-                // Update running balance and opening balance
-                $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                $('#openingBalance').text(jsIndianFormat(OeningB));
-                $('#outstanding').text(jsIndianFormat(lastRowRunningBalance));
-                $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
-
-                // Show/hide the button based on running balance
-                if (totalRunningBalance > 0) {
-                    $('.btn-outline-danger').show();
-                } else {
-                    $('.btn-outline-danger').hide();
-                }
-            }
-
-
-        });
-
-        const dateRangeInput = document.querySelector(".date-range");
-        flatpickr(dateRangeInput, {
-            mode: "range",
-            altInput: true,
-            altFormat: "F j, Y",
-            dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr, instance) {
-                if (selectedDates.length === 2) {
-                    let startDate = flatpickr.formatDate(selectedDates[0], "Y-m-d");
-                    let endDate = flatpickr.formatDate(selectedDates[1], "Y-m-d");
-                    let url = new URL(window.location.href);
-                    url.searchParams.set('start_date', startDate);
-                    url.searchParams.set('end_date', endDate);
-                    window.location.href = url.toString();
-                }
+                this.tableInitialized = true;
             }
         });
-
-        if (startDate && endDate) {
-            dateRangeInput._flatpickr.setDate([startDate, endDate], false);
-        }
-
-        $('#resetDateRange').on('click', function() {
-            $('.date-range').val('');
-            let url = new URL(window.location.href);
-            url.searchParams.delete('start_date');
-            url.searchParams.delete('end_date');
-
-            window.location.href = url.toString();
-        });
-
     });
 </script>
 

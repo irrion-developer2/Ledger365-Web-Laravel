@@ -2,8 +2,7 @@
 @section('title', __('Cancelled Records | PreciseCA'))
 
 @section("style")
-    <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
-	<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+    <link href="https://unpkg.com/vue2-datepicker@3.10.2/index.css" rel="stylesheet">
 @endsection
 
 @section("wrapper")
@@ -23,17 +22,42 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="d-lg-flex align-items-center gap-2">
-                        <div class="col-lg-3">
-                            <form id="dateRangeForm">
-                                {{-- <label for="date_range" class="form-label">Date Range</label> --}}
-                                <div class="input-group">
-                                    <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
-                                        <button type="button" id="resetDateRange" class="btn btn-outline-secondary">
-                                            <i class="fadeIn animated bx bx-refresh" aria-hidden="true"></i> 
-                                        </button>
-                                </div>
-                            </form>
+                    <!-- Vue App for Date Picker -->
+                    <div id="vue-datepicker-app">
+                        <div class="d-lg-flex align-items-center gap-2">
+                            <div class="col-lg-3">
+                                <form id="dateRangeForm">
+                                    <div class="input-group">
+                                        <date-picker 
+                                            v-model="dateRange" 
+                                            :range="true" 
+                                            format="YYYY-MM-DD" 
+                                            :number-of-months="2" 
+                                            placeholder="Select Date Range"
+                                            :time-picker="false"
+                                            value-type="format">
+                                        </date-picker>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="col-lg-2">
+                                <form id="customDateForm">
+                                    <select id="custom_date_range" name="custom_date_range" class="form-select" @change="updateCustomRange">
+                                        <template v-for="group in customDateRangeOptions">
+                                            <optgroup :label="group.label">
+                                                <option 
+                                                    v-for="option in group.options" 
+                                                    :key="option.value" 
+                                                    :value="option.value"
+                                                    :selected="option.value === customDateRange">
+                                                    @{{ option.text }}
+                                                </option>
+                                            </optgroup>
+                                        </template>
+                                    </select>
+                                </form>
+                            </div>
                         </div>
                     </div>
 
@@ -74,21 +98,103 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+<script src="https://unpkg.com/vue2-datepicker@3.10.2/index.min.js"></script>
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
+
 <script>
-    $(document).ready(function() {
-        var urlParams = new URLSearchParams(window.location.search);
+    Vue.component('date-picker', window.DatePicker.default || window.DatePicker);
 
-        var startDate = urlParams.get('start_date');
-        var endDate = urlParams.get('end_date');
-
-        var customDateRange = urlParams.get('custom_date_range');
-
-        if (customDateRange) {
-            $('#custom_date_range').val(customDateRange);
+    new Vue({
+        el: '#vue-datepicker-app',
+        data: {
+            dateRange: [],
+            customDateRange: "{{ request('custom_date_range') }}",
+            tableInitialized: false,
+            customDateRangeOptions: [
+                {
+                    label: "General",
+                    options: [
+                        { text: "All", value: "all" }
+                    ]
+                },
+                {
+                    label: "Monthly",
+                    options: [
+                        { text: "This Month", value: "this_month" },
+                        { text: "Last Month", value: "last_month" }
+                    ]
+                },
+                {
+                    label: "Quarterly",
+                    options: [
+                        { text: "This Quarter", value: "this_quarter" },
+                        { text: "Prev Quarter", value: "prev_quarter" }
+                    ]
+                },
+                {
+                    label: "Yearly",
+                    options: [
+                        { text: "This Year", value: "this_year" },
+                        { text: "Prev Year", value: "prev_year" }
+                    ]
+                }
+            ]
+        },
+        methods: {
+            resetDateRange() {
+                this.dateRange = [];
+                this.updateURL();
+                this.reloadTableData();
+            },
+            updateCustomRange(event) {
+                this.customDateRange = event.target.value;
+                this.updateURL();
+                this.reloadTableData();
+            },
+            updateURL() {
+                const url = new URL(window.location.href);
+                if (this.dateRange.length === 2) {
+                    url.searchParams.set('start_date', this.dateRange[0]);
+                    url.searchParams.set('end_date', this.dateRange[1]);
+                } else {
+                    url.searchParams.delete('start_date');
+                    url.searchParams.delete('end_date');
+                }
+                url.searchParams.set('custom_date_range', this.customDateRange);
+                window.history.pushState({}, '', url.toString());
+            },
+            reloadTableData() {
+                if (this.tableInitialized) {
+                    $('#cancelled-datatable').DataTable().ajax.reload(null, false);
+                }
+            }
+        },
+        watch: {
+            dateRange(newRange) {
+                if (newRange.length === 2) {
+                    this.updateURL();
+                    this.reloadTableData();
+                }
+            }
+        },
+        mounted() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const startDate = urlParams.get('start_date');
+            const endDate = urlParams.get('end_date');
+            if (startDate && endDate) {
+                this.dateRange = [startDate, endDate];
+            }
+            $('#cancelled-datatable').on('init.dt', () => {
+                this.tableInitialized = true;
+            });
         }
+    });
 
-        var table = new DataTable('#cancelled-datatable', {
+
+    $(document).ready(function() {
+        const dataTable = $('#cancelled-datatable').DataTable({
             fixedColumns: { start: 1, },
             paging: false,
             scrollCollapse: true,
@@ -98,17 +204,20 @@
                 url: "{{ route('cancelled.get-data') }}",
                 type: 'GET',
                 data: function (d) {
-                    d.start_date = startDate;
-                    d.end_date = endDate;
-                    d.custom_date_range = customDateRange;
+                    const vueInstance = document.getElementById('vue-datepicker-app').__vue__;
+                    if (vueInstance.dateRange.length === 2) {
+                        d.start_date = vueInstance.dateRange[0];
+                        d.end_date = vueInstance.dateRange[1];
+                    }
+                    d.custom_date_range = vueInstance.customDateRange || "all";
                 }
             },
             columns: [
                 {data: 'voucher_date', name: 'voucher_date'},
-                {data: 'party_ledger_name', name: 'party_ledger_name', render: function(data, type, row) {
+                {data: 'ledger_name', name: 'ledger_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'voucher_type', name: 'voucher_type', render: function(data, type, row) {
+                {data: 'voucher_type_name', name: 'voucher_type_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'voucher_number', name: 'voucher_number',
@@ -137,8 +246,8 @@
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
 
-                $(api.column(DebitToTotal).footer()).html(number_format(Math.abs(Debittotal), 2));
-                $(api.column(CreditToTotal).footer()).html(number_format(Math.abs(Credittotal), 2));
+                $(api.column(DebitToTotal).footer()).html(jsIndianFormat(Math.abs(Debittotal), 2));
+                $(api.column(CreditToTotal).footer()).html(jsIndianFormat(Math.abs(Credittotal), 2));
             },
             search: {
                 orthogonal: {
@@ -147,56 +256,10 @@
             }
         });
 
-        const dateRangeInput = document.querySelector(".date-range");
-        flatpickr(dateRangeInput, {
-            mode: "range",
-            altInput: true,
-            altFormat: "F j, Y",
-            dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr, instance) {
-                if (selectedDates.length === 2) {
-                    let startDate = flatpickr.formatDate(selectedDates[0], "Y-m-d");
-                    let endDate = flatpickr.formatDate(selectedDates[1], "Y-m-d");
-                    let url = new URL(window.location.href);
-                    url.searchParams.set('start_date', startDate);
-                    url.searchParams.set('end_date', endDate);
-                    window.location.href = url.toString();
-                }
-            }
-        });
-
-        // Prepopulate date range input if already set
-        if (startDate && endDate) {
-            dateRangeInput._flatpickr.setDate([startDate, endDate], false);
-        }
-
-        $('#custom_date_range').on('change', function() {
-            var selectedRange = $(this).val();
-            var url = new URL(window.location.href);
-            url.searchParams.set('custom_date_range', selectedRange);
-            window.location.href = url.toString();
-        });
-
         function sanitizeNumber(value) {
             return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
         }
 
-        function number_format(number, decimals) {
-            if (isNaN(number)) return 0;
-            number = parseFloat(number).toFixed(decimals);
-            var parts = number.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            return parts.join('.');
-        }
-
-        $('#resetDateRange').on('click', function() {
-            $('.date-range').val('');
-            let url = new URL(window.location.href);
-            url.searchParams.delete('start_date');
-            url.searchParams.delete('end_date');
-
-            window.location.href = url.toString();
-        });
 
     });
 </script>

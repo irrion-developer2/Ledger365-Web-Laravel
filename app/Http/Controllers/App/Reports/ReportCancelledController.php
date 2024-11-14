@@ -29,22 +29,56 @@ class ReportCancelledController extends Controller
 
     public function getData(Request $request)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
         if ($request->ajax()) {
             $startTime = microtime(true);
 
-            $vouchers = TallyVoucher::where('tally_vouchers.is_cancelled', 1)
-                                    ->whereIn('company_guid', $companyGuids);
+            $vouchers = TallyVoucher::select(
+                        'tally_vouchers.voucher_id',
+                        'tally_vouchers.company_id',
+                        'tally_vouchers.is_optional',
+                        'tally_vouchers.is_cancelled',
+                        'tally_vouchers.voucher_date',
+                        'tally_voucher_types.voucher_type_name',
+                        'tally_vouchers.voucher_number',
+                        'tally_ledgers.ledger_name'
+                    )
+                    ->leftJoin('tally_voucher_heads', function ($join) {
+                        $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id');
+                    })
+                    ->leftJoin('tally_voucher_types', function ($join) {
+                        $join->on('tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                            ->on('tally_vouchers.company_id', '=', 'tally_voucher_types.company_id');
+                    })
+                    ->leftJoin('tally_ledgers', function ($join) {
+                        $join->on('tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id');
+                    })
+                    ->where('tally_vouchers.is_cancelled', 1)
+                    ->whereIn('tally_vouchers.company_id', $companyIds)
+                    ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END) as total_credit')
+                    ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as total_debit')
+                    ->groupBy(
+                        'tally_vouchers.voucher_id',
+                        'tally_vouchers.company_id',
+                        'tally_vouchers.is_optional',
+                        'tally_vouchers.is_cancelled',
+                        'tally_vouchers.voucher_date',
+                        'tally_voucher_types.voucher_type_name',
+                        'tally_vouchers.voucher_number',
+                        'tally_ledgers.ledger_name'
+                    );
 
+
+            Log::info("vouchers Query");        
+            Log::info($this->reportService->getFinalQuery($vouchers));
+         
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
-
-            Log::info('Total first db request execution time for ReportCancelledController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+            Log::info('Initial DB request execution time:', ['time_taken' => $executionTime1 . ' seconds']);
 
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
-
             $customDateRange = $request->get('custom_date_range');
 
             if ($customDateRange) {
@@ -76,40 +110,30 @@ class ReportCancelledController extends Controller
                 }
             }
 
+            Log::info('Custom Date Range:', ['customDateRange' => $customDateRange]);
+            Log::info('Start Date:', ['startDate' => $startDate]);
+            Log::info('End Date:', ['endDate' => $endDate]);
+
             if ($startDate && $endDate) {
-                    $vouchers->whereBetween('voucher_date', [$startDate, $endDate]);
+                $vouchers->whereBetween('voucher_date', [$startDate, $endDate]);
             }
 
-            Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
-            Log::info('Start date:', ['startDate' => $startDate]);
-            Log::info('End date:', ['endDate' => $endDate]);
-            
+
             $dataTable = DataTables::of($vouchers)
                 ->addIndexColumn()
                 ->addColumn('credit', function ($data) {
-                    $totalCredit = TallyVoucherHead::where('ledger_name', $data->party_ledger_name)
-                        ->where('tally_voucher_id', $data->id)
-                        ->where('entry_type', 'credit')
-                        ->sum('amount');
-                
-                    return number_format(abs($totalCredit), 2);
+                    return indian_format(abs($data->total_credit));
                 })
                 ->addColumn('debit', function ($data) {
-                    $totalCredit = TallyVoucherHead::where('ledger_name', $data->party_ledger_name)
-                        ->where('tally_voucher_id', $data->id)
-                        ->where('entry_type', 'debit')
-                        ->sum('amount');
-                
-                    return number_format(abs($totalCredit), 2);
+                    return indian_format(abs($data->total_debit));
                 })
                 ->make(true);
 
-                $endTime = microtime(true);
-                $executionTime = $endTime - $startTime;
-                Log::info('Total end execution time for ReportCancelledController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total execution time for getData:', ['time_taken' => $executionTime . ' seconds']);
 
-                return $dataTable;
+            return $dataTable;
         }
     }
-
 }

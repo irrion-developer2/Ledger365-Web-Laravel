@@ -2,7 +2,7 @@
 @section('title', __('Reports | PreciseCA'))
 
 @section("style")
-    <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
+    
 @endsection
 
 @section("wrapper")
@@ -30,7 +30,6 @@
                         <table id="customerGroup-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    {{-- <th>Id</th> --}}
                                     <th>Name</th>
                                     <th>Parent</th>
                                     <th>₹ Total Sales</th>
@@ -69,6 +68,7 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
     $(document).ready(function() {
 
@@ -87,11 +87,10 @@
                 }
             },
             columns: [
-                // {data: 'id', name: 'id'},
-                {data: 'name', name: 'name',
+                {data: 'ledger_group_name', name: 'ledger_group_name',
                     render: function(data, type, row) {
                         var url = '{{ route("reports.CustomerGroupLedger", ":id") }}';
-                        url = url.replace(':id', row.id);
+                        url = url.replace(':id', row.ledger_group_id);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
@@ -124,9 +123,9 @@
                 }, 0);
 
 
-                $(api.column(SaleToTotal).footer()).html(number_format(Math.abs(Saletotal), 2));
-                $(api.column(QtySoldToTotal).footer()).html(number_format(Math.abs(QtySoldtotal), 2));
-                $(api.column(AvgSaleToTotal).footer()).html(number_format(Math.abs(AvgSaletotal), 2));
+                $(api.column(SaleToTotal).footer()).html(jsIndianFormat(Math.abs(Saletotal), 2));
+                $(api.column(QtySoldToTotal).footer()).html(jsIndianFormat(Math.abs(QtySoldtotal), 2));
+                $(api.column(AvgSaleToTotal).footer()).html(jsIndianFormat(Math.abs(AvgSaletotal), 2));
             },
             search: {
                 orthogonal: {
@@ -139,13 +138,6 @@
             return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
         }
 
-        function number_format(number, decimals) {
-            if (isNaN(number)) return 0;
-            number = parseFloat(number).toFixed(decimals);
-            var parts = number.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            return parts.join('.');
-        }
     });
 </script>
 @endsection

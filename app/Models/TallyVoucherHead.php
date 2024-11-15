@@ -19,7 +19,7 @@ class TallyVoucherHead extends Model
 
     public function tallyVoucher()
     {
-        return $this->belongsTo(TallyVoucher::class, 'tally_voucher_id', 'id'); // Adjust as needed
+        return $this->belongsTo(TallyVoucher::class, 'voucher_id', 'voucher_id'); // Adjust as needed
     }
 
     public function voucher()

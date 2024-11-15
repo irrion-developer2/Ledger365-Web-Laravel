@@ -34,7 +34,7 @@ class ReportGeneralLedgerController extends Controller
 
     public function AllGeneralLedgerReports($generalLedgerId)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
         $generalLedger = TallyLedgerGroup::whereIn('company_guid', $companyGuids)
                                     ->findOrFail($generalLedgerId);

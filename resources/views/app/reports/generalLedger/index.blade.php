@@ -26,30 +26,33 @@
                         <div class="card">
                             <div class="card-body">
                                 <div class="d-lg-flex align-items-center mb-4 gap-3">
-                                    {{-- <div class="col-lg-3">
-                                        <form id="dateRangeForm">
-                                            <label for="date_range" class="form-label">Date Range</label>
-                                            <input type="text" id="date_range" name="date_range" class="form-control date-range" placeholder="Select Date Range">
-                                        </form>
-                                    </div>
-                                    <div class="col-lg-2">
-                                        <form id="voucherTypeForm">
-                                            <label for="voucher_type" class="form-label">Voucher Type</label>
-                                            <select id="voucher_type" name="voucher_type" class="form-select">
-                                                <option value="">All</option>
-                                                <option value="Sales">Sale</option>
-                                                <option value="Purchase">Purchase</option>
-                                                <option value="Credit Note">CreditNote</option>
-                                                <option value="Debit Note">DebitNote</option>
-                                                <option value="Receipt">Receipt</option>
-                                                <option value="Payment">Payment</option>
-                                            </select>
-                                        </form>
-                                    </div> --}}
                                 </div>
-                                <div class="table-responsive">
-                                    {{-- {{ $dataTable->table(['width' => '100%']) }} --}}
-                                    {!! $dataTable->table(['width' => '100%','id' => 'general-ledger-table'], true) !!}
+                                <div class="table-responsive table-responsive-scroll border-0">
+                                    <table id="general-ledger-datatable" class="stripe row-border order-column" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>Ledger group Name</th>
+                                                <th>primary group</th>
+                                                <th>Opening Balance	</th>
+                                                <th>Debit</th>
+                                                <th>Credit</th>
+                                                <th>Closing Balance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {{-- Data will be populated by AJAX --}}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th>Total</th>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -58,57 +61,157 @@
     </div>
 @endsection
 
-@push('css')
-    @include('layouts.includes.datatable-css')
-@endpush
-@push('javascript')
-    @include('layouts.includes.datatable-js')
-    {!! $dataTable->scripts() !!}
+@section("script")
+@include('layouts.includes.datatable-js-css')
 
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+<script src="https://unpkg.com/vue2-datepicker@3.10.2/index.min.js"></script>
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 
-    <script>
-        // Initialize date range picker
-        const dateRangeInput = document.querySelector(".date-range");
-        flatpickr(dateRangeInput, {
-            mode: "range",
-            altInput: true,
-            altFormat: "F j, Y",
-            dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr, instance) {
-                if (selectedDates.length === 2) {
-                    let [startDate, endDate] = selectedDates.map(date => date.toISOString().split('T')[0]);
-                    let url = new URL(window.location.href);
-                    url.searchParams.set('start_date', startDate);
-                    url.searchParams.set('end_date', endDate);
-                    window.location.href = url.toString();
+<script>
+    Vue.component('date-picker', window.DatePicker.default || window.DatePicker);
+
+    new Vue({
+        el: '#vue-datepicker-app',
+        data: {
+            dateRange: [],
+            customDateRange: "{{ request('custom_date_range') }}",
+            tableInitialized: false,
+            customDateRangeOptions: [
+                {
+                    label: "General",
+                    options: [
+                        { text: "All", value: "all" }
+                    ]
+                },
+                {
+                    label: "Monthly",
+                    options: [
+                        { text: "This Month", value: "this_month" },
+                        { text: "Last Month", value: "last_month" }
+                    ]
+                },
+                {
+                    label: "Quarterly",
+                    options: [
+                        { text: "This Quarter", value: "this_quarter" },
+                        { text: "Prev Quarter", value: "prev_quarter" }
+                    ]
+                },
+                {
+                    label: "Yearly",
+                    options: [
+                        { text: "This Year", value: "this_year" },
+                        { text: "Prev Year", value: "prev_year" }
+                    ]
+                }
+            ]
+        },
+        methods: {
+            resetDateRange() {
+                this.dateRange = [];
+                this.updateURL();
+                this.reloadTableData();
+            },
+            updateCustomRange(event) {
+                this.customDateRange = event.target.value;
+                this.updateURL();
+                this.reloadTableData();
+            },
+            updateURL() {
+                const url = new URL(window.location.href);
+                if (this.dateRange.length === 2) {
+                    url.searchParams.set('start_date', this.dateRange[0]);
+                    url.searchParams.set('end_date', this.dateRange[1]);
+                } else {
+                    url.searchParams.delete('start_date');
+                    url.searchParams.delete('end_date');
+                }
+                url.searchParams.set('custom_date_range', this.customDateRange);
+                window.history.pushState({}, '', url.toString());
+            },
+            reloadTableData() {
+                if (this.tableInitialized) {
+                    $('#customer-datatable').DataTable().ajax.reload(null, false);
                 }
             }
-        });
-
-        // Handle voucher type filter
-        const voucherTypeSelect = document.getElementById('voucher_type');
-        voucherTypeSelect.addEventListener('change', function() {
-            let voucherType = this.value;
-            let url = new URL(window.location.href);
-            url.searchParams.set('voucher_type', voucherType);
-            window.location.href = url.toString();
-        });
-
-        // Reset filters on page load if needed
-        document.addEventListener('DOMContentLoaded', function() {
+        },
+        watch: {
+            dateRange(newRange) {
+                if (newRange.length === 2) {
+                    this.updateURL();
+                    this.reloadTableData();
+                }
+            }
+        },
+        mounted() {
             const urlParams = new URLSearchParams(window.location.search);
             const startDate = urlParams.get('start_date');
             const endDate = urlParams.get('end_date');
-            const voucherType = urlParams.get('voucher_type');
             if (startDate && endDate) {
-                dateRangeInput._flatpickr.setDate([startDate, endDate], false);
+                this.dateRange = [startDate, endDate];
             }
-            if (voucherType) {
-                voucherTypeSelect.value = voucherType;
+            $('#customer-datatable').on('init.dt', () => {
+                this.tableInitialized = true;
+            });
+        }
+    });
+
+
+    $(document).ready(function() {
+        const dataTable = $('#customer-datatable').DataTable({
+            fixedColumns: { start: 1 },
+            paging: false,
+            scrollCollapse: true,
+            scrollX: true,
+            scrollY: 300,
+            ajax: {
+                url: "{{ route('customers.get-data') }}",
+                type: 'GET',
+                data: function (d) {
+                    const vueInstance = document.getElementById('vue-datepicker-app').__vue__;
+                    if (vueInstance.dateRange.length === 2) {
+                        d.start_date = vueInstance.dateRange[0];
+                        d.end_date = vueInstance.dateRange[1];
+                    }
+                    d.custom_date_range = vueInstance.customDateRange || "all";
+                }
+            },
+            columns: [
+                {data: 'ledger_name', name: 'ledger_name',
+                    render: function(data, type, row) {
+                        let url = '{{ route("customers.show", ":guid") }}';
+                        url = url.replace(':guid', row.ledger_guid);
+                        return `<a href="${url}" style="color: #337ab7;">${data}</a>`;
+                    }
+                },
+                {data: 'party_gst_in', name: 'party_gst_in', render: data => data || '-'},
+                {data: 'sales', name: 'sales', render: data => data || '-'},
+                {data: 'outstanding', name: 'outstanding', render: data => data || '-'},
+                {data: 'payment_collection', name: 'payment_collection', render: data => data || '-'},
+            ],
+            footerCallback: function (row, data, start, end, display) {
+                const api = this.api();
+                const columnIndexes = { sales: 2, outstanding: 3, payment: 4 };
+                
+                const totals = {
+                    sales: api.column(columnIndexes.sales).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                    outstanding: api.column(columnIndexes.outstanding).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                    payment: api.column(columnIndexes.payment).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                };
+
+                $(api.column(columnIndexes.sales).footer()).html(jsIndianFormat(Math.abs(totals.sales)));
+                $(api.column(columnIndexes.outstanding).footer()).html(jsIndianFormat(Math.abs(totals.outstanding)));
+                $(api.column(columnIndexes.payment).footer()).html(jsIndianFormat(Math.abs(totals.payment)));
+            },
+            search: {
+                orthogonal: { search: 'plain' }
             }
         });
 
-        
-    </script>
-@endpush
+        function sanitizeNumber(value) {
+            return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
+        }
+    });
+</script>
+@endsection

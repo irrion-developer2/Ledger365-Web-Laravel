@@ -144,7 +144,9 @@ Route::middleware([
         Route::get('reports/ItemGroup', [ReportItemGroupController::class, 'index'])->name('reports.ItemGroup');
         Route::get('/reports/ItemGroup/get-data', [ReportItemGroupController::class, 'getData'])->name('reports.ItemGroup.get-data');
         Route::get('reports/ItemGroupLedger/{ItemGroupLedger}', [ReportItemGroupController::class, 'AllItemGroupLedgerReports'])->name('reports.ItemGroupLedger');
-        Route::get('/reports/ItemGroup/ItemGroupLedger/{itemGroupLedgerId}/get-data', [ReportItemGroupController::class, 'ledgergetData'])->name('reports.ItemGroupLedger.get-data');
+        Route::get('/reports/ItemGroup/ItemGroupLedger/{itemGroupLedgerId}/get-data', [ReportItemGroupController::class, 'getItemGroupLedgerData'])->name('reports.ItemGroupLedger.get-data');
+        Route::get('reports/ItemLedger/{ItemLedger}', [ReportItemGroupController::class, 'AllItemLedgerReports'])->name('reports.ItemLedger');
+        Route::get('/reports/Item/ItemLedger/{itemLedgerId}/get-data', [ReportItemGroupController::class, 'getItemLedgerData'])->name('reports.ItemLedger.get-data');
 
         Route::get('reports/BalanceSheet', [ReportBalanceSheetController::class, 'index'])->name('reports.BalanceSheet');
         Route::get('/reports/BalanceSheet/get-data', [ReportBalanceSheetController::class, 'getData'])->name('reports.BalanceSheet.get-data');

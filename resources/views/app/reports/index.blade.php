@@ -70,23 +70,19 @@
                                            </div>
                                        </div>
                                        <div class="pt-4">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_outstanding' => 'true']) }}">Outstanding by Customers</a></h5>
+                                           {{--  <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_outstanding' => 'true']) }}">Outstanding by Customers</a></h5>
                                            <hr class="border-1">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_ageing' => 'true']) }}">Outstanding Ageing</a></h5>
                                            <hr class="border-1">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_collection' => 'true']) }}">Customers Collections</a></h5>
                                            <hr class="border-1">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_sale' => 'true']) }}">Inactive Customers</a></h5>
-                                           <hr class="border-1">
+                                           <hr class="border-1">  --}}
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('sales.index', ['start_date' => $startDate, 'end_date' => $endDate]) }}">Monthly Sales</a></h5>
                                            <hr class="border-1">
-                                           {{-- <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers *</a></h5>
-                                           <hr class="border-1"> --}}
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers Group</a></h5>
                                            <hr class="border-1">
-                                           {{-- <h5 class="my-1">Sales by Items</h5>
-                                           <hr class="border-1"> --}}
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ItemGroup') }}">Sales by Items</a></h5>
+                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ItemGroup') }}">Sales by Items Group</a></h5>
                                        </div>
                                    </div>
                                 </div>

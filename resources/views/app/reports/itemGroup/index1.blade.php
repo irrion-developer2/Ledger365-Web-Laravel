@@ -2,7 +2,7 @@
 @section('title', __('Reports | PreciseCA'))
 
 @section("style")
-    
+
 @endsection
 
 @section("wrapper")
@@ -14,7 +14,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Sales by Customers Group</li>
+                            <li class="breadcrumb-item active" aria-current="page">Sales by Item Group</li>
                         </ol>
                     </nav>
                 </div>
@@ -27,17 +27,16 @@
 
                     <div class="table-responsive table-responsive-scroll border-0">
                         
-                        <table id="customerGroup-datatable" class="stripe row-border order-column" style="width:100%">
+                        <table id="itemGroup-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Parent</th>
+                                    <th>Item Group</th>
                                     <th>₹ Total Sales</th>
-                                    <th>Transaction</th>
+                                    <th>Qty Sold</th>
                                     <th>
-                                        ₹ Avg Sales
+                                        Customer
                                         <br>
-                                        <span style="font-size: smaller;color: gray;">Price</span>
+                                        <span style="font-size: smaller;color: gray;">Count</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -46,11 +45,14 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th>Total</th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
+                                    <th>Name</th>
+                                    <th>₹ Total Sales</th>
+                                    <th>Qty Sold</th>
+                                    <th>
+                                        Customer
+                                        <br>
+                                        <span style="font-size: smaller;color: gray;">Count</span>
+                                    </th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -64,46 +66,45 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+<script src="https://unpkg.com/vue2-datepicker@3.10.2/index.min.js"></script>
 <script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
+
 <script>
     $(document).ready(function() {
-
-        new DataTable('#customerGroup-datatable', {
-            fixedColumns: {
-                start: 1,
-            },
+        new DataTable('#itemGroup-datatable', {
+            fixedColumns: { start: 1 },
             paging: false,
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
             ajax: {
-                url: "{{ route('reports.CustomerGroup.get-data') }}",
+                url: "{{ route('reports.ItemGroup.get-data') }}",
                 type: 'GET',
                 data: function (d) {
                 }
             },
             columns: [
-                {data: 'ledger_group_name', name: 'ledger_group_name',
+                {data: 'item_group_name', name: 'item_group_name',
                     render: function(data, type, row) {
-                        var url = '{{ route("reports.CustomerGroupLedger", ":id") }}';
-                        url = url.replace(':id', row.ledger_group_id);
+                        var url = '{{ route("reports.ItemGroupLedger", ":id") }}';
+                        url = url.replace(':id', row.item_group_id);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
-                {data: 'parent', name: 'parent'},
                 {data: 'total_sales', name: 'total_sales'},
-                {data: 'transaction', name: 'transaction', className: 'text-end', render: function(data, type, row) {
+                {data: 'qty_sold', name: 'qty_sold', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'avg_sales', name: 'avg_sales', className: 'text-end', render: function(data, type, row) {
+                {data: 'customer_count', name: 'customer_count', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
             ],
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
-                var SaleToTotal = 2;
-                var QtySoldToTotal = 3;
-                var AvgSaleToTotal = 4;
+                var SaleToTotal = 1;
+                var QtySoldToTotal = 2;
+                var CustomerCountToTotal = 3;
 
 
                 var Saletotal = api.column(SaleToTotal).data().reduce(function (a, b) {
@@ -114,14 +115,13 @@
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
 
-                var AvgSaletotal = api.column(AvgSaleToTotal).data().reduce(function (a, b) {
+                var CustomerCounttotal = api.column(CustomerCountToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
 
-
                 $(api.column(SaleToTotal).footer()).html(jsIndianFormat(Math.abs(Saletotal), 2));
                 $(api.column(QtySoldToTotal).footer()).html(jsIndianFormat(Math.abs(QtySoldtotal), 2));
-                $(api.column(AvgSaleToTotal).footer()).html(jsIndianFormat(Math.abs(AvgSaletotal), 2));
+                $(api.column(CustomerCountToTotal).footer()).html(jsIndianFormat(Math.abs(CustomerCounttotal), 2));
             },
             search: {
                 orthogonal: {

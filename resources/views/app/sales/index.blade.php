@@ -71,7 +71,6 @@
                             <thead>
                                 <tr>
                                     <th>Ledger Name</th>
-                                    <th>GSTIN</th>
                                     <th>Invoice Date</th>
                                     <th>Invoice Number</th>
                                     <th>Invoice Amount</th>
@@ -84,7 +83,6 @@
                             <tfoot>
                                 <tr>
                                     <th>Total</th>
-                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -216,16 +214,13 @@
             },
             columns: [
                 {data: 'ledger_name', name: 'ledger_name'},
-                {data: 'gst_in', name: 'gst_in', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
                 {data: 'voucher_date', name: 'voucher_date', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'voucher_number', name: 'voucher_number',
                     render: function(data, type, row) {
                         var url = '{{ route("sales.items", ":id") }}';
-                        url = url.replace(':id', row.id);
+                        url = url.replace(':id', row.voucher_id);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
@@ -238,7 +233,7 @@
             ],
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
-                var InvoiceAmountToTotal = 4;
+                var InvoiceAmountToTotal = 3;
 
                 var InvoiceAmounttotal = api.column(InvoiceAmountToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);

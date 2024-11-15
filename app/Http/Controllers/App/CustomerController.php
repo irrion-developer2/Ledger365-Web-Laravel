@@ -321,6 +321,40 @@ class CustomerController extends Controller
         // Apply date filters
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
+
+        $customDateRange = $request->get('custom_date_range');
+    
+        if ($customDateRange) {
+            switch ($customDateRange) {
+                case 'this_month':
+                    $startDate = now()->startOfMonth()->toDateString();
+                    $endDate = now()->endOfMonth()->toDateString();
+                    break;
+                case 'last_month':
+                    $startDate = now()->subMonth()->startOfMonth()->toDateString();
+                    $endDate = now()->subMonth()->endOfMonth()->toDateString();
+                    break;
+                case 'this_quarter':
+                    $startDate = now()->firstOfQuarter()->toDateString();
+                    $endDate = now()->lastOfQuarter()->toDateString();
+                    break;
+                case 'prev_quarter':
+                    $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
+                    $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
+                    break;
+                case 'this_year':
+                    $startDate = now()->startOfYear()->toDateString();
+                    $endDate = now()->endOfYear()->toDateString();
+                    break;
+                case 'prev_year':
+                    $startDate = now()->subYear()->startOfYear()->toDateString();
+                    $endDate = now()->subYear()->endOfYear()->toDateString();
+                    break;
+                case 'all':
+                    break;
+            }
+        }
+        
         if ($startDate && $endDate) {
             $groupedVouchers = $groupedVouchers->filter(function ($entry) use ($startDate, $endDate) {
                 $voucherDate = \Carbon\Carbon::parse($entry['voucher_date']);

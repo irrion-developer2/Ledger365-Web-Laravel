@@ -109,14 +109,49 @@
             el: '#vue-datepicker-app',
             data: {
                 dateRange: [],
+                customDateRange: "{{ request('custom_date_range') }}",
                 tableInitialized: false,
                 firstVoucherDate: null,
                 lastVoucherDate: null,
-                totalInvoices: 0
+                totalInvoices: 0,
+                customDateRangeOptions: [
+                    {
+                        label: "General",
+                        options: [
+                            { text: "All", value: "all" }
+                        ]
+                    },
+                    {
+                        label: "Monthly",
+                        options: [
+                            { text: "This Month", value: "this_month" },
+                            { text: "Last Month", value: "last_month" }
+                        ]
+                    },
+                    {
+                        label: "Quarterly",
+                        options: [
+                            { text: "This Quarter", value: "this_quarter" },
+                            { text: "Prev Quarter", value: "prev_quarter" }
+                        ]
+                    },
+                    {
+                        label: "Yearly",
+                        options: [
+                            { text: "This Year", value: "this_year" },
+                            { text: "Prev Year", value: "prev_year" }
+                        ]
+                    }
+                ]
             },
             methods: {
                 resetDateRange() {
                     this.dateRange = [this.firstVoucherDate, this.lastVoucherDate];
+                    this.updateURL();
+                    this.reloadTableData();
+                },
+                updateCustomRange(event) {
+                    this.customDateRange = event.target.value;
                     this.updateURL();
                     this.reloadTableData();
                 },
@@ -129,6 +164,7 @@
                         url.searchParams.delete('start_date');
                         url.searchParams.delete('end_date');
                     }
+                    url.searchParams.set('custom_date_range', this.customDateRange);
                     window.history.pushState({}, '', url.toString());
                 },
                 reloadTableData() {
@@ -164,10 +200,16 @@
                         url: "{{ route("customers.vouchers", ["customer" => $ledger->ledger_guid]) }}",
                         type: 'GET',
                         data: function(d) {
-                            if (vm.dateRange.length === 2) {
+                            const vueInstance = document.getElementById('vue-datepicker-app').__vue__;
+                            if (vueInstance.dateRange.length === 2) {
+                                d.start_date = vueInstance.dateRange[0];
+                                d.end_date = vueInstance.dateRange[1];
+                            }
+                            d.custom_date_range = vueInstance.customDateRange || "all";
+                            {{--  if (vm.dateRange.length === 2) {
                                 d.start_date = vm.dateRange[0];
                                 d.end_date = vm.dateRange[1];
-                            }
+                            }  --}}
                         },
                         dataSrc: function(json) {
                             // Initialize date picker with date range from server

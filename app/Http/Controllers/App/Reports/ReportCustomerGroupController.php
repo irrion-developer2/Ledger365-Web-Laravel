@@ -7,10 +7,6 @@ use Carbon\Carbon;
 use Yajra\DataTables\DataTables;
 use App\Models\TallyLedgerGroup;
 use App\Models\TallyLedger;
-use App\Models\TallyVoucher;
-use App\Models\TallyVoucherHead;
-use App\Models\TallyItem;
-use App\Models\TallyCompany;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -138,39 +134,25 @@ class ReportCustomerGroupController extends Controller
     public function getCustomerGroupLedgerData($customerGroupLedgerId)
     {
         $companyIds = $this->reportService->companyData();
-    
+
         $generalLedger = TallyLedgerGroup::whereIn('company_id', $companyIds)
                                     ->findOrFail($customerGroupLedgerId);
         $generalLedgerName = $generalLedger->ledger_group_name;
-    
+
         $normalizedNames = [
             'Direct Expenses, Expenses (Direct)' => 'Direct Expenses',
             'Direct Incomes, Income (Direct)' => 'Direct Incomes',
             'Indirect Expenses, Expenses (Indirect)' => 'Indirect Expenses',
             'Indirect Incomes, Income (Indirect)' => 'Indirect Incomes',
         ];
-    
+
         if (array_key_exists($generalLedgerName, $normalizedNames)) {
             $generalLedgerName = $normalizedNames[$generalLedgerName];
         }
-    
-        $overallTotalSales = TallyVoucherHead::select(DB::raw('SUM(tally_voucher_heads.amount) as total_sales'))
-            ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
-            ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-            ->whereIn('tally_vouchers.company_id', $companyIds)
-            ->where('tally_vouchers.is_cancelled', 0)
-            ->where('tally_vouchers.is_optional', 0)
-            ->where('tally_voucher_types.voucher_type_name', 'Sales')
-            ->first()
-            ->total_sales;
-    
-        $overallTotalSales = $overallTotalSales ?? 0;
-    
-        $query = TallyLedger::select(
-                    'tally_ledgers.ledger_name as name',
-                    DB::raw('SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" THEN tally_voucher_heads.amount ELSE 0 END) as total_sales'),
-                    DB::raw('COUNT(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" THEN tally_voucher_heads.amount END) as transactions_count'),
-                    DB::raw('AVG(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" THEN tally_voucher_heads.amount ELSE NULL END) as avg_sales')
+
+        $CustomerGroupQuery = TallyLedger::select(
+                    'tally_ledgers.ledger_name',
+                    'tally_ledgers.ledger_guid',
                 )
                 ->leftJoin('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
                 ->leftJoin('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
@@ -179,39 +161,38 @@ class ReportCustomerGroupController extends Controller
                 ->where('tally_ledgers.parent', $generalLedgerName)
                 ->where('tally_vouchers.is_cancelled', 0)
                 ->where('tally_vouchers.is_optional', 0)
-                ->where('tally_voucher_types.voucher_type_name', 'Sales')
+                ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name IN ("Sales", "Credit Note") AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as total_sale')
+                ->selectRaw('COALESCE(COUNT(CASE WHEN tally_voucher_types.voucher_type_name IN ("Sales", "Credit Note") AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as transactions_count')
+                ->selectRaw('COALESCE(AVG(CASE WHEN tally_voucher_types.voucher_type_name IN ("Sales", "Credit Note") AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as avg_sale')
+                ->selectRaw('
+                    COALESCE(
+                        100 * SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" THEN tally_voucher_heads.amount ELSE 0 END)
+                        / NULLIF(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" THEN tally_voucher_heads.amount ELSE 0 END) - SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Credit Note" THEN tally_voucher_heads.amount END), 0), 0
+                    ) as percentage
+                ')
                 ->groupBy('tally_ledgers.ledger_id', 'tally_ledgers.ledger_name')
-                ->orderBy('total_sales', '
-                DESC')->get();
+                ->orderBy('total_sale', 'asc')
+                ->get();
 
-                dd($query);
-    
-        return DataTables::of($query)
+        return DataTables::of($CustomerGroupQuery)
             ->addIndexColumn()
-            ->editColumn('total_sales', function ($data) {
-                    $totalSales = $data->total_sales;
-                    return indian_format(abs($totalSales));
+            ->editColumn('percentage', function ($data) {
+                return indian_format($data->percentage) . '%';
             })
-            ->addColumn('percentage', function ($row) use ($overallTotalSales) {
-                if ($overallTotalSales == 0) {
-                    return '0%';
-                }
-                $percentage = ($row->total_sales / $overallTotalSales) * 100;
-                return $this->formatNumber($percentage) . '%';
+            ->editColumn('total_sales', function ($data) {
+                    $totalSales = $data->total_sale;
+                    return indian_format(abs($totalSales));
             })
             ->editColumn('total_count', function ($data) {
                 $totalCount = $data->transactions_count;
                 return indian_format(abs($totalCount));
             })
             ->editColumn('avg_sales', function ($data) {
-                $totalAvgSales = $data->avg_sales;
+                $totalAvgSales = $data->avg_sale;
                 return indian_format(abs($totalAvgSales));
             })
-            ->rawColumns(['percentage'])
             ->make(true);
     }
-    
-
 
     // public function getCustomerGroupLedgerData($customerGroupLedgerId)
     // {
@@ -302,15 +283,5 @@ class ReportCustomerGroupController extends Controller
     //                 // })
     //             ->make(true);
     // }
-
-    protected function formatNumber($value)
-    {
-        if (!is_numeric($value) || $value == 0) {
-            return '-';
-        }
-
-        $floatValue = (float) $value;
-        return number_format(abs($floatValue), 2, '.', '');
-    }
 
 }

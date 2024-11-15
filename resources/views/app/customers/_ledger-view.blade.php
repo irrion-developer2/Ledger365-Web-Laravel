@@ -1,8 +1,8 @@
 <div class="col-lg-12">
     <div id="vue-datepicker-app" class="mb-2">
         <!-- Vue component should have id exactly as specified in Vue instance -->
-        <div class="d-lg-flex align-items-center gap-2">
-            <div class="col-lg-9"></div>
+        <div class="d-lg-flex align-items-center gap-1">
+            <div class="col-lg-7"></div>
             <div class="col-lg-3">
                 <form id="dateRangeForm">
                     <div class="input-group">
@@ -18,6 +18,23 @@
                                 value-type="format">
                         </date-picker>
                     </div>
+                </form>
+            </div>
+            <div class="col-lg-2">
+                <form id="customDateForm">
+                    <select id="custom_date_range" name="custom_date_range" class="form-select" @change="updateCustomRange">
+                        <template v-for="group in customDateRangeOptions">
+                            <optgroup :label="group.label">
+                                <option 
+                                    v-for="option in group.options" 
+                                    :key="option.value" 
+                                    :value="option.value"
+                                    :selected="option.value === customDateRange">
+                                    @{{ option.text }}
+                                </option>
+                            </optgroup>
+                        </template>
+                    </select>
                 </form>
             </div>
         </div>

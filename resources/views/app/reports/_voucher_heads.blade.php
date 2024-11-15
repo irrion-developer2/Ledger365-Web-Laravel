@@ -41,9 +41,9 @@
                     <div class="email-navigation" style="height: 530px;">
                         <div class="list-group list-group-flush">
                             @foreach($menuItems as $item)
-                                <a href="{{ route('reports.VoucherHead', ['VoucherHead' => $item->guid]) }}" class="list-group-item d-flex align-items-center {{ request()->route('VoucherHead') == $item->guid ? 'active' : '' }}" style="border-top: none;">
+                                <a href="{{ route('reports.VoucherHead', ['VoucherHead' => $item->ledger_guid]) }}" class="list-group-item d-flex align-items-center {{ request()->route('VoucherHead') == $item->ledger_guid ? 'active' : '' }}" style="border-top: none;">
                                     <i class='bx {{ $item->icon ?? 'bx-default-icon' }} me-3 font-20'></i>
-                                    <span>{{ $item->name }}</span>
+                                    <span>{{ $item->ledger_name }}</span>
                                     @if(isset($item->badge))
                                         <span class="badge bg-primary rounded-pill ms-auto">{{ $item->badge }}</span>
                                     @endif
@@ -58,7 +58,7 @@
                 
                 <div class="d-flex align-items-center">
                     <div class="">
-                        <h4 class="my-1 text-info">{{ $voucherHead->name }} </h4>
+                        <h4 class="my-1 text-info">{{ $voucherHead->ledger_name }} </h4>
                     </div>
                 </div>
                
@@ -72,11 +72,9 @@
                             <table class="table table-striped" id="voucher-head-table" width="100%">
                                 <thead>
                                     <tr>
-                                        {{-- <td>Name</td> --}}
                                         <td>Date</td>
                                         <td>Transaction Type</td>
                                         <td>Transaction</td>
-                                        {{-- <td>Transaction</td> --}}
                                         <td>Debit</td>
                                         <td>Credit</td>
                                         <td>Running Balance</td>
@@ -84,7 +82,7 @@
                                 </thead>
                                 <tfoot>
                                     <tr>
-                                        <th>Totals</th>
+                                        <th>Total</th>
                                         <th colspan="2"></th>
                                         <th id="total-debit" style="text-align:right"></th>
                                         <th id="total-credit" style="text-align:right"></th>
@@ -111,17 +109,9 @@
 
 
 @endsection
-@push('css')
-@include('layouts.includes.datatable-css')
-@endpush
-@push('javascript')
-<script>
-	new PerfectScrollbar('.email-navigation');
-	new PerfectScrollbar('.email-list');
-</script>
-
-
-@include('layouts.includes.datatable-js')
+@section('script')
+@include('layouts.includes.datatable-js-css')
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
     $(document).ready(function() {
         let runningBalance = 0;
@@ -136,19 +126,12 @@
                     data: 'voucher_date',
                     name: 'voucher_date'
                 },
-                { data: 'voucher_type', name: 'voucher_type', className: 'text-center' },
+                { data: 'voucher_type_name', name: 'voucher_type_name', className: 'text-center' },
                 { data: 'voucher_number', name: 'voucher_number', className: 'text-center',
                     render: function(data, type, row) {
-                        return '<a href="{{ url('reports/VoucherItem') }}/' + row.id + '">' + data + '</a>';
+                        return '<a href="{{ url('reports/VoucherItem') }}/' + row.voucher_id + '">' + data + '</a>';
                     }
-                 },
-                // { data: 'id', name: 'id', className: 'text-center',
-                    
-                // render: function(data, type, row) {
-                //         // Modify this to include the correct route for viewing details
-                //         return '<a href="{{ url('reports/VoucherItem') }}/' + data + '">' + data + '</a>';
-                //     }
-                //  },
+                },
                 { data: 'debit', name: 'debit', className: 'text-end' },
                 { data: 'credit', name: 'credit', className: 'text-end' },
                 { data: 'running_balance', name: 'running_balance', className: 'text-end', orderable: false, searchable: false }
@@ -156,30 +139,38 @@
             drawCallback: function(settings) {
                 var api = this.api();
                 let rows = api.rows({ page: 'current' }).data();
-                let totalDebit = 0;
-                let totalCredit = 0;
-                runningBalance = 0;
 
-                rows.each(function(row, index) {
-                    let debit = parseFloat(row.debit) || 0;
-                    let credit = parseFloat(row.credit) || 0;
-                    totalDebit += debit;
-                    totalCredit += credit;
-                    runningBalance += credit - debit;
+                var DebitToTotal = 3;
+                var CreditToTotal = 4;
+                var RunningBalanceToTotal = 5;
 
-                    $(api.row(index).node()).find('td:eq(5)').html(Math.abs(runningBalance).toFixed(2));
-                });
+                var Debittotal = api.column(DebitToTotal).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
 
-                $(api.column(3).footer()).html(totalDebit.toFixed(2));
+                var Credittotal = api.column(CreditToTotal).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
+
+                var RunningBalancetotal = api.column(RunningBalanceToTotal).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
+
+
+                $(api.column(DebitToTotal).footer()).html(jsIndianFormat(Math.abs(Debittotal), 2));
+                $(api.column(CreditToTotal).footer()).html(jsIndianFormat(Math.abs(Credittotal), 2));
+                $(api.column(RunningBalanceToTotal).footer()).html(jsIndianFormat(Math.abs(RunningBalancetotal), 2));
+
+                {{--  $(api.column(3).footer()).html(totalDebit.toFixed(2));
                 $(api.column(4).footer()).html(totalCredit.toFixed(2));
-                $(api.column(5).footer()).html(Math.abs(runningBalance).toFixed(2));
+                $(api.column(5).footer()).html(Math.abs(runningBalance).toFixed(2));  --}}
             }
         });
+        
+        function sanitizeNumber(value) {
+            return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
+        }
+
     });
 </script>
-@endpush
-@section("script")
-<script src="{{ url('assets/plugins/bs-stepper/js/bs-stepper.min.js') }}"></script>
-<script src="{{ url('assets/plugins/bs-stepper/js/main.js') }}"></script>
-
 @endsection

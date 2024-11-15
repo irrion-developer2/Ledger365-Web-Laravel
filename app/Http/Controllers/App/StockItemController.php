@@ -435,15 +435,15 @@ class StockItemController extends Controller
 
     public function AllStockItemReports($stockItemId)
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
-        $stockItem = TallyItem::whereIn('company_guid', $companyGuids)
+        $stockItem = TallyItem::whereIn('company_id', $companyIds)
                                     ->findOrFail($stockItemId);
         // dd($stockItem);
-        $stockItemVoucherItem = TallyVoucherItem::where('stock_item_name', $stockItem->name)->get();
+        $stockItemVoucherItem = TallyVoucherItem::where('item_id', $stockItem->item_id)->get();
 
         //credit note
-        $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $stockItem->name)
+        $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('item_id', $stockItem->item_id)
         ->whereHas('tallyVoucher', function ($query) {
             $query->where('voucher_type', 'Credit Note');
         })

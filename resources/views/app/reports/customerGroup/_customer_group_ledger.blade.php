@@ -1,7 +1,7 @@
 @extends("layouts.main")
 @section('title', __('Reports | PreciseCA'))
 @section("style")
-<link href="{{ url('assets/plugins/bs-stepper/css/bs-stepper.css') }}" rel="stylesheet" />
+
 @endsection
 @section("wrapper")
     <div class="page-wrapper">
@@ -14,7 +14,7 @@
                     <ol class="breadcrumb mb-0 p-0">
                         <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a>
                         </li>
-                        <li class="breadcrumb-item active" aria-current="page">Sales by Customers Group</li>
+                        <li class="breadcrumb-item active" aria-current="page">Sales by Customers</li>
                     </ol>
                 </nav>
             </div>
@@ -74,11 +74,11 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <th>Name</th>
-                                        <th>Total Sales</th>
-                                        <th>% of Total Sales</th>
-                                        <th>Transactions Count</th>
-                                        <th>Avg Sales</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
                                         {{-- <td>Sales count</td> --}}
                                     </tr>
                                 </tfoot>
@@ -94,21 +94,10 @@
             <!--end email overlay-->
         </div>
         <!--end email wrapper-->
-
-
-            
     </div>
 </div>
-
-
-
-
 @endsection
-@push('javascript')
-<script>
-	new PerfectScrollbar('.email-navigation');
-	new PerfectScrollbar('.email-list');
-</script>
+@section('script')
 @include('layouts.includes.datatable-js-css')
 <script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
 <script>
@@ -134,7 +123,7 @@
                     name: 'ledger_name',
                     render: function(data, type, row) {
                         var url = '{{ route("reports.VoucherHead", ":guid") }}';
-                        url = url.replace(':guid', row.guid);
+                        url = url.replace(':guid', row.ledger_guid);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
@@ -145,6 +134,31 @@
                 // { data: 'sales_count', name: 'sales_count', className: 'text-end' }
             ],
             footerCallback: function (row, data, start, end, display) {
+                var api = this.api();
+                var SaleToTotal = 1; 
+                var QtySoldToTotal = 3; 
+                var AvgSaleToTotal = 4; 
+            
+                var Saletotal = api.column(SaleToTotal, { page: 'current' }).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
+            
+                var QtySoldtotal = api.column(QtySoldToTotal, { page: 'current' }).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
+
+                var AvgSales = api.column(AvgSaleToTotal, { page: 'current' }).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
+            
+                {{--  var AvgSales = QtySoldtotal > 0 ? Saletotal / QtySoldtotal : 0;  --}}
+            
+                $(api.column(SaleToTotal).footer()).html(jsIndianFormat(Math.abs(Saletotal), 2));
+                $(api.column(QtySoldToTotal).footer()).html(jsIndianFormat(Math.abs(QtySoldtotal), 0)); 
+                $(api.column(AvgSaleToTotal).footer()).html(jsIndianFormat(Math.abs(AvgSales), 2)); 
+            },
+            
+            {{--  footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
                 var SaleToTotal = 1;
                 var QtySoldToTotal = 3;
@@ -177,7 +191,7 @@
                 $(api.column(QtySoldToTotal).footer()).html(jsIndianFormat(Math.abs(QtySoldtotal), 2));
                 $(api.column(2).footer()).html(Math.abs(totalPercentage / data.length).toFixed(2) + '%'); // Average percentage
                 $(api.column(AvgSaleToTotal).footer()).html(jsIndianFormat(Math.abs(AvgSales), 2));
-            },
+            },  --}}
             search: {
                 orthogonal: {
                     search: 'plain' 
@@ -190,8 +204,4 @@
         }
     });
 </script>
-@endpush
-@section("script")
-<script src="{{ url('assets/plugins/bs-stepper/js/bs-stepper.min.js') }}"></script>
-<script src="{{ url('assets/plugins/bs-stepper/js/main.js') }}"></script>
 @endsection

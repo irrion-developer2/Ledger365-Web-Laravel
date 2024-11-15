@@ -15,6 +15,7 @@ use App\Models\TallyVoucherItem;
 use App\Models\TallyBankAllocation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Services\ReportService;
 
 class ReportController extends Controller
@@ -36,10 +37,10 @@ class ReportController extends Controller
     {
         $companyIds = $this->reportService->companyData();
 
-        $voucherHead = TallyLedger::whereIn('company_id', $companyIds)->where('guid', $voucherHeadId)->firstOrFail();
-        $voucherHeadName = $voucherHead->name;
+        $voucherHead = TallyLedger::whereIn('company_id', $companyIds)->where('ledger_guid', $voucherHeadId)->firstOrFail();
+        $voucherHeadName = $voucherHead->ledger_name;
 
-        $menuItems = TallyLedger::where('name', $voucherHead->name)->whereIn('company_id', $companyIds)->get();
+        $menuItems = TallyLedger::where('ledger_name', $voucherHead->ledger_name)->whereIn('company_id', $companyIds)->get();
 
         return view('app.reports._voucher_heads', [
             'voucherHead' => $voucherHead,
@@ -52,45 +53,107 @@ class ReportController extends Controller
     {
         $companyIds = $this->reportService->companyData();
 
-        $cashBankLedger = TallyLedger::whereIn('company_id', $companyIds)->where('guid', $cashBankLedgerId)->firstOrFail();
-        $cashBankLedgerName = $cashBankLedger->name;
-        $cashBankLadgerGuid = $cashBankLedger->guid;
+        $cashBankLedger = TallyLedger::whereIn('company_id', $companyIds)->where('ledger_guid', $cashBankLedgerId)->firstOrFail();
+        $cashBankLadgerGuid = $cashBankLedger->ledger_guid;
+       
+        DB::statement('SET @running_balance := 0');
 
-        $query = TallyLedger::select('tally_ledgers.*',
-                                    'tally_voucher_heads.entry_type',
-                                    'tally_voucher_heads.amount',
-                                    'tally_voucher_heads.ledger_name',
-                                    'tally_vouchers.voucher_type' ,
-                                    'tally_vouchers.voucher_date',
-                                    'tally_vouchers.voucher_number',
-                                    'tally_vouchers.id')
-            ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
-            ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
-            ->whereNot('tally_vouchers.is_cancelled', 'Yes')
-            ->whereNot('tally_vouchers.is_optional', 'Yes')
-            ->whereIn('tally_ledgers.company_id', $companyIds)
-            ->whereIn('tally_vouchers.company_id', $companyIds)
-            ->where('tally_ledgers.guid', $cashBankLadgerGuid);
+        $VoucherHeadQuery = TallyVoucherHead::selectRaw('
+                tv.voucher_date,
+                tvt.voucher_type_name,
+                tv.voucher_number,
+                tv.voucher_id,
+                CASE 
+                    WHEN tvh.entry_type = "debit" THEN tvh.amount 
+                    ELSE 0 
+                END AS `debit`,
+                CASE 
+                    WHEN tvh.entry_type = "credit" THEN tvh.amount 
+                    ELSE 0 
+                END AS `credit`,
+                @running_balance := @running_balance + 
+                    CASE 
+                        WHEN tvh.entry_type = "debit" THEN tvh.amount 
+                        WHEN tvh.entry_type = "credit" THEN -tvh.amount 
+                        ELSE 0 
+                    END AS `running_balance`
+            ')
+            ->from('tally_voucher_heads as tvh')
+            ->leftJoin('tally_vouchers as tv', 'tvh.voucher_id', '=', 'tv.voucher_id')
+            ->leftJoin('tally_voucher_types as tvt', 'tv.voucher_type_id', '=', 'tvt.voucher_type_id')
+            ->leftJoin('tally_ledgers as tl', 'tvh.ledger_id', '=', 'tl.ledger_id')
+            ->where('tv.is_cancelled', 0)
+            ->where('tv.is_optional', 0)
+            ->whereIn('tl.company_id', $companyIds)
+            ->whereIn('tv.company_id', $companyIds)
+            ->where('tl.ledger_guid', $cashBankLadgerGuid)
+            ->orderBy('tv.voucher_date')
+            ->orderBy('tv.voucher_id')
+            ->get();
 
-            // dd($query);
 
-        return DataTables::of($query)
+        return DataTables::of($VoucherHeadQuery)
             ->addIndexColumn()
-            ->editColumn('created_at', function ($entry) {
-                return Carbon::parse($entry->created_at)->format('Y-m-d H:i:s');
+            ->editColumn('created_at', function ($data) {
+                return Carbon::parse($data->created_at)->format('Y-m-d H:i:s');
             })
-            ->addColumn('credit', function ($entry) {
-                return $entry->entry_type == 'credit' ? number_format(abs($entry->amount), 2, '.', '') : '-';
+            ->addColumn('credit', function ($data) {
+                    $totalCredit = $data->credit;
+                    return indian_format(abs($totalCredit));
             })
-            ->addColumn('debit', function ($entry) {
-                return $entry->entry_type == 'debit' ? number_format(abs($entry->amount), 2, '.', '') : '-';
+            ->addColumn('debit', function ($data) {
+                    $totalDebit = $data->debit;
+                    return indian_format(abs($totalDebit));
             })
-            ->addColumn('running_balance', function ($entry) {
-                // Placeholder for running balance
-                return '-';
+            ->addColumn('running_balance', function ($data) {
+                    $totalRunningBalance = $data->running_balance;
+                    return indian_format(abs($totalRunningBalance));
             })
             ->make(true);
     }
+    
+    // public function getVoucherHeadData($cashBankLedgerId)
+    // {
+    //     $companyIds = $this->reportService->companyData();
+
+    //     $cashBankLedger = TallyLedger::whereIn('company_id', $companyIds)->where('ledger_guid', $cashBankLedgerId)->firstOrFail();
+    //     $cashBankLedgerName = $cashBankLedger->ledger_name;
+    //     $cashBankLadgerGuid = $cashBankLedger->ledger_guid;
+
+    //     $query = TallyLedger::select('tally_ledgers.*',
+    //                                 'tally_voucher_heads.entry_type',
+    //                                 'tally_voucher_heads.amount',
+    //                                 'tally_voucher_heads.ledger_name',
+    //                                 'tally_vouchers.voucher_type' ,
+    //                                 'tally_vouchers.voucher_date',
+    //                                 'tally_vouchers.voucher_number',
+    //                                 'tally_vouchers.id')
+    //         ->leftJoin('tally_voucher_heads', 'tally_ledgers.guid', '=', 'tally_voucher_heads.ledger_guid')
+    //         ->leftJoin('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
+    //         ->whereNot('tally_vouchers.is_cancelled', 'Yes')
+    //         ->whereNot('tally_vouchers.is_optional', 'Yes')
+    //         ->whereIn('tally_ledgers.company_id', $companyIds)
+    //         ->whereIn('tally_vouchers.company_id', $companyIds)
+    //         ->where('tally_ledgers.guid', $cashBankLadgerGuid);
+
+    //         // dd($query);
+
+    //     return DataTables::of($query)
+    //         ->addIndexColumn()
+    //         ->editColumn('created_at', function ($entry) {
+    //             return Carbon::parse($entry->created_at)->format('Y-m-d H:i:s');
+    //         })
+    //         ->addColumn('credit', function ($entry) {
+    //             return $entry->entry_type == 'credit' ? indian_format(abs($entry->amount), 2, '.', '') : '-';
+    //         })
+    //         ->addColumn('debit', function ($entry) {
+    //             return $entry->entry_type == 'debit' ? indian_format(abs($entry->amount), 2, '.', '') : '-';
+    //         })
+    //         ->addColumn('running_balance', function ($entry) {
+    //             return '-';
+    //         })
+    //         ->make(true);
+    // }
 
 
     public function AllVoucherItemReports($voucherItemId)

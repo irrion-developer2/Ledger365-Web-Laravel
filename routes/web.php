@@ -1,42 +1,43 @@
 <?php
 
+use Illuminate\Http\Request;
 use Laravel\Jetstream\Jetstream;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SuperAdmin\UserController;
-use App\Http\Controllers\SuperAdmin\SettingController;
-use App\Http\Controllers\SuperAdmin\TallyController;
-
-use Laravel\Jetstream\Http\Controllers\CurrentTeamController;
-use Laravel\Jetstream\Http\Controllers\Inertia\TeamController;
-use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
-use Laravel\Jetstream\Http\Controllers\Inertia\ApiTokenController;
-use Laravel\Jetstream\Http\Controllers\Inertia\UserProfileController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\App\SalesController;
+use App\Http\Controllers\App\CompanyController;
 
 use App\Http\Controllers\App\AnalyticController;
-use App\Http\Controllers\App\CompanyController;
-use App\Http\Controllers\App\CustomerController;
-use App\Http\Controllers\App\SupplierController;
-use App\Http\Controllers\App\StockItemController;
-use App\Http\Controllers\App\SalesController;
 use App\Http\Controllers\App\ColumnarController;
+use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\EmployeeController;
+use App\Http\Controllers\App\SupplierController;
+
+use App\Http\Controllers\App\StockItemController;
+use App\Http\Controllers\SuperAdmin\UserController;
+use App\Http\Controllers\SuperAdmin\TallyController;
 use App\Http\Controllers\App\Reports\ReportController;
-use App\Http\Controllers\App\Reports\ReportCashBankController;
-use App\Http\Controllers\App\Reports\ReportGeneralLedgerController;
+use App\Http\Controllers\SuperAdmin\SettingController;
 use App\Http\Controllers\App\Reports\ReportDayBookController;
+use Laravel\Jetstream\Http\Controllers\CurrentTeamController;
+use App\Http\Controllers\App\Reports\ReportCashBankController;
+use App\Http\Controllers\App\Reports\ReportOptionalController;
+use Laravel\Jetstream\Http\Controllers\Inertia\TeamController;
+use App\Http\Controllers\App\Reports\ReportCancelledController;
+use App\Http\Controllers\App\Reports\ReportItemGroupController;
+use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
+use App\Http\Controllers\App\Reports\ReportBalanceSheetController;
+use Laravel\Jetstream\Http\Controllers\Inertia\ApiTokenController;
+use App\Http\Controllers\App\Reports\ReportCustomerGroupController;
+use App\Http\Controllers\App\Reports\ReportGeneralLedgerController;
+use App\Http\Controllers\App\Reports\ReportLedgerSummaryController;
 use App\Http\Controllers\App\Reports\ReportPaymentRegisterController;
 use App\Http\Controllers\App\Reports\ReportReceiptRegisterController;
-use App\Http\Controllers\App\Reports\ReportCustomerGroupController;
-use App\Http\Controllers\App\Reports\ReportItemGroupController;
-use App\Http\Controllers\App\Reports\ReportBalanceSheetController;
-use App\Http\Controllers\App\Reports\ReportBalanceSheetProfitLossController;
-use App\Http\Controllers\App\Reports\ReportBalanceSheetAssetStockController;
+use Laravel\Jetstream\Http\Controllers\Inertia\UserProfileController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetLiabilityController;
-use App\Http\Controllers\App\Reports\ReportCancelledController;
-use App\Http\Controllers\App\Reports\ReportOptionalController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\App\Reports\ReportBalanceSheetAssetStockController;
+use App\Http\Controllers\App\Reports\ReportBalanceSheetProfitLossController;
 
 Route::get('/home',function(){
     return view('welcome');
@@ -178,6 +179,10 @@ Route::middleware([
         Route::get('/columnar', [ColumnarController::class, 'index'])->name('columnar.index');
         Route::get('/columnar/get-data', [ColumnarController::class, 'getData'])->name('columnar.get-data');
 
+
+        Route::get('reports/LedgerSummary', [ReportLedgerSummaryController::class, 'index'])->name('reports.LedgerSummary');
+        Route::get('/ledgerSummary/get-data', [ReportLedgerSummaryController::class, 'getData'])->name('LedgerSummary.get-data');
+       
 
         Route::resource('/settings', SettingController::class);
         Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');

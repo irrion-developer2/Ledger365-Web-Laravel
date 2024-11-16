@@ -41,40 +41,19 @@ class SalesController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
       
-            $salesQuery = TallyVoucher::select(
-                        'tally_vouchers.voucher_id',
-                        'tally_vouchers.company_id',
-                        'tally_vouchers.voucher_type_id',
-                        'tally_voucher_types.voucher_type_name',
-                        'tally_ledgers.ledger_name',
-                        'tally_vouchers.voucher_date',
-                        'tally_vouchers.voucher_number',
-                        'tally_vouchers.place_of_supply'
-                    )
-                    ->where('tally_voucher_types.voucher_type_name', 'Sales')
-                    ->where('tally_vouchers.is_cancelled', 0)
-                    ->where('tally_vouchers.is_optional', 0)
-                    ->whereIn('tally_vouchers.company_id', $companyIds)
-                    ->leftJoin('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-                    ->leftJoin('tally_voucher_types', function($join) {
-                        $join->on('tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-                            ->on('tally_vouchers.company_id', '=', 'tally_voucher_types.company_id');
-                    })
-                    ->leftJoin('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
-                    ->selectRaw('
-                        COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END), 0) as total_debit
-                    ')
-                    ->groupBy(
-                        'tally_vouchers.voucher_id',
-                        'tally_vouchers.company_id',
-                        'tally_vouchers.voucher_type_id',
-                        'tally_voucher_types.voucher_type_name',
-                        'tally_ledgers.ledger_name',
-                        'tally_vouchers.voucher_date',
-                        'tally_vouchers.voucher_number',
-                        'tally_vouchers.place_of_supply'
-                    );
-
+            $salesQuery = DB::table('tally_vouchers as tv')
+            ->select(
+                'tl.ledger_name',
+                'tv.voucher_date',
+                'tv.voucher_number',
+                DB::raw('ABS(tvh.amount) as invoice_amount'),
+                'tv.place_of_supply'
+            )
+            ->join('tally_voucher_heads as tvh', 'tv.voucher_id', '=', 'tvh.voucher_id')
+            ->join('tally_ledgers as tl', 'tvh.ledger_id', '=', 'tl.ledger_id')
+            ->whereIn('tv.company_id', $companyIds)
+            ->where('tvh.is_party_ledger', 1);
+            
             Log::info("Sales Query");        
             Log::info($this->reportService->getFinalQuery($salesQuery));
 
@@ -113,7 +92,7 @@ class SalesController extends Controller
                 }
             }
             if ($startDate && $endDate) {
-                $salesQuery->whereBetween('tally_vouchers.voucher_date', [$startDate, $endDate]);
+                $salesQuery->whereBetween('tv.voucher_date', [$startDate, $endDate]);
             }
     
             $sales = $salesQuery->get();
@@ -129,7 +108,7 @@ class SalesController extends Controller
             $dataTable = DataTables::of($sales)
                 ->addIndexColumn()
                 ->addColumn('debit', function ($data) {
-                    $totalDebit = $data->total_debit;
+                    $totalDebit = $data->invoice_amount;
                     return indian_format(abs($totalDebit));
                 })
                 ->addColumn('voucher_date', function ($entry) {

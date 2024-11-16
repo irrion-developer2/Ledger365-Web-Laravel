@@ -83,6 +83,9 @@
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers Group</a></h5>
                                            <hr class="border-1">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ItemGroup') }}">Sales by Items Group</a></h5>
+                                           <hr class="border-1">
+                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.LedgerSummary') }}">Ledger Summary</a></h5>
+                                           
                                        </div>
                                    </div>
                                 </div>

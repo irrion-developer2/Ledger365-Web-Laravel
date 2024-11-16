@@ -45,15 +45,18 @@ class SalesController extends Controller
             ->select(
                 'tl.ledger_name',
                 'tv.voucher_date',
+                'tv.voucher_type_id',
                 'tv.voucher_number',
                 DB::raw('ABS(tvh.amount) as invoice_amount'),
                 'tv.place_of_supply'
             )
-            ->join('tally_voucher_heads as tvh', 'tv.voucher_id', '=', 'tvh.voucher_id')
-            ->join('tally_ledgers as tl', 'tvh.ledger_id', '=', 'tl.ledger_id')
+            ->leftJoin('tally_voucher_heads as tvh', 'tv.voucher_id', '=', 'tvh.voucher_id')
+            ->leftJoin('tally_ledgers as tl', 'tvh.ledger_id', '=', 'tl.ledger_id')
+            ->leftJoin('tally_voucher_types as tvt', 'tv.voucher_type_id', '=', 'tvt.voucher_type_id')
+            ->where('tvt.voucher_type_name', 'Sales')
             ->whereIn('tv.company_id', $companyIds)
             ->where('tvh.is_party_ledger', 1);
-            
+
             Log::info("Sales Query");        
             Log::info($this->reportService->getFinalQuery($salesQuery));
 

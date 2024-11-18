@@ -361,7 +361,7 @@ class LedgerController extends Controller
             foreach ($messages as $message) {
                 if (isset($message['LEDGER'])) {
                     $ledgerData = $message['LEDGER'];
-                    Log::info('Ledger Data:', ['ledgerData' => $ledgerData]);
+                    // Log::info('Ledger Data:', ['ledgerData' => $ledgerData]);
 
                     $applicableFrom = null;
                     if (isset($ledgerData['LEDGSTREGDETAILS.LIST']['APPLICABLEFROM'])) {
@@ -765,8 +765,16 @@ class LedgerController extends Controller
                                     ? (float) $cleaned
                                     : 0)
                                 : 0,
-                            'opening_value' => $stockItemData['OPENINGVALUE'] ?? null,
-                            'opening_rate' => isset($stockItemData['OPENINGRATE']) ? preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGRATE']) : null,
+                            'opening_value' => isset($stockItemData['OPENINGVALUE'])
+                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGVALUE']))
+                                    ? (float) $cleaned
+                                    : 0)
+                                : 0,
+                            'opening_rate' => isset($stockItemData['OPENINGRATE'])
+                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGRATE']))
+                                    ? (float) $cleaned
+                                    : 0)
+                                : 0,
                             // 'unit' => $unit,
                             'igst_rate' => $igstRate,
                             'hsn_code' => $stockItemData['HSNDETAILS.LIST']['HSNCODE'] ?? null,

@@ -760,7 +760,11 @@ class LedgerController extends Controller
                             'denominator' => $stockItemData['DENOMINATOR'] ?? null,
                             'basic_rate_of_excise' => $stockItemData['BASICRATEOFEXCISE'] ?? null,
                             'base_units' => $stockItemData['BASEUNITS'] ?? null,
-                            'opening_balance' => isset($stockItemData['OPENINGBALANCE']) ? preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGBALANCE']) : null,
+                            'opening_balance' => isset($stockItemData['OPENINGBALANCE'])
+                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGBALANCE']))
+                                    ? (float) $cleaned
+                                    : 0)
+                                : 0,
                             'opening_value' => $stockItemData['OPENINGVALUE'] ?? null,
                             'opening_rate' => isset($stockItemData['OPENINGRATE']) ? preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGRATE']) : null,
                             // 'unit' => $unit,
@@ -872,7 +876,7 @@ class LedgerController extends Controller
         }
     }
 
-    
+
     public function voucherJsonImport(Request $request)
     {
         try {
@@ -918,7 +922,7 @@ class LedgerController extends Controller
                     $company = TallyCompany::where('company_guid', $companyGuid)->first();
                     if (!$company) {
                         Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
-                        continue; 
+                        continue;
                     }
                     $companyId = $company->company_id;
 
@@ -993,9 +997,9 @@ class LedgerController extends Controller
                     $tallyVoucher = TallyVoucher::updateOrCreate(
                         [
                             'voucher_guid' => $voucherData['GUID'],
-                            'company_id' => $companyId              
+                            'company_id' => $companyId
                         ],
-                        
+
                         [
                             'voucher_type_id' => $voucherTypeId,
                             // 'voucher_type' => $voucherData['VOUCHERTYPENAME'] ?? null,
@@ -1019,8 +1023,8 @@ class LedgerController extends Controller
                             'bill_lading_no' => $voucherData['BILLOFLADINGNO'] ?? null,
                             'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
                             'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
-                            'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null) 
-                                        ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS']) 
+                            'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null)
+                                        ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'])
                                         : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
                             'consignee_name' => $voucherData['BASICBUYERNAME'] ?? null,
                             'consignee_state_name' => $voucherData['CONSIGNEESTATENAME'] ?? null,
@@ -1052,21 +1056,21 @@ class LedgerController extends Controller
                     $inventoryEntriesWithId = $this->processInventoryEntries($voucherData['ALLINVENTORYENTRIES.LIST'] ?? [], $voucherHeadIds, $companyId);
 
                     $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations, $companyId);
-                    
+
                     if (!empty($inventoryEntriesWithId)) {
-                    $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId); 
+                    $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId);
                     } else {
                         Log::info('No inventory entries with ID found; skipping batch allocations.');
                     }
-                    
+
                     $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
                     $this->processBankAllocationsForVoucher($voucherHeadIds, $bankAllocations);
-                    
+
 
                 }
             }
 
-            return response()->json(['message' => 'Tally Voucher data saved successfully.', 
+            return response()->json(['message' => 'Tally Voucher data saved successfully.',
                                         'vouchers_processed' => $voucherCount,
                                     ]);
         } catch (\Exception $e) {

@@ -354,7 +354,7 @@ class LedgerController extends Controller
                     $primaryGroupName = $this->getPrimaryGroup($group, $groupsByName);
                     $group->primary_group = $primaryGroupName;
                     $group->save();
-                    Log::info('Updated primary_group for group', ['group_id' => $group->id, 'primary_group' => $primaryGroupName]);
+                    // Log::info('Updated primary_group for group', ['group_id' => $group->id, 'primary_group' => $primaryGroupName]);
                 }
             }
 

@@ -93,8 +93,8 @@ class LedgerController extends Controller
     {
         $licenseNumber = $request->input('license_number');
         if (empty($licenseNumber)) {
-            Log::info('Please enter your license number');
-            throw new \Exception('Please enter your license number');
+            Log::info('license number is required');
+            throw new \Exception('license number ');
         }
 
         $license = TallyLicense::where('license_number', $licenseNumber)->first();
@@ -1068,7 +1068,7 @@ class LedgerController extends Controller
                     if (!empty($inventoryEntriesWithId)) {
                     $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId);
                     } else {
-                        Log::info('No inventory entries with ID found; skipping batch allocations.');
+                        // Log::info('No inventory entries with ID found; skipping batch allocations.');
                     }
 
                     $this->processBillAllocationsForVoucher($voucherHeadIds, $billAllocations);
@@ -1396,8 +1396,8 @@ class LedgerController extends Controller
 
     private function processInventoryEntries($inventoryEntries, array $voucherHeadIds, $companyId)
     {
-        Log::info('Processing Inventory Entries:', ['count' => is_array($inventoryEntries) ? count($inventoryEntries) : 1]);
-        Log::info('Available Voucher Head IDs:', ['voucherHeadIds' => $voucherHeadIds]);
+        // Log::info('Processing Inventory Entries:', ['count' => is_array($inventoryEntries) ? count($inventoryEntries) : 1]);
+        // Log::info('Available Voucher Head IDs:', ['voucherHeadIds' => $voucherHeadIds]);
 
         if (empty($voucherHeadIds)) {
             Log::error('No voucher_head_id available for inventory entry.');
@@ -1405,10 +1405,10 @@ class LedgerController extends Controller
         }
 
         $voucherHeadId = $voucherHeadIds[0];
-        Log::info('Using Voucher Head ID:', ['voucherHeadId' => $voucherHeadId]);
+        // Log::info('Using Voucher Head ID:', ['voucherHeadId' => $voucherHeadId]);
 
         $inventoryEntries = $this->normalizeEntries($inventoryEntries);
-        Log::info('Normalized Inventory Entries:', ['entries' => $inventoryEntries]);
+        // Log::info('Normalized Inventory Entries:', ['entries' => $inventoryEntries]);
 
         $inventoryEntriesWithId = [];
 
@@ -1448,7 +1448,7 @@ class LedgerController extends Controller
             $unitId = null;
             if ($unit) {
                 $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->value('unit_id');
-                Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
+                // Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
             }
 
             $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
@@ -1476,10 +1476,18 @@ class LedgerController extends Controller
                 'hsn_item_source' => $inventoryEntry['HSNITEMSOURCE'] ?? null,
                 'gst_rate_infer_applicability' => $inventoryEntry['GSTRATEINFERAPPLICABILITY'] ?? null,
                 'gst_hsn_infer_applicability' => $inventoryEntry['GSTHSNINFERAPPLICABILITY'] ?? null,
-                'rate' => $rate,
+                'rate' => isset($data['RATE'])
+                    ? (is_numeric($cleanedRate = preg_replace('/[^0-9.-]/', '', $data['RATE']))
+                        ? (float) $cleanedRate
+                        : 0)
+                    : 0,
                 'billed_qty' => $billed_qty ?? 0,
                 'actual_qty' => $actual_qty ?? 0,
-                'amount' => $inventoryEntry['AMOUNT'] ?? 0,
+                'amount' => isset($data['AMOUNT'])
+                    ? (is_numeric($cleanedAmount = preg_replace('/[^0-9.-]/', '', $data['AMOUNT']))
+                        ? (float) $cleanedAmount
+                        : 0)
+                    : 0,
                 'discount' => $inventoryEntry['DISCOUNT'] ?? 0,
                 'igst_rate' => $igstRate,
                 'gst_hsn_name' => $inventoryEntry['GSTHSNNAME'] ?? null,
@@ -1493,7 +1501,7 @@ class LedgerController extends Controller
                     'stock_item_name' => $itemName,
                 ];
 
-                Log::info('Inventory Entry Processed:', ['inventoryData' => $inventoryData]);
+                // Log::info('Inventory Entry Processed:', ['inventoryData' => $inventoryData]);
 
             } catch (\Exception $e) {
                 Log::error('Error saving inventory entry:', [
@@ -1548,15 +1556,15 @@ class LedgerController extends Controller
 
     private function processBillAllocationsForVoucher($voucherHeadIds, array $billAllocations)
     {
-        Log::info('Processing Bill Allocations', ['voucherHeadIds' => $voucherHeadIds, 'billAllocations' => $billAllocations]);
+        // Log::info('Processing Bill Allocations', ['voucherHeadIds' => $voucherHeadIds, 'billAllocations' => $billAllocations]);
 
         foreach ($voucherHeadIds as $voucherHead) {
-            Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
+            // Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
 
             foreach ($billAllocations as $ledgerName => $bills) {
                 if (is_array($bills)) {
                     foreach ($bills as $bill) {
-                        Log::info('Current bill being processed:', ['bill' => $bill]);
+                        // Log::info('Current bill being processed:', ['bill' => $bill]);
 
                         if (is_array($bill)) {
                             try {
@@ -1572,7 +1580,7 @@ class LedgerController extends Controller
                                             'bill_type' => $bill['BILLTYPE'] ?? null,
                                         ]
                                     );
-                                    Log::info('Successfully processed bill allocation', ['ledger_name' => $ledgerName, 'bill' => $bill]);
+                                    // Log::info('Successfully processed bill allocation', ['ledger_name' => $ledgerName, 'bill' => $bill]);
                                 } else {
                                     Log::error('Missing NAME or AMOUNT in BILLALLOCATIONS.LIST entry: ' . json_encode($bill));
                                 }
@@ -1592,17 +1600,17 @@ class LedgerController extends Controller
 
     private function processBankAllocationsForVoucher($voucherHeadIds, array $bankAllocations)
     {
-        Log::info('Processing Bank Allocations', ['voucherHeadIds' => $voucherHeadIds, 'bankAllocations' => $bankAllocations]);
+        // Log::info('Processing Bank Allocations', ['voucherHeadIds' => $voucherHeadIds, 'bankAllocations' => $bankAllocations]);
 
         foreach ($voucherHeadIds as $voucherHead) {
-            Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
+            // Log::info('Current voucher head being processed:', ['voucherHead' => $voucherHead]);
 
             $ledgerName = $voucherHead['ledger_name'] ?? null;
-            Log::info("Ledger name: " . $ledgerName);
+            // Log::info("Ledger name: " . $ledgerName);
 
             if (isset($bankAllocations[$ledgerName]) && is_array($bankAllocations[$ledgerName])) {
                 foreach ($bankAllocations[$ledgerName] as $bank) {
-                    Log::info("Processing bank allocation: " . json_encode($bank));
+                    // Log::info("Processing bank allocation: " . json_encode($bank));
 
                     try {
                         $allocation = TallyBankAllocation::updateOrCreate(
@@ -1618,13 +1626,13 @@ class LedgerController extends Controller
                                 'amount' => $bank['AMOUNT'] ?? null,
                             ]
                         );
-                        Log::info("Bank allocation stored: " . json_encode($allocation));
+                        // Log::info("Bank allocation stored: " . json_encode($allocation));
                     } catch (\Exception $e) {
                         Log::error("Failed to process bank allocation: " . $e->getMessage());
                     }
                 }
             } else {
-                Log::error("No bank allocations found for ledger: " . $ledgerName);
+                // Log::error("No bank allocations found for ledger: " . $ledgerName);
             }
         }
     }

@@ -28,11 +28,11 @@
                             <div class="col-lg-3">
                                 <form id="dateRangeForm">
                                     <div class="input-group">
-                                        <date-picker 
-                                            v-model="dateRange" 
-                                            :range="true" 
-                                            format="YYYY-MM-DD" 
-                                            :number-of-months="2" 
+                                        <date-picker
+                                            v-model="dateRange"
+                                            :range="true"
+                                            format="YYYY-MM-DD"
+                                            :number-of-months="2"
                                             placeholder="Select Date Range"
                                             :time-picker="false"
                                             value-type="format">
@@ -46,9 +46,9 @@
                                     <select id="custom_date_range" name="custom_date_range" class="form-select" @change="updateCustomRange">
                                         <template v-for="group in customDateRangeOptions">
                                             <optgroup :label="group.label">
-                                                <option 
-                                                    v-for="option in group.options" 
-                                                    :key="option.value" 
+                                                <option
+                                                    v-for="option in group.options"
+                                                    :key="option.value"
                                                     :value="option.value"
                                                     :selected="option.value === customDateRange">
                                                     @{{ option.text }}
@@ -58,7 +58,7 @@
                                     </select>
                                 </form>
                             </div>
-                            
+
                             <div class="col-lg-7 text-end">
                                 <a href="{{ route('columnar.index') }}" class="btn btn-outline-primary border-1">
                                     <span>Sales Columnar Report</span>
@@ -198,7 +198,7 @@
             fixedColumns: { start: 1 },
             processing: true,
             serverSide: true,
-            paging: false,
+            paging: true,
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,

@@ -1523,14 +1523,17 @@ class LedgerController extends Controller
                             ->value('tally_godowns.godown_id');
 
 
+                        $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
+                        $actual_qty = $this->extractNumericValue($inventoryEntry['ACTUALQTY'] ?? null);
+
                         TallyBatchAllocation::updateOrCreate(
                             [
                                 'voucher_item_id' => $inventoryEntries['voucher_item_id'],
                                 'batch_name' => $batch['BATCHNAME'],
                                 'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
                                 'amount' => $batch['AMOUNT'],
-                                'actual_qty' => isset($batch['ACTUALQTY']) ? preg_replace('/[^0-9.]/', '', $batch['ACTUALQTY']) : null,
-                                'billed_qty' => isset($batch['BILLEDQTY']) ? preg_replace('/[^0-9.]/', '', $batch['BILLEDQTY']) : null,
+                                'actual_qty' => $actual_qty,
+                                'billed_qty' =>  $billed_qty,
                                 'order_no' => $batch['ORDERNO'] ?? null,
                                 'godown_id' => $godownId,
                             ]

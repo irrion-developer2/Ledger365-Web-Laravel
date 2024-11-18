@@ -218,6 +218,8 @@
     $(document).ready(function() {
         const dataTable = $('#SalesColumnar-datatable').DataTable({
             fixedColumns: { start: 2 },
+            processing: true,
+            serverSide: true,
             paging: false,
             scrollCollapse: true,
             scrollX: true,

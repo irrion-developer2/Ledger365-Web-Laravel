@@ -196,6 +196,8 @@
     $(document).ready(function() {
         const dataTable = $('#cancelled-datatable').DataTable({
             fixedColumns: { start: 1, },
+            processing: true,
+            serverSide: true,
             paging: false,
             scrollCollapse: true,
             scrollX: true,

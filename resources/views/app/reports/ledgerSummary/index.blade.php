@@ -192,6 +192,8 @@
     $(document).ready(function() {
         const dataTable = $('#ledger-summary-datatable').DataTable({
             fixedColumns: { start: 1 },
+            processing: true,
+            serverSide: true,
             paging: false,
             scrollCollapse: true,
             scrollX: true,
@@ -209,7 +211,13 @@
                 }
             },
             columns: [
-                {data: 'ledger_name', name: 'ledger_name', render: data => data || '-'},
+                {data: 'ledger_name', name: 'ledger_name', 
+                    render: function(data, type, row) {
+                        let url = '{{ route("customers.show", ":guid") }}';
+                        url = url.replace(':guid', row.ledger_guid);
+                        return `<a href="${url}" style="color: #337ab7;">${data}</a>`;
+                    }
+                },
                 {data: 'opening_balance', name: 'opening_balance', render: data => data || '-'},
                 {data: 'total_debit', name: 'total_debit', render: data => data || '-'},
                 {data: 'total_credit', name: 'total_credit', render: data => data || '-'},

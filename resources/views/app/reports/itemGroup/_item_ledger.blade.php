@@ -119,6 +119,8 @@
             fixedColumns: {
                 start: 1,
             },
+            processing: true,
+            serverSide: true,
             paging: false,
             scrollCollapse: true,
             scrollX: true,

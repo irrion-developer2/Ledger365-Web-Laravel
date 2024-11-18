@@ -1,5 +1,5 @@
 @extends("layouts.main")
-@section('title', __('Suppliers | PreciseCA'))
+@section('title', __('Group Summary | PreciseCA'))
 
 @section("style")
     <link href="https://unpkg.com/vue2-datepicker@3.10.2/index.css" rel="stylesheet">
@@ -9,12 +9,12 @@
     <div class="page-wrapper">
         <div class="page-content pt-2">
             <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-2">
-                <div class="breadcrumb-title pe-3">Suppliers</div>
+                <div class="breadcrumb-title pe-3">Group Summary</div>
                 <div class="ps-3">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Suppliers</li>
+                            <li class="breadcrumb-item active" aria-current="page">Group Summary</li>
                         </ol>
                     </nav>
                 </div>
@@ -60,27 +60,17 @@
                             </div>
                         </div>
                     </div>
-                        {{-- <button id="filter-outstanding" class="btn btn-outline-secondary p-1">Outstanding</button>
-
-                        <button id="filter-ageing" class="btn btn-outline-secondary p-1">Overdue</button>
-
-                        <button id="filter-payment" class="btn btn-outline-secondary p-1">Payment</button> --}}
-                    
 
                     <div class="table-responsive table-responsive-scroll border-0">
-
-                        <table id="supplier-datatable" class="stripe row-border order-column" style="width:100%">
+                        <table id="group-summary-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Ledger Name</th>
-                                    <th>GSTIN</th>
-                                    <th>Purchase </th>
-                                    <th>Outstanding</th>
-                                    <th>
-                                        ₹ Pmt Made
-                                        <br>
-                                        <span style="font-size: smaller;color: gray;">FY</span>
-                                    </th>
+                                    <th>Parent Group Name</th>
+                                    <th>Ledger group Name</th>
+                                    <th>Opening Balance</th>
+                                    <th>Total Debit</th>
+                                    <th>Total Credit</th>
+                                    <th>closing Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -89,6 +79,7 @@
                             <tfoot>
                                 <tr>
                                     <th>Total</th>
+                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -174,7 +165,7 @@
             },
             reloadTableData() {
                 if (this.tableInitialized) {
-                    $('#supplier-datatable').DataTable().ajax.reload(null, false);
+                    $('#group-summary-datatable').DataTable().ajax.reload(null, false);
                 }
             }
         },
@@ -193,14 +184,15 @@
             if (startDate && endDate) {
                 this.dateRange = [startDate, endDate];
             }
-            $('#supplier-datatable').on('init.dt', () => {
+            $('#group-summary-datatable').on('init.dt', () => {
                 this.tableInitialized = true;
             });
         }
     });
 
+
     $(document).ready(function() {
-        const DataTable = $('#supplier-datatable').DataTable({
+        const dataTable = $('#group-summary-datatable').DataTable({
             fixedColumns: { start: 1 },
             processing: true,
             serverSide: true,
@@ -209,7 +201,7 @@
             scrollX: true,
             scrollY: 300,
             ajax: {
-                url: "{{ route('suppliers.get-data') }}",
+                url: "{{ route('GroupSummary.get-data') }}",
                 type: 'GET',
                 data: function (d) {
                     const vueInstance = document.getElementById('vue-datepicker-app').__vue__;
@@ -221,47 +213,26 @@
                 }
             },
             columns: [
-                {data: 'ledger_name', name: 'ledger_name',
-                    render: function(data, type, row) {
-                        var url = '{{ route("customers.show", ":guid") }}';
-                        url = url.replace(':guid', row.ledger_guid);
-                        return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
-                    }
-                },
-                {data: 'party_gst_in', name: 'party_gst_in', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'purchase', name: 'purchase', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'outstanding', name: 'outstanding', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                {data: 'parent_group_name', name: 'parent_group_name', render: data => data || '-'},
+                { data: 'ledger_group_name', render: data => data || '-' },
+                {data: 'opening_balance', name: 'opening_balance', render: data => data || '-'},
+                {data: 'total_debit', name: 'total_debit', render: data => data || '-'},
+                {data: 'total_credit', name: 'total_credit', render: data => data || '-'},
+                {data: 'closing_balance', name: 'closing_balance', render: data => data || '-'},
             ],
             footerCallback: function (row, data, start, end, display) {
-                var api = this.api();
-                var LastSaleToTotal = 2;
-                var OutstandingToTotal = 3;
-                var PmtToTotal = 4;
+                const api = this.api();
+                const columnIndexes = { sales: 3, outstanding: 4, payment: 5 };
+                
+                const totals = {
+                    sales: api.column(columnIndexes.sales).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                    outstanding: api.column(columnIndexes.outstanding).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                    payment: api.column(columnIndexes.payment).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                };
 
-
-                var LastSaletotal = api.column(LastSaleToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
-                var Outstandingtotal = api.column(OutstandingToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
-                var Pmttotal = api.column(PmtToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
-
-
-                $(api.column(LastSaleToTotal).footer()).html(jsIndianFormat(Math.abs(LastSaletotal)));
-                $(api.column(OutstandingToTotal).footer()).html(jsIndianFormat(Math.abs(Outstandingtotal)));
-                $(api.column(PmtToTotal).footer()).html(jsIndianFormat(Math.abs(Pmttotal)));
+                $(api.column(columnIndexes.sales).footer()).html(jsIndianFormat(Math.abs(totals.sales)));
+                $(api.column(columnIndexes.outstanding).footer()).html(jsIndianFormat(Math.abs(totals.outstanding)));
+                $(api.column(columnIndexes.payment).footer()).html(jsIndianFormat(Math.abs(totals.payment)));
             },
             search: {
                 orthogonal: { search: 'plain' }
@@ -271,7 +242,6 @@
         function sanitizeNumber(value) {
             return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
         }
-
     });
 </script>
 @endsection

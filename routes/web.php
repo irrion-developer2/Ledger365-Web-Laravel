@@ -28,6 +28,7 @@ use App\Http\Controllers\App\Reports\ReportCancelledController;
 use App\Http\Controllers\App\Reports\ReportItemGroupController;
 use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetController;
+use App\Http\Controllers\App\Reports\ReportGroupSummaryController;
 use Laravel\Jetstream\Http\Controllers\Inertia\ApiTokenController;
 use App\Http\Controllers\App\Reports\ReportCustomerGroupController;
 use App\Http\Controllers\App\Reports\ReportGeneralLedgerController;
@@ -150,11 +151,15 @@ Route::middleware([
         Route::get('/reports/Item/ItemLedger/{itemLedgerId}/get-data', [ReportItemGroupController::class, 'getItemLedgerData'])->name('reports.ItemLedger.get-data');
 
         Route::get('reports/BalanceSheet', [ReportBalanceSheetController::class, 'index'])->name('reports.BalanceSheet');
-        Route::get('/reports/BalanceSheet/get-data', [ReportBalanceSheetController::class, 'getData'])->name('reports.BalanceSheet.get-data');
+        Route::get('/BalanceSheet/get-data', [ReportBalanceSheetController::class, 'getData'])->name('BalanceSheet.get-data');
+        Route::get('reports/BalanceSheetProfitLoss', [ReportBalanceSheetProfitLossController::class, 'index'])->name('reports.BalanceSheetProfitLoss');
+        Route::get('/BalanceSheetProfitLoss/get-data', [ReportBalanceSheetProfitLossController::class, 'getData'])->name('BalanceSheetProfitLoss.get-data');
+
+        // Route::get('/reports/BalanceSheet/get-data', [ReportBalanceSheetController::class, 'getData'])->name('reports.BalanceSheet.get-data');
         Route::get('/reports/BalanceAssetSheet/get-data', [ReportBalanceSheetController::class, 'getAssetData'])->name('reports.BalanceAssetSheet.get-data');
         Route::get('/reports/BalanceAssetSheetItem/get-data', [ReportBalanceSheetController::class, 'getAssetItemData'])->name('reports.BalanceAssetSheetItem.get-data');
 
-        Route::get('reports/BalanceSheetProfitLoss', [ReportBalanceSheetProfitLossController::class, 'index'])->name('reports.BalanceSheetProfitLoss');
+        // Route::get('reports/BalanceSheetProfitLoss', [ReportBalanceSheetProfitLossController::class, 'index'])->name('reports.BalanceSheetProfitLoss');
         Route::get('/reports/BalanceSheetProfitLoss/get-data', [ReportBalanceSheetProfitLossController::class, 'OpeningGetData'])->name('reports.BalanceSheetProfitLoss.get-data');
         Route::get('/reports/BalanceSheetProfitLossExpense/get-data', [ReportBalanceSheetProfitLossController::class, 'getExpenseData'])->name('reports.BalanceSheetProfitLossExpense.get-data');
         Route::get('/reports/BalanceSheetProfitLossClosingStock/get-data', [ReportBalanceSheetProfitLossController::class, 'getClosingStockData'])->name('reports.BalanceSheetProfitLossClosingStock.get-data');
@@ -182,6 +187,9 @@ Route::middleware([
 
         Route::get('reports/LedgerSummary', [ReportLedgerSummaryController::class, 'index'])->name('reports.LedgerSummary');
         Route::get('/ledgerSummary/get-data', [ReportLedgerSummaryController::class, 'getData'])->name('LedgerSummary.get-data');
+       
+        Route::get('reports/GroupSummary', [ReportGroupSummaryController::class, 'index'])->name('reports.GroupSummary');
+        Route::get('/groupSummary/get-data', [ReportGroupSummaryController::class, 'getData'])->name('GroupSummary.get-data');
        
 
         Route::resource('/settings', SettingController::class);

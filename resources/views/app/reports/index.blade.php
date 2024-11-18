@@ -44,9 +44,9 @@
                                             <div class="pt-4">
                                                 <h5 class="my-1"><a class="nav-link " href="{{ route('reports.daybook') }}">Daybook</a></h5>
                                                 <hr class="border-1">
-                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.GeneralLedger') }}">General Ledger</a></h5>
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.GroupSummary') }}">Group Summary</a></h5>
                                                 <hr class="border-1">
-                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CashBank') }}">Cash and Bank</a></h5>
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.LedgerSummary') }}">Ledger Summary</a></h5>
                                                 <hr class="border-1">
                                                 <h5 class="my-1"><a class="nav-link " href="{{ route('reports.PaymentRegister') }}">Payment Register</a></h5>
                                                 <hr class="border-1">
@@ -83,8 +83,6 @@
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers Group</a></h5>
                                            <hr class="border-1">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ItemGroup') }}">Sales by Items Group</a></h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.LedgerSummary') }}">Ledger Summary</a></h5>
                                            
                                        </div>
                                    </div>
@@ -105,9 +103,6 @@
                                        <div class="pt-4">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('stock-items.index') }}">Stock Items</a></h5>
                                            <hr class="border-1">
-                                           <h5 class="my-1">Fast and Slow Moving Items *</h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1">Below Reorder Items *</h5>
                                        </div>
                                    </div>
                                 </div>

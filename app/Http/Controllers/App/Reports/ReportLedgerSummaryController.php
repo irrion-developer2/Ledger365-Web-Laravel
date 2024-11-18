@@ -67,6 +67,7 @@ class ReportLedgerSummaryController extends Controller
 
         $ledgerSummaryQuery = TallyLedger::select(
                 'tally_ledgers.ledger_name',
+                'tally_ledgers.ledger_guid',
                 DB::raw('IFNULL(tally_ledgers.opening_balance, 0) AS `opening_balance`'),
                 DB::raw('IFNULL(tr.total_debit, 0) AS `total_debit`'),
                 DB::raw('IFNULL(tr.total_credit, 0) AS `total_credit`'),

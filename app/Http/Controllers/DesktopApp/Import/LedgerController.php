@@ -528,7 +528,7 @@ class LedgerController extends Controller
             foreach ($messages as $message) {
                 if (isset($message['UNIT'])) {
                     $unitData = $message['UNIT'];
-                    Log::info('Unit Data:', ['unitData' => $unitData]);
+                    // Log::info('Unit Data:', ['unitData' => $unitData]);
 
                     $reportingUQCDetails = $unitData['REPORTINGUQCDETAILS.LIST'] ?? [];
                     $reportingUQCName = $reportingUQCDetails['REPORTINGUQCNAME'] ?? null;
@@ -574,7 +574,7 @@ class LedgerController extends Controller
             foreach ($messages as $message) {
                 if (isset($message['GODOWN'])) {
                     $godownData = $message['GODOWN'];
-                    Log::info('Godown Data:', ['godownData' => $godownData]);
+                    // Log::info('Godown Data:', ['godownData' => $godownData]);
 
                     $nameField = $godownData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? null;
                     if (is_array($nameField)) {
@@ -602,7 +602,7 @@ class LedgerController extends Controller
             foreach ($messages as $message) {
                 if (isset($message['STOCKGROUP'])) {
                     $stockGroupData = $message['STOCKGROUP'];
-                    Log::info('STOCKGROUP Data:', ['stockGroupData' => $stockGroupData]);
+                    // Log::info('STOCKGROUP Data:', ['stockGroupData' => $stockGroupData]);
 
                     $nameField = $stockGroupData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? null;
                     if (is_array($nameField)) {
@@ -643,7 +643,7 @@ class LedgerController extends Controller
             foreach ($messages as $message) {
                 if (isset($message['STOCKITEM'])) {
                     $stockItemData = $message['STOCKITEM'];
-                    Log::info('Stock Item Data:', ['stockItemData' => $stockItemData]);
+                    // Log::info('Stock Item Data:', ['stockItemData' => $stockItemData]);
 
                     $nameField = $stockItemData['LANGUAGENAME.LIST']['NAME.LIST']['NAME'] ?? [];
                     $aliases = [];
@@ -1000,7 +1000,7 @@ class LedgerController extends Controller
                                 ->where('company_Id', $companyId)
                                 ->value('voucher_type_id');
 
-                    Log::info('jsonFilePath Data:', ['jsonFilePath' => $jsonFilePath]);
+                    // Log::info('jsonFilePath Data:', ['jsonFilePath' => $jsonFilePath]);
 
                     $tallyVoucher = TallyVoucher::updateOrCreate(
                         [

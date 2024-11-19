@@ -54,7 +54,7 @@ class ReportBalanceSheetProfitLossController extends Controller
         }
     }
 
-    
+
     public function getData(Request $request)
     {
         $companyIds = $this->reportService->companyData();
@@ -62,7 +62,7 @@ class ReportBalanceSheetProfitLossController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
 
-            $desiredParentGroups = ['Purchase Accounts', 'Sales Accounts', 'Direct Expenses, Expenses (Direct)', 'Direct Incomes, Income (Direct)', 'Indirect Expenses, Expenses (Indirect)', 'Indirect Incomes, Income (Indirect)'];
+            $desiredParentGroups = ['Purchase Accounts', 'Sales Accounts', 'Direct Expenses', 'Direct Incomes', 'Indirect Expenses', 'Indirect Incomes'];
 
 
             $transactionsSubquery = DB::table('tally_voucher_heads as tvh')
@@ -194,15 +194,15 @@ class ReportBalanceSheetProfitLossController extends Controller
     }
 
 
-    public function getExpenseData(Request $request) 
+    public function getExpenseData(Request $request)
     {
         $companyGuids = $this->reportService->companyData();
-    
+
         if ($request->ajax()) {
             $startTime = microtime(true);
-    
+
             $accountTypeCases = '
-                CASE 
+                CASE
                     WHEN name LIKE "%liabilities%" THEN "Liability"
                     WHEN name LIKE "%liability%" THEN "Liability"
                     WHEN name LIKE "%branch / divisions%" THEN "Liability"
@@ -219,23 +219,23 @@ class ReportBalanceSheetProfitLossController extends Controller
 
                     WHEN name LIKE "%expense%" THEN "Expense"
                     WHEN name LIKE "%purchase%" THEN "Expense"
-                    ELSE "Other" 
+                    ELSE "Other"
                 END as account_type
             ';
-    
+
             $Balancequery = TallyLedgerGroup::where(function($query) {
                                 $query->where('parent', '')->orWhereNull('parent');
                             })
                             ->whereIn('company_guid', $companyGuids)
                             ->selectRaw("guid, name, parent, company_guid, $accountTypeCases");
-    
+
             Log::info("BalanceSheet Query");
             Log::info($this->reportService->getFinalQuery($Balancequery));
-    
+
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
             Log::info('Total first db request execution time for ReportBalanceSheetProfitLossController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
-    
+
             $dataTable = DataTables::of($Balancequery)
                 ->addIndexColumn()
                 ->editColumn('amount', function ($data) use ($companyGuids) {
@@ -251,7 +251,7 @@ class ReportBalanceSheetProfitLossController extends Controller
 
                     $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
                     $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-    
+
                     if ($groupLedgerIds->isNotEmpty()) {
                         $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
                                 ->whereIn('company_guid', $companyGuids)
@@ -261,13 +261,13 @@ class ReportBalanceSheetProfitLossController extends Controller
                                 ->whereIn('company_guid', $companyGuids)
                                 ->pluck('guid');
                     }
-    
+
                     $allLedgerIds = $ledgerIds->unique();
-    
+
                     if ($allLedgerIds->isEmpty()) {
                         return '-';
                     }
-    
+
                     $totalAmount = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
                                                     ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
                                                     ->whereNot('tally_vouchers.is_cancelled', 'Yes')
@@ -277,7 +277,7 @@ class ReportBalanceSheetProfitLossController extends Controller
                     if ($totalAmount == 0) {
                         return '-';
                     }
-    
+
                     return indian_format(abs($totalAmount));
                 })
                 ->filter(function ($query) {
@@ -293,11 +293,11 @@ class ReportBalanceSheetProfitLossController extends Controller
                     });
                 })
                 ->make(true);
-    
+
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
             Log::info('Total end execution time for ReportBalanceSheetProfitLossController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
-    
+
             return $dataTable;
         }
     }
@@ -340,7 +340,7 @@ class ReportBalanceSheetProfitLossController extends Controller
 
                 $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
                 $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
-                        
+
                 // Get sums for this stock item
                 $sumsEntry = $sums->get($guid);
 

@@ -38,13 +38,10 @@ class HomeController extends Controller
         $cashBankName = $cashBank ? $cashBank->ledger_group_name : 'Bank Accounts';
         $cashBankId = $cashBank ? $cashBank->ledger_group_id : null;
         
-        $cashBankAmount = TallyVoucherHead::whereIn('ledger_id', function($query) use ($cashBankId, $companyIds) {
-            $query->select('ledger_id')
-                ->from('tally_ledgers')
-                ->where('ledger_group_id', $cashBankId)
-                ->whereIn('company_id', $companyIds);
-        })->sum('amount');
-
+        $cashBankAmount = TallyVoucherHead::join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+                        ->where('tally_ledgers.ledger_group_id', $cashBankId)
+                        ->whereIn('tally_ledgers.company_id', $companyIds)
+                        ->sum('tally_voucher_heads.amount');
         /* cashBankAmount */
 
         /* Inventory Amount */
@@ -56,12 +53,10 @@ class HomeController extends Controller
          $payableName = $payable ? $payable->ledger_group_name : 'Sundry Creditors';
          $payableId = $payable ? $payable->ledger_group_id : null;
  
-         $payables = TallyVoucherHead::whereIn('ledger_id', function($query) use ($payableId, $companyIds) {
-             $query->select('ledger_id')
-                 ->from('tally_ledgers')
-                 ->where('ledger_group_id', $payableId)
-                 ->whereIn('company_id', $companyIds);
-         })->sum('amount');
+         $payables = TallyVoucherHead::join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+                    ->where('tally_ledgers.ledger_group_id', $payableId)
+                    ->whereIn('tally_ledgers.company_id', $companyIds)
+                    ->sum('tally_voucher_heads.amount');
          /* Payables */
 
         /* Sales Receipt chart */
@@ -71,8 +66,6 @@ class HomeController extends Controller
         $chartSaleAmt = abs(array_sum($chartData['sales']));
         $chartReceiptAmt = abs(array_sum($chartData['receipts']));
         $lastMonthsTotal = $this->getLastMonthsTotal($chartData);
-
-        // dd($chartData, $chartSaleAmt, $chartReceiptAmt);
         /* Sales Receipt chart */
 
         /* pie chart */
@@ -86,12 +79,10 @@ class HomeController extends Controller
         $cashName = $cashGroup ? $cashGroup->ledger_group_name : 'Cash-in-Hand';
         $cashGroupId = $cashGroup ? $cashGroup->ledger_group_id : null;
 
-        $cashAmount = TallyVoucherHead::whereIn('ledger_id', function($query) use ($cashGroupId, $companyIds) {
-            $query->select('ledger_id')
-                ->from('tally_ledgers')
-                ->where('ledger_group_id', $cashGroupId)
-                ->whereIn('company_id', $companyIds);
-        })->sum('amount');
+        $cashAmount = TallyVoucherHead::join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+                        ->where('tally_ledgers.ledger_group_id', $cashGroupId)
+                        ->whereIn('tally_ledgers.company_id', $companyIds)
+                        ->sum('tally_voucher_heads.amount');
         /* Cash Amount */
 
 

@@ -13,6 +13,11 @@ class TallyLedger extends Model
     protected $primaryKey = 'ledger_id';
     protected $guarded = [];
 
+    public function ledgerGroup()
+    {
+        return $this->belongsTo(TallyLedgerGroup::class, 'ledger_group_id', 'ledger_group_id');
+    }
+
     public function tallyVoucherHead()
     {
         return $this->belongsTo(TallyVoucherHead::class, 'ledger_guid', 'guid'); // 'guid' in TallyLedger and 'ledger_guid' in TallyVoucherHead

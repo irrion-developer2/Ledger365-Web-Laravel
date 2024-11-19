@@ -15,4 +15,9 @@ class TallyLedgerGroup extends Model
     {
         return $this->hasMany(TallyLedger::class, 'parent', 'name');
     }
+
+    public function ledgers()
+    {
+        return $this->hasMany(TallyLedger::class, 'ledger_group_id', 'ledger_group_id');
+    }
 }

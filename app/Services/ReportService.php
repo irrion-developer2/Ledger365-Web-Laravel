@@ -15,7 +15,7 @@ class ReportService
         $companyId = session('selected_company_ids');
         \Log::info('Company ReportService ID Latest:', ['selected_company_ids' => $companyId]);            
 
-        return TallyCompany::where('company_id', $companyId)->pluck('company_id')->toArray();
+        return TallyCompany::whereIn('company_id', $companyId)->pluck('company_id')->toArray();
     }
     
     

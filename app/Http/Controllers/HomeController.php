@@ -28,6 +28,8 @@ class HomeController extends Controller
     public function index()
     {
         $companyIds = $this->reportService->companyData();
+
+        // dd($companyIds);
         $user = User::count();
         $role = auth()->user()->role;
 
@@ -35,13 +37,14 @@ class HomeController extends Controller
         $cashBank = TallyLedgerGroup::where('ledger_group_name', 'Bank Accounts')->whereIn('company_id', $companyIds)->first();
         $cashBankName = $cashBank ? $cashBank->ledger_group_name : 'Bank Accounts';
         $cashBankId = $cashBank ? $cashBank->ledger_group_id : null;
-
+        
         $cashBankAmount = TallyVoucherHead::whereIn('ledger_id', function($query) use ($cashBankId, $companyIds) {
             $query->select('ledger_id')
                 ->from('tally_ledgers')
                 ->where('ledger_group_id', $cashBankId)
                 ->whereIn('company_id', $companyIds);
         })->sum('amount');
+
         /* cashBankAmount */
 
         /* Inventory Amount */

@@ -1,6 +1,7 @@
 <?php
     $reportService = new App\Services\ReportService();
     $companyIds = $reportService->companyData();
+    {{--  dd($companyIds);  --}}
     $companies = App\Models\TallyCompany::whereIn('company_id', $companyIds)->get();
 ?>
     <div class="header-wrapper">

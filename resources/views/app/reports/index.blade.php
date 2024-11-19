@@ -102,7 +102,7 @@
                                        </div>
                                        <div class="pt-4">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('stock-items.index') }}">Stock Items</a></h5>
-                                           <hr class="border-1">
+                                           {{--  <hr class="border-1">  --}}
                                        </div>
                                    </div>
                                 </div>
@@ -148,7 +148,7 @@
                                 </div>
                             </div> --}}
 
-                            <div class="col">
+                            {{--  <div class="col">
                                 <div class="card radius-10 border-start border-0 border-4 border-danger">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center">
@@ -166,7 +166,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div>  --}}
 
 
                             <div class="col">

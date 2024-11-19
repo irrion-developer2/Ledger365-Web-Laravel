@@ -62,7 +62,7 @@ class ReportBalanceSheetProfitLossController extends Controller
         if ($request->ajax()) {
             $startTime = microtime(true);
 
-            $desiredParentGroups = ['Purchase Accounts', 'Sales Accounts', 'Indirect Expenses, Expenses (Indirect)'];
+            $desiredParentGroups = ['Purchase Accounts', 'Sales Accounts', 'Direct Expenses, Expenses (Direct)', 'Direct Incomes, Income (Direct)', 'Indirect Expenses, Expenses (Indirect)', 'Indirect Incomes, Income (Indirect)'];
 
 
             $transactionsSubquery = DB::table('tally_voucher_heads as tvh')

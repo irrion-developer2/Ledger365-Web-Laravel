@@ -6,6 +6,7 @@
 
     $companies = App\Models\TallyCompany::whereIn('company_id', $userCompanyMappings)->get();
 
+    $selectedCompanyIds = session('selected_company_ids', []);
 ?>
 <style>
   .dropdown-item.selected {
@@ -185,51 +186,37 @@
             </li>
             @endif
 
-            {{-- @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
-                        <div class="parent-icon"><i class="bx bx-buildings"></i></div>
-                        <div class="menu-title d-flex align-items-center company-changes">
-                            {{ session('selected_company_name', 'Companies') }}
-                        </div>
-                        <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
-                    </a>
-                    <ul class="dropdown-menu">
-                        @foreach($companies as $company)
-                            <li>
-                                <a class="dropdown-item {{ session('selected_company_id') == $company->company_id ? 'selected' : '' }}"
-                                href="javascript:;" onclick="changeCompany('{{ $company->company_id }}', '{{ $company->company_name }}')">
-                                    {{ $company->company_name }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </li>
-            @endif --}}
-
+            @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
-                  <div class="parent-icon"><i class="bx bx-buildings"></i></div>
-                  <div class="menu-title d-flex align-items-center company-changes">
-                      {{ session('selected_company_names', 'Select Companies') }}
-                  </div>
-                  <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
-              </a>
-              <ul class="dropdown-menu">
-                  @foreach($companies as $company)
-                      <li>
-                          <label class="dropdown-item">
-                              {{ $company->company_name }}
-                              <input type="checkbox" class="company-checkbox ms-2" value="{{ $company->company_id }}" 
-                                     data-name="{{ $company->company_name }}" onchange="updateSelectedCompanies()"> 
-                          </label>
-                      </li>
-                  @endforeach
-                  <li>
-                      <button class="btn btn-primary w-100 mt-2" onclick="changeCompanies()">Confirm Selection</button>
-                  </li>
-              </ul>
-          </li>
+                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
+                    <div class="parent-icon"><i class="bx bx-buildings"></i></div>
+                    <div class="menu-title d-flex align-items-center company-changes">
+                        {{ ('Select Companies') }}
+                    </div>
+                    <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
+                </a>
+                <ul class="dropdown-menu">
+                    @foreach($companies as $company)
+                        @php
+                            $isChecked = in_array($company->company_id, $selectedCompanyIds);
+                        @endphp
+                        <li>
+                            <label class="dropdown-item">
+                                {{ $company->company_name }}
+                                <input type="checkbox" class="company-checkbox ms-2" value="{{ $company->company_id }}"
+                                    data-name="{{ $company->company_name }}"
+                                    onchange="updateSelectedCompanies()"
+                                    {{ $isChecked ? 'checked' : '' }}>
+                            </label>
+                        </li>
+                    @endforeach
+                    <li>
+                        <button class="btn btn-primary w-100 mt-2" onclick="changeCompanies()">Confirm Selection</button>
+                    </li>
+                </ul>
+            </li>
+            @endif
+            
             
          </ul>
        </div>
@@ -290,43 +277,3 @@
       });
   }
 </script>
-{{-- <script>
-    function changeCompany(companyId, companyName) {
-        if (!companyId) {
-            return;
-        }
-        
-        // Update UI immediately to show selected company name
-        document.querySelector('.company-changes').textContent = companyName;
-        
-        // Call backend to set session data
-        fetch('/set-company-session', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                company_id: companyId,
-                company_name: companyName
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to update session: ' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(sessionData => {
-            if (sessionData.success) {
-                console.log('Session updated with company:', sessionData.company);
-                window.location.reload();
-            } else {
-                console.warn('Failed to update session.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error.message);
-        });
-    }
-</script> --}}

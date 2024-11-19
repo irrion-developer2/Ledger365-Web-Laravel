@@ -25,7 +25,7 @@ class ReportBalanceSheetController extends Controller
         $this->reportService = $reportService;
     }
 
-    
+
     public function index()
     {
         $companyIds = $this->reportService->companyData();
@@ -38,73 +38,16 @@ class ReportBalanceSheetController extends Controller
 
     public function getData(Request $request)
     {
-        $companyIds = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData(); // Get dynamic company IDs
 
         if ($request->ajax()) {
             $startTime = microtime(true);
-
-            $desiredParentGroups = ['Capital Account', 'Loans (Liability)', 'Current Liabilities','Fixed Assets', 'Investments', 'Current Assets'];
-
-
-            $transactionsSubquery = DB::table('tally_voucher_heads as tvh')
-            ->select(
-                'tvh.ledger_id',
-                DB::raw('SUM(CASE WHEN tvh.amount < 0 THEN ABS(tvh.amount) ELSE 0 END) AS total_debit'),
-                DB::raw('SUM(CASE WHEN tvh.amount > 0 THEN tvh.amount ELSE 0 END) AS total_credit'),
-                DB::raw('SUM(tvh.amount) AS net_change')
-            )
-            ->join('tally_vouchers as tv', 'tvh.voucher_id', '=', 'tv.voucher_id')
-            ->where(function ($query) {
-                $query->where('tv.is_optional', 0)
-                      ->orWhereNull('tv.is_optional');
-            })
-            ->where(function ($query) {
-                $query->where('tv.is_cancelled', 0)
-                      ->orWhereNull('tv.is_cancelled');
-            })
-            ->groupBy('tvh.ledger_id');
-
-        $latestVoucherDateSubquery = DB::table('tally_voucher_heads as tvh')
-            ->select(
-                'tvh.ledger_id',
-                DB::raw('MAX(tv.voucher_date) AS latest_voucher_date')
-            )
-            ->join('tally_vouchers as tv', 'tvh.voucher_id', '=', 'tv.voucher_id')
-            ->where(function ($query) {
-                $query->where('tv.is_optional', 0)
-                      ->orWhereNull('tv.is_optional');
-            })
-            ->where(function ($query) {
-                $query->where('tv.is_cancelled', 0)
-                      ->orWhereNull('tv.is_cancelled');
-            })
-            ->groupBy('tvh.ledger_id');
-
-        $ledgerSummaryQuery = DB::table('tally_ledger_groups as tlg')
-            ->select(
-                DB::raw('COALESCE(tlg.parent, tlg.ledger_group_name) AS parent_group_name'),
-                DB::raw('IFNULL(SUM(tl.opening_balance), 0) AS total_opening_balance'),
-                DB::raw('IFNULL(SUM(tr.total_debit), 0) AS total_debit'),
-                DB::raw('IFNULL(SUM(tr.total_credit), 0) AS total_credit'),
-                DB::raw('IFNULL(SUM(tl.opening_balance), 0) + IFNULL(SUM(tr.net_change), 0) AS total_closing_balance'),
-                DB::raw('MAX(lv.latest_voucher_date) AS latest_voucher_date')
-            )
-            ->leftJoin('tally_ledgers as tl', 'tl.ledger_group_id', '=', 'tlg.ledger_group_id')
-            ->leftJoinSub($transactionsSubquery, 'tr', function ($join) {
-                $join->on('tl.ledger_id', '=', 'tr.ledger_id');
-            })
-            ->leftJoinSub($latestVoucherDateSubquery, 'lv', function ($join) {
-                $join->on('tl.ledger_id', '=', 'lv.ledger_id');
-            })
-            ->whereIn('tl.company_id', $companyIds)
-            ->whereIn(DB::raw('COALESCE(tlg.parent, tlg.ledger_group_name)'), $desiredParentGroups)
-            ->groupBy(DB::raw('COALESCE(tlg.parent, tlg.ledger_group_name)'))
-            ->orderBy('parent_group_name');
 
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
 
+            // Handle date range logic
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -132,28 +75,132 @@ class ReportBalanceSheetController extends Controller
                         $endDate = now()->subYear()->endOfYear()->toDateString();
                         break;
                     case 'all':
+                        $startDate = null;
+                        $endDate = null;
                         break;
                 }
             }
 
-            if ($startDate && $endDate) {
-                $ledgerSummaryQuery->whereBetween('lv.latest_voucher_date', [$startDate, $endDate]);
-            }
+            // Prepare placeholders for company IDs
+            $placeholders = implode(',', array_fill(0, count($companyIds), '?'));
 
-            $ledgerSummary = $ledgerSummaryQuery->get();
+            $query = <<<SQL
+            WITH RECURSIVE ledger_group_hierarchy AS (
+                SELECT
+                    lg.ledger_group_id,
+                    lg.ledger_group_name,
+                    lg.parent,
+                    CAST(lg.ledger_group_name AS CHAR(1000)) AS full_group_path,
+                    0 AS level
+                FROM
+                    tally_ledger_groups lg
+                WHERE
+                    lg.ledger_group_name IN ('Capital Account', 'Loans (Liability)', 'Current Liabilities', 'Fixed Assets', 'Investments', 'Current Assets')
+                    AND lg.company_id IN ($placeholders)
 
-            Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
+                UNION ALL
+
+                SELECT
+                    lg_child.ledger_group_id,
+                    lg_child.ledger_group_name,
+                    lg_child.parent,
+                    CAST(CONCAT(lg_h.full_group_path, ' > ', lg_child.ledger_group_name) AS CHAR(1000)) AS full_group_path,
+                    lg_h.level + 1 AS level
+                FROM
+                    tally_ledger_groups lg_child
+                INNER JOIN
+                    ledger_group_hierarchy lg_h ON lg_child.parent = lg_h.ledger_group_name
+                WHERE
+                    lg_child.company_id IN ($placeholders)
+            ),
+            voucher_amounts_before AS (
+                SELECT
+                    vh.ledger_id,
+                    SUM(vh.amount) AS total_amount
+                FROM
+                    tally_voucher_heads vh
+                INNER JOIN
+                    tally_vouchers v ON vh.voucher_id = v.voucher_id
+                WHERE
+                    v.voucher_date < ?
+                    AND (v.is_optional = 0 OR v.is_optional IS NULL)
+                    AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
+                    AND v.company_id IN ($placeholders)
+                GROUP BY
+                    vh.ledger_id
+            ),
+            voucher_amounts_in_range AS (
+                SELECT
+                    vh.ledger_id,
+                    SUM(vh.amount) AS total_amount,
+                    SUM(CASE WHEN vh.amount < 0 THEN vh.amount ELSE 0 END) AS debit_amount,
+                    SUM(CASE WHEN vh.amount > 0 THEN vh.amount ELSE 0 END) AS credit_amount
+                FROM
+                    tally_voucher_heads vh
+                INNER JOIN
+                    tally_vouchers v ON vh.voucher_id = v.voucher_id
+                WHERE
+                    v.voucher_date BETWEEN ? AND ?
+                    AND (v.is_optional = 0 OR v.is_optional IS NULL)
+                    AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
+                    AND v.company_id IN ($placeholders)
+                GROUP BY
+                    vh.ledger_id
+            ),
+            ledger_balances AS (
+                SELECT
+                    l.ledger_id,
+                    l.ledger_name,
+                    lg_h.full_group_path AS ledger_group_hierarchy,
+                    (IFNULL(l.opening_balance, 0) + IFNULL(vab.total_amount, 0)) AS adjusted_opening_balance,
+                    ABS(IFNULL(vai.debit_amount, 0)) AS total_debit,
+                    IFNULL(vai.credit_amount, 0) AS total_credit,
+                    (IFNULL(l.opening_balance, 0) + IFNULL(vab.total_amount, 0) + IFNULL(vai.total_amount, 0)) AS closing_balance
+                FROM
+                    ledger_group_hierarchy lg_h
+                INNER JOIN
+                    tally_ledgers l ON l.ledger_group_id = lg_h.ledger_group_id
+                LEFT JOIN
+                    voucher_amounts_before vab ON vab.ledger_id = l.ledger_id
+                LEFT JOIN
+                    voucher_amounts_in_range vai ON vai.ledger_id = l.ledger_id
+                WHERE
+                    l.company_id IN ($placeholders)
+            )
+            SELECT
+                lb.ledger_group_hierarchy,
+                SUM(lb.adjusted_opening_balance) AS opening_balance,
+                SUM(lb.total_debit) AS total_debit,
+                SUM(lb.total_credit) AS total_credit,
+                SUM(lb.closing_balance) AS closing_balance
+            FROM
+                ledger_balances lb
+            GROUP BY
+                lb.ledger_group_hierarchy
+            ORDER BY
+                lb.ledger_group_hierarchy;
+        SQL;
+
+            // Combine bindings
+            $bindings = array_merge(
+                $companyIds, // For `lg.company_id` in ledger_group_hierarchy
+                $companyIds, // For `lg_child.company_id` in recursive part
+                [$startDate], // For voucher_amounts_before
+                $companyIds, // For `v.company_id` in voucher_amounts_before
+                [$startDate, $endDate], // For voucher_amounts_in_range
+                $companyIds // For `v.company_id` in voucher_amounts_in_range
+            );
+
+            // Execute the query
+            $results = DB::select($query, $bindings);
+
             Log::info('Start date:', ['startDate' => $startDate]);
             Log::info('End date:', ['endDate' => $endDate]);
 
-            $endTime1 = microtime(true);
-            $executionTime1 = $endTime1 - $startTime;
-            Log::info('Total first db request execution time for ReportGroupSummaryController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
-
-            $dataTable = DataTables::of($ledgerSummary)
+            $dataTable = DataTables::of($results)
                 ->addIndexColumn()
                 ->addColumn('opening_balance', function ($data) {
-                    return indian_format($data->total_opening_balance);
+                    return indian_format($data->opening_balance);
                 })
                 ->addColumn('total_debit', function ($data) {
                     return indian_format($data->total_debit);
@@ -162,13 +209,13 @@ class ReportBalanceSheetController extends Controller
                     return indian_format($data->total_credit);
                 })
                 ->addColumn('closing_balance', function ($data) {
-                    return indian_format($data->total_closing_balance);
+                    return indian_format($data->closing_balance);
                 })
                 ->make(true);
 
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
-            Log::info('Total end execution time for ReportGroupSummaryController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+            Log::info('Execution time for getData:', ['time_taken' => $executionTime . ' seconds']);
 
             return $dataTable;
         }
@@ -182,7 +229,7 @@ class ReportBalanceSheetController extends Controller
 
     //     return view ('app.reports.balanceSheet.index', compact('company'));
     // }
-    
+
     // public function getData(Request $request)
     // {
     //     $companyGuids = $this->reportService->companyData();
@@ -191,7 +238,7 @@ class ReportBalanceSheetController extends Controller
     //         $startTime = microtime(true);
 
     //         $accountTypeCases = '
-    //             CASE 
+    //             CASE
     //                 WHEN name LIKE "%liabilities%" THEN "Liability"
     //                 WHEN name LIKE "%liability%" THEN "Liability"
     //                 WHEN name LIKE "%branch / divisions%" THEN "Liability"
@@ -209,7 +256,7 @@ class ReportBalanceSheetController extends Controller
     //                 WHEN name LIKE "%expense%" THEN "Expense"
     //                 WHEN name LIKE "%purchase%" THEN "Expense"
 
-    //                 ELSE "Other" 
+    //                 ELSE "Other"
     //             END as account_type
     //         ';
 
@@ -218,14 +265,14 @@ class ReportBalanceSheetController extends Controller
     //                     })
     //                     ->whereIn('company_guid', $companyGuids)
     //                     ->selectRaw("guid, name, parent, company_guid, $accountTypeCases");
-    
-    //         Log::info("BalanceSheet Query");        
+
+    //         Log::info("BalanceSheet Query");
     //         Log::info($this->reportService->getFinalQuery($Balancequery));
-    
+
     //         $endTime1 = microtime(true);
     //         $executionTime1 = $endTime1 - $startTime;
     //         Log::info('Total first db request execution time for ReportBalanceSheetController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
-    
+
     //         $dataTable = DataTables::of($Balancequery)
     //             ->addIndexColumn()
     //             ->editColumn('amount', function ($data) use ($companyGuids) {
@@ -241,7 +288,7 @@ class ReportBalanceSheetController extends Controller
 
     //                 $groupLedgerIdsQuery = TallyLedgerGroup::where('parent', $name)->whereIn('company_guid', $companyGuids);
     //                 $groupLedgerIds = $groupLedgerIdsQuery->pluck('name');
-    
+
     //                 if ($groupLedgerIds->isNotEmpty()) {
     //                     $ledgerIds = TallyLedger::whereIn('parent', $groupLedgerIds)
     //                             ->whereIn('company_guid', $companyGuids)
@@ -251,13 +298,13 @@ class ReportBalanceSheetController extends Controller
     //                             ->whereIn('company_guid', $companyGuids)
     //                             ->pluck('guid');
     //                 }
-    
+
     //                 $allLedgerIds = $ledgerIds->unique();
-    
+
     //                 if ($allLedgerIds->isEmpty()) {
     //                     return '-';
     //                 }
-    
+
     //                 $totalAmount = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id')
     //                                                 ->whereIn('tally_voucher_heads.ledger_guid', $allLedgerIds)
     //                                                 ->whereNot('tally_vouchers.is_cancelled', 'Yes')
@@ -267,7 +314,7 @@ class ReportBalanceSheetController extends Controller
     //                 if ($totalAmount == 0) {
     //                     return '-';
     //                 }
-    
+
 
     //                 // dd($totalAmount);
     //                 return indian_format(abs($totalAmount));
@@ -286,11 +333,11 @@ class ReportBalanceSheetController extends Controller
     //             })
 
     //             ->make(true);
-            
+
     //         $endTime = microtime(true);
     //         $executionTime = $endTime - $startTime;
     //         Log::info('Total end execution time for ReportBalanceSheetController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
-    
+
     //         return $dataTable;
     //     }
     // }

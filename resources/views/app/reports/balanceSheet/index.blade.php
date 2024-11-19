@@ -28,11 +28,11 @@
                             <div class="col-lg-3">
                                 <form id="dateRangeForm">
                                     <div class="input-group">
-                                        <date-picker 
-                                            v-model="dateRange" 
-                                            :range="true" 
-                                            format="YYYY-MM-DD" 
-                                            :number-of-months="2" 
+                                        <date-picker
+                                            v-model="dateRange"
+                                            :range="true"
+                                            format="YYYY-MM-DD"
+                                            :number-of-months="2"
                                             placeholder="Select Date Range"
                                             :time-picker="false"
                                             value-type="format">
@@ -46,9 +46,9 @@
                                     <select id="custom_date_range" name="custom_date_range" class="form-select" @change="updateCustomRange">
                                         <template v-for="group in customDateRangeOptions">
                                             <optgroup :label="group.label">
-                                                <option 
-                                                    v-for="option in group.options" 
-                                                    :key="option.value" 
+                                                <option
+                                                    v-for="option in group.options"
+                                                    :key="option.value"
                                                     :value="option.value"
                                                     :selected="option.value === customDateRange">
                                                     @{{ option.text }}
@@ -211,7 +211,7 @@
                 }
             },
             columns: [
-                {data: 'parent_group_name', name: 'parent_group_name', render: data => data || '-'},
+                {data: 'ledger_group_hierarchy', name: 'ledger_group_hierarchy', render: data => data || '-'},
                 {data: 'opening_balance', name: 'opening_balance', render: data => data || '-'},
                 {data: 'total_debit', name: 'total_debit', render: data => data || '-'},
                 {data: 'total_credit', name: 'total_credit', render: data => data || '-'},
@@ -220,7 +220,7 @@
             footerCallback: function (row, data, start, end, display) {
                 const api = this.api();
                 const columnIndexes = { sales: 2, outstanding: 3, payment: 4 };
-                
+
                 const totals = {
                     sales: api.column(columnIndexes.sales).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
                     outstanding: api.column(columnIndexes.outstanding).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),

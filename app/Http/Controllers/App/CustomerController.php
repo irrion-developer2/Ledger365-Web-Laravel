@@ -32,7 +32,7 @@ class CustomerController extends Controller
 
     public function getData(Request $request)
     {
-        $companyIds = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData(); // Get dynamic company IDs
 
         if ($request->ajax()) {
             $startTime = microtime(true);
@@ -74,6 +74,9 @@ class CustomerController extends Controller
                         break;
                 }
             }
+
+            // Prepare placeholders for company IDs
+            $placeholders = implode(',', array_fill(0, count($companyIds), '?'));
 
             $query = <<<SQL
             WITH RECURSIVE ledger_group_hierarchy AS (
@@ -144,19 +147,21 @@ class CustomerController extends Controller
                 tally_voucher_types tvt
                 ON tv.voucher_type_id = tvt.voucher_type_id
             WHERE
-                tl.company_id IN (?)
+                tl.company_id IN ($placeholders)
                 AND (? IS NULL OR tv.voucher_date >= ?)
                 AND (? IS NULL OR tv.voucher_date <= ?)
             GROUP BY
                 tl.ledger_id;
         SQL;
 
+            // Combine company IDs with date parameters
+            $bindings = array_merge(
+                $companyIds,
+                [$startDate, $startDate, $endDate, $endDate]
+            );
+
             // Execute the query
-            $results = DB::select($query, [
-                implode(',', $companyIds),
-                $startDate, $startDate,
-                $endDate, $endDate
-            ]);
+            $results = DB::select($query, $bindings);
 
             Log::info('Start date:', ['startDate' => $startDate]);
             Log::info('End date:', ['endDate' => $endDate]);

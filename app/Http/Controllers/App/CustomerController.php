@@ -144,7 +144,7 @@ class CustomerController extends Controller
                 tally_voucher_types tvt
                 ON tv.voucher_type_id = tvt.voucher_type_id
             WHERE
-                tl.company_id IN (?, ?)
+                tl.company_id IN (?)
                 AND (? IS NULL OR tv.voucher_date >= ?)
                 AND (? IS NULL OR tv.voucher_date <= ?)
             GROUP BY
@@ -153,7 +153,7 @@ class CustomerController extends Controller
 
             // Execute the query
             $results = DB::select($query, [
-                $companyIds[0], $companyIds[1],
+                implode(',', $companyIds),
                 $startDate, $startDate,
                 $endDate, $endDate
             ]);

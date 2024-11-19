@@ -1533,13 +1533,14 @@ class LedgerController extends Controller
 
                         $billed_qty = $this->extractNumericValue($inventoryEntry['BILLEDQTY'] ?? null);
                         $actual_qty = $this->extractNumericValue($inventoryEntry['ACTUALQTY'] ?? null);
+                        $amount = $this->extractNumericValue($inventoryEntry['AMOUNT'] ?? null);
 
                         TallyBatchAllocation::updateOrCreate(
                             [
                                 'voucher_item_id' => $inventoryEntries['voucher_item_id'],
                                 'batch_name' => $batch['BATCHNAME'],
                                 'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
-                                'amount' => $batch['AMOUNT'],
+                                'amount' => $amount,
                                 'actual_qty' => $actual_qty,
                                 'billed_qty' =>  $billed_qty,
                                 'order_no' => $batch['ORDERNO'] ?? null,

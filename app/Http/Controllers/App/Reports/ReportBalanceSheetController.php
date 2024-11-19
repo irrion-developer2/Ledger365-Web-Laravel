@@ -195,6 +195,10 @@ class ReportBalanceSheetController extends Controller
             // Execute the query
             $results = DB::select($query, $bindings);
 
+            // log query with proper binding in them
+            Log::info('BalanceSheet Query');
+            Log::info($this->reportService->getFinalQuery($query, $bindings));
+
             Log::info('Start date:', ['startDate' => $startDate]);
             Log::info('End date:', ['endDate' => $endDate]);
 

@@ -188,7 +188,8 @@ class ReportBalanceSheetController extends Controller
                 [$startDate], // For voucher_amounts_before
                 $companyIds, // For voucher_amounts_before company_ids
                 [$startDate, $endDate], // For voucher_amounts_in_range
-                $companyIds // For voucher_amounts_in_range company_ids
+                $companyIds, // For voucher_amounts_in_range company_ids
+                $companyIds, // For voucher_amounts_in_range company_ids
             );
 
             // Execute the query

@@ -80,7 +80,7 @@
                             <tbody>
                                 {{-- Data will be populated by AJAX --}}
                             </tbody>
-                            <tfoot>
+                            {{--  <tfoot>
                                 <tr>
                                     <th>Total</th>
                                     <th></th>
@@ -88,7 +88,7 @@
                                     <th></th>
                                     <th></th>
                                 </tr>
-                            </tfoot>
+                            </tfoot>  --}}
                         </table>
                     </div>
                 </div>
@@ -233,7 +233,7 @@
                     return data ? data : '-';
                 }},
             ],
-            footerCallback: function (row, data, start, end, display) {
+            {{--  footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
                 var InvoiceAmountToTotal = 3;
 
@@ -242,7 +242,7 @@
                 }, 0);
 
                 $(api.column(InvoiceAmountToTotal).footer()).html(jsIndianFormat(Math.abs(InvoiceAmounttotal)));
-            },
+            },  --}}
             search: {
                 orthogonal: { search: 'plain' }
             }

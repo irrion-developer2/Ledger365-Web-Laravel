@@ -41,8 +41,9 @@
                                 <div class="row">
                                     <div class="col-lg-3">
                                         <p class="mb-0 font-13">Total Invoices</p>
-                                        {{--  <h6><h6 id="totalInvoices">0</h6></h6>  --}}
-                                        <h6>@{{ totalInvoices }}</h6> 
+                                        <h6 id="totalInvoices">0</h6>
+                                        {{--  <h6 id="summaryTotalInvoices">0</h6>  --}}
+                                        {{--  <h6>@{{ totalInvoices }}</h6>   --}}
                                     </div>
                                     <div class="col-lg-3">
                                         <p class="mb-0 font-13">Opening Balance</p>
@@ -169,7 +170,6 @@
                 },
                 reloadTableData() {
                     if (this.tableInitialized) {
-                        console.log("Reloading DataTable...");
                         $('#voucherEntriesTable').DataTable().ajax.reload(null, false);
                     }
                 },
@@ -177,8 +177,17 @@
                     if (this.tableInitialized) {
                         $('#voucherEntriesTable').DataTable().ajax.reload(null, (json) => {
                             this.totalInvoices = json.total_invoices || 0;
+                            $('#summaryTotalInvoices').text(jsIndianFormat(this.totalInvoices));
                             console.log("Total Invoices Updated:", this.totalInvoices);
-                        });
+                        }, false);
+                    }
+                },
+                initializeDateRangeFromURL() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const start_date = urlParams.get('start_date');
+                    const end_date = urlParams.get('end_date');
+                    if (start_date && end_date) {
+                        this.dateRange = [start_date, end_date];
                     }
                 }
             },
@@ -192,6 +201,8 @@
             },
             mounted() {
                 const vm = this;
+                this.initializeDateRangeFromURL();
+
                 $('#voucherEntriesTable').DataTable({
                     processing: true,
                     serverSide: true,
@@ -206,16 +217,14 @@
                                 d.end_date = vueInstance.dateRange[1];
                             }
                             d.custom_date_range = vueInstance.customDateRange || "all";
-                            {{--  if (vm.dateRange.length === 2) {
-                                d.start_date = vm.dateRange[0];
-                                d.end_date = vm.dateRange[1];
-                            }  --}}
                         },
                         dataSrc: function(json) {
                             // Initialize date picker with date range from server
                             vm.firstVoucherDate = json.first_voucher_date;
                             vm.lastVoucherDate = json.last_voucher_date;
                             vm.totalInvoices = json.total_invoices;
+
+                            $('#totalInvoices').text(jsIndianFormat(vm.totalInvoices));
                             console.log("Initial Total Invoices:", vm.totalInvoices);
                             if (!vm.dateRange.length) {
                                 vm.dateRange = [vm.firstVoucherDate, vm.lastVoucherDate];

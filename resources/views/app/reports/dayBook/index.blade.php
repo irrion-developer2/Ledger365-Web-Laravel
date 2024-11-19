@@ -91,7 +91,7 @@
                             <tbody>
                                 {{-- Data will be populated by AJAX --}}
                             </tbody>
-                            <tfoot>
+                            {{--  <tfoot>
                                 <tr>
                                     <th>Total</th>
                                     <th></th>
@@ -100,7 +100,7 @@
                                     <th></th>
                                     <th></th>
                                 </tr>
-                            </tfoot>
+                            </tfoot>  --}}
                         </table>
                     </div>
                 </div>

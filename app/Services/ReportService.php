@@ -12,13 +12,17 @@ class ReportService
 {
     public function companyData()
     {
-        $companyId = session('selected_company_ids');
-        \Log::info('Company ReportService ID Latest:', ['selected_company_ids' => $companyId]);            
+        $companyId = session('selected_company_ids', []);
+        \Log::info('Company ReportService ID Latest:', ['selected_company_ids' => $companyId]);
+
+        if (empty($companyId)) {
+            return [];
+        }
 
         return TallyCompany::whereIn('company_id', $companyId)->pluck('company_id')->toArray();
     }
-    
-    
+
+
     public $normalizedNames = [
         'Direct Expenses, Expenses (Direct)' => 'Direct Expenses',
         'Direct Incomes, Income (Direct)' => 'Direct Incomes',
@@ -55,12 +59,12 @@ class ReportService
     function getFinalQuery($query) {
         $sql = $query->toSql();
         $bindings = $query->getBindings();
-    
+
         foreach ($bindings as $binding) {
             $escapedBinding = is_numeric($binding) ? $binding : "'" . addslashes($binding) . "'";
             $sql = preg_replace('/\?/', $escapedBinding, $sql, 1);
         }
-    
+
         return $sql;
     }
 

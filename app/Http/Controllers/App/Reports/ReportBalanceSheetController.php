@@ -81,7 +81,7 @@ class ReportBalanceSheetController extends Controller
                 }
             }
 
-            // Prepare placeholders for company IDs
+            // Prepare dynamic placeholders for company IDs
             $placeholders = implode(',', array_fill(0, count($companyIds), '?'));
 
             $query = <<<SQL
@@ -183,12 +183,12 @@ class ReportBalanceSheetController extends Controller
 
             // Combine bindings
             $bindings = array_merge(
-                $companyIds, // For `lg.company_id` in ledger_group_hierarchy
-                $companyIds, // For `lg_child.company_id` in recursive part
+                $companyIds, // For ledger_group_hierarchy
+                $companyIds, // For recursive ledger_group_hierarchy
                 [$startDate], // For voucher_amounts_before
-                $companyIds, // For `v.company_id` in voucher_amounts_before
+                $companyIds, // For voucher_amounts_before company_ids
                 [$startDate, $endDate], // For voucher_amounts_in_range
-                $companyIds // For `v.company_id` in voucher_amounts_in_range
+                $companyIds // For voucher_amounts_in_range company_ids
             );
 
             // Execute the query

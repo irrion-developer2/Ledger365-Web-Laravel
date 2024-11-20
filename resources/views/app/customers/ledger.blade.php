@@ -67,14 +67,15 @@
                             <thead>
                                 <tr>
                                     <th>Ledger Name</th>
+                                    <th>Company Name</th>
                                     <th>GSTIN</th>
-                                    <th>Sales</th>
+                                    {{--  <th>Sales</th>  --}}
                                     <th>outstanding</th>
-                                    <th>
+                                    {{--  <th>
                                         ₹ Pmt Collection
                                         <br>
                                         <span style="font-size: smaller;color: gray;">FY</span>
-                                    </th>
+                                    </th>  --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -86,7 +87,8 @@
                                     <th></th>
                                     <th></th>
                                     <th></th>
-                                    <th></th>
+                                    {{--  <th></th>
+                                    <th></th>  --}}
                                 </tr>
                             </tfoot>
                         </table>
@@ -223,36 +225,37 @@
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
+                {data: 'company_name', name: 'company_name', render: data => data || '-'},
                 {data: 'party_gst_in', name: 'party_gst_in', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'sales', name: 'sales'},
+                {{--  {data: 'sales', name: 'sales'},  --}}
                 {data: 'outstanding', name: 'outstanding', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
+                {{--  {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
                     return data ? data : '-';
-                }},
+                }},  --}}
             ],
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
-                var LastSaleToTotal = 2;
+                {{--  var LastSaleToTotal = 2;  --}}
                 var OutstandingToTotal = 3;
-                var PmtToTotal = 4;
+                {{--  var PmtToTotal = 4;  --}}
 
-                var LastSaletotal = api.column(LastSaleToTotal).data().reduce(function (a, b) {
+                {{--  var LastSaletotal = api.column(LastSaleToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
+                }, 0);  --}}
                 var Outstandingtotal = api.column(OutstandingToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
                 }, 0);
-                var Pmttotal = api.column(PmtToTotal).data().reduce(function (a, b) {
+                {{--  var Pmttotal = api.column(PmtToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
+                }, 0);  --}}
 
-                $(api.column(LastSaleToTotal).footer()).html(jsIndianFormat(Math.abs(LastSaletotal)));
+                {{--  $(api.column(LastSaleToTotal).footer()).html(jsIndianFormat(Math.abs(LastSaletotal)));  --}}
                 $(api.column(OutstandingToTotal).footer()).html(jsIndianFormat(Math.abs(Outstandingtotal)));
-                $(api.column(PmtToTotal).footer()).html(jsIndianFormat(Math.abs(Pmttotal)));
+                {{--  $(api.column(PmtToTotal).footer()).html(jsIndianFormat(Math.abs(Pmttotal)));  --}}
             },
             search: {
                 orthogonal: {

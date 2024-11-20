@@ -42,8 +42,6 @@
                                     <div class="col-lg-3">
                                         <p class="mb-0 font-13">Total Invoices</p>
                                         <h6 id="totalInvoices">0</h6>
-                                        {{--  <h6 id="summaryTotalInvoices">0</h6>  --}}
-                                        {{--  <h6>@{{ totalInvoices }}</h6>   --}}
                                     </div>
                                     <div class="col-lg-3">
                                         <p class="mb-0 font-13">Opening Balance</p>
@@ -224,7 +222,7 @@
                             vm.lastVoucherDate = json.last_voucher_date;
                             vm.totalInvoices = json.total_invoices;
 
-                            $('#totalInvoices').text(jsIndianFormat(vm.totalInvoices));
+                            $('#totalInvoices').text(vm.totalInvoices);
                             console.log("Initial Total Invoices:", vm.totalInvoices);
                             if (!vm.dateRange.length) {
                                 vm.dateRange = [vm.firstVoucherDate, vm.lastVoucherDate];

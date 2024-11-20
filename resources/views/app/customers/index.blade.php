@@ -66,14 +66,15 @@
                             <thead>
                                 <tr>
                                     <th>Ledger Name</th>
+                                    <th>Company Name</th>
                                     <th>GSTIN</th>
-                                    <th>Sales</th>
+                                    {{--  <th>Sales</th>  --}}
                                     <th>Outstanding</th>
-                                    <th>
+                                    {{--  <th>
                                         ₹ Pmt Collection
                                         <br>
                                         <span style="font-size: smaller;color: gray;">FY</span>
-                                    </th>
+                                    </th>  --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -85,7 +86,8 @@
                                     <th></th>
                                     <th></th>
                                     <th></th>
-                                    <th></th>
+                                    {{--  <th></th>
+                                    <th></th>  --}}
                                 </tr>
                             </tfoot>
                         </table>
@@ -222,24 +224,25 @@
                         return `<a href="${url}" style="color: #337ab7;">${data}</a>`;
                     }
                 },
+                {data: 'company_name', name: 'company_name', render: data => data || '-'},
                 {data: 'party_gst_in', name: 'party_gst_in', render: data => data || '-'},
-                {data: 'sales', name: 'sales', render: data => data || '-'},
+                {{--  {data: 'sales', name: 'sales', render: data => data || '-'},  --}}
                 {data: 'outstanding', name: 'outstanding', render: data => data || '-'},
-                {data: 'payment_collection', name: 'payment_collection', render: data => data || '-'},
+                {{--  {data: 'payment_collection', name: 'payment_collection', render: data => data || '-'},  --}}
             ],
             footerCallback: function (row, data, start, end, display) {
                 const api = this.api();
-                const columnIndexes = { sales: 2, outstanding: 3, payment: 4 };
+                const columnIndexes = { outstanding: 3 };
                 
                 const totals = {
-                    sales: api.column(columnIndexes.sales).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                    {{--  sales: api.column(columnIndexes.sales).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),  --}}
                     outstanding: api.column(columnIndexes.outstanding).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
-                    payment: api.column(columnIndexes.payment).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                    {{--  payment: api.column(columnIndexes.payment).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),  --}}
                 };
 
-                $(api.column(columnIndexes.sales).footer()).html(jsIndianFormat(Math.abs(totals.sales)));
+                {{--  $(api.column(columnIndexes.sales).footer()).html(jsIndianFormat(Math.abs(totals.sales)));  --}}
                 $(api.column(columnIndexes.outstanding).footer()).html(jsIndianFormat(Math.abs(totals.outstanding)));
-                $(api.column(columnIndexes.payment).footer()).html(jsIndianFormat(Math.abs(totals.payment)));
+                {{--  $(api.column(columnIndexes.payment).footer()).html(jsIndianFormat(Math.abs(totals.payment)));  --}}
             },
             search: {
                 orthogonal: { search: 'plain' }

@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
-use App\Models\TallyVoucher;
-use App\Models\TallyCompany;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
@@ -32,16 +30,19 @@ class CustomerController extends Controller
 
     public function getData(Request $request)
     {
-        $companyIds = $this->reportService->companyData(); // Get dynamic company IDs
+        $companyIds = $this->reportService->companyData();
 
+        if (empty($companyIds)) {
+            return DataTables::of([])->make(true);
+        }
+    
         if ($request->ajax()) {
             $startTime = microtime(true);
-
+    
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
-
-            // Handle date range logic
+    
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -69,119 +70,123 @@ class CustomerController extends Controller
                         $endDate = now()->subYear()->endOfYear()->toDateString();
                         break;
                     case 'all':
-                        $startDate = null;
-                        $endDate = null;
                         break;
                 }
             }
-
-            // Prepare placeholders for company IDs
-            $placeholders = implode(',', array_fill(0, count($companyIds), '?'));
-
-            $query = <<<SQL
-            WITH RECURSIVE ledger_group_hierarchy AS (
+    
+            $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
+            $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
+    
+            $companyIdsList = implode(',', $companyIds);
+    
+            $sql = "
+                WITH RECURSIVE ledger_group_hierarchy AS (
+                    SELECT
+                        ledger_group_id,
+                        ledger_group_name,
+                        parent,
+                        company_id
+                    FROM
+                        tally_ledger_groups
+                    WHERE
+                        ledger_group_name = 'Sundry Debtors'
+    
+                    UNION ALL
+    
+                    SELECT
+                        lg.ledger_group_id,
+                        lg.ledger_group_name,
+                        lg.parent,
+                        lg.company_id
+                    FROM
+                        tally_ledger_groups lg
+                    INNER JOIN
+                        ledger_group_hierarchy lgh
+                        ON lg.parent = lgh.ledger_group_name
+                        AND lg.company_id = lgh.company_id
+                )
                 SELECT
-                    ledger_group_id,
-                    ledger_group_name,
-                    parent,
-                    company_id
+                    tl.company_id,
+                    c.company_name, 
+                    tl.ledger_guid,
+                    tl.ledger_name,
+                    tl.party_gst_in,
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN tvt.voucher_type_name = 'Sales'
+                                THEN tvh.amount
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS total_sales,
+                    COALESCE(SUM(tvh.amount), 0) AS outstanding,
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN tvt.voucher_type_name = 'Receipt'
+                                THEN tvh.amount
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS payment_collection
                 FROM
-                    tally_ledger_groups
-                WHERE
-                    ledger_group_name = 'Sundry Debtors'
-
-                UNION ALL
-
-                SELECT
-                    lg.ledger_group_id,
-                    lg.ledger_group_name,
-                    lg.parent,
-                    lg.company_id
-                FROM
-                    tally_ledger_groups lg
+                    tally_ledgers tl
                 INNER JOIN
                     ledger_group_hierarchy lgh
-                    ON lg.parent = lgh.ledger_group_name
-                    AND lg.company_id = lgh.company_id
-            )
-            SELECT
-                tl.company_id,
-                tl.ledger_guid,
-                tl.ledger_name,
-                tl.party_gst_in,
-                COALESCE(
-                    SUM(
-                        CASE
-                            WHEN tvt.voucher_type_name = 'Sales'
-                            THEN tvh.amount
-                            ELSE 0
-                        END
-                    ),
-                    0
-                ) AS total_sales,
-                COALESCE(SUM(tvh.amount), 0) AS outstanding,
-                COALESCE(
-                    SUM(
-                        CASE
-                            WHEN tvt.voucher_type_name = 'Receipt'
-                            THEN tvh.amount
-                            ELSE 0
-                        END
-                    ),
-                    0
-                ) AS payment_collection
-            FROM
-                tally_ledgers tl
-            INNER JOIN
-                ledger_group_hierarchy lgh
-                ON tl.ledger_group_id = lgh.ledger_group_id
-            LEFT JOIN
-                tally_voucher_heads tvh
-                ON tl.ledger_id = tvh.ledger_id
-            LEFT JOIN
-                tally_vouchers tv
-                ON tvh.voucher_id = tv.voucher_id
-                AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
-                AND (tv.is_optional = 0 OR tv.is_optional IS NULL)
-            LEFT JOIN
-                tally_voucher_types tvt
-                ON tv.voucher_type_id = tvt.voucher_type_id
-            WHERE
-                tl.company_id IN ($placeholders)
-                AND (? IS NULL OR tv.voucher_date >= ?)
-                AND (? IS NULL OR tv.voucher_date <= ?)
-            GROUP BY
-                tl.ledger_id;
-        SQL;
-
-            // Combine company IDs with date parameters
-            $bindings = array_merge(
-                $companyIds,
-                [$startDate, $startDate, $endDate, $endDate]
-            );
-
-            // Execute the query
-            $results = DB::select($query, $bindings);
-
-            Log::info('Start date:', ['startDate' => $startDate]);
-            Log::info('End date:', ['endDate' => $endDate]);
-            Log::info('Total first db request execution time for CustomerController.getDATA:', ['time_taken' => microtime(true) - $startTime . ' seconds']);
-
-            $dataTable = DataTables::of($results)
+                    ON tl.ledger_group_id = lgh.ledger_group_id
+                LEFT JOIN
+                    tally_voucher_heads tvh
+                    ON tl.ledger_id = tvh.ledger_id
+                LEFT JOIN
+                    tally_vouchers tv
+                    ON tvh.voucher_id = tv.voucher_id
+                    AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
+                    AND (tv.is_optional = 0 OR tv.is_optional IS NULL)
+                LEFT JOIN
+                    tally_voucher_types tvt
+                    ON tv.voucher_type_id = tvt.voucher_type_id
+                LEFT JOIN
+                    tally_companies c
+                    ON tl.company_id = c.company_id 
+                WHERE
+                    tl.company_id IN ({$companyIdsList})
+                    AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
+                    AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
+                GROUP BY
+                    tl.ledger_id;
+            ";
+    
+            Log::info("Customer Query", ['sql' => $sql]);
+    
+            $customers = DB::select(DB::raw($sql));
+    
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for CustomerController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+    
+            $dataTable = DataTables::of($customers)
                 ->addIndexColumn()
                 ->addColumn('sales', function ($data) {
-                    return indian_format(abs($data->total_sales));
+                    $totalSales = $data->total_sales;
+                    return indian_format(abs($totalSales));
                 })
                 ->addColumn('outstanding', function ($data) {
-                    return indian_format(abs($data->outstanding));
+                    $outstanding = $data->outstanding;
+                    return indian_format(($outstanding));
                 })
                 ->addColumn('payment_collection', function ($data) {
-                    return indian_format(abs($data->payment_collection));
+                    $payment_collection = $data->payment_collection;
+                    return indian_format(abs($payment_collection));
                 })
                 ->make(true);
-
-            Log::info('Total end execution time for CustomerController.getDATA:', ['time_taken' => microtime(true) - $startTime . ' seconds']);
-
+    
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for CustomerController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+    
             return $dataTable;
         }
     }
@@ -195,37 +200,17 @@ class CustomerController extends Controller
     {
         $companyIds = $this->reportService->companyData();
 
+        if (empty($companyIds)) {
+            return DataTables::of([])->make(true);
+        }
+    
         if ($request->ajax()) {
             $startTime = microtime(true);
-
-            $customersQuery = TallyLedger::select(
-                'tally_ledgers.company_id',
-                'tally_ledgers.ledger_guid',
-                'tally_ledgers.ledger_name',
-                'tally_ledgers.party_gst_in'
-            )
-            ->where('tally_ledgers.parent', 'Sundry Creditors')
-            ->whereIn('tally_ledgers.company_id', $companyIds)
-            ->leftJoin('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
-            ->leftJoin('tally_vouchers', function ($join) {
-                $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
-                    ->where('tally_vouchers.is_cancelled', 0)
-                    ->where('tally_vouchers.is_optional', 0);
-            })
-            ->leftJoin('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-            ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as total_sales')
-            ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Sales" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as outstanding')
-            ->selectRaw('COALESCE(SUM(CASE WHEN tally_voucher_types.voucher_type_name = "Receipt" AND tally_ledgers.ledger_id = tally_voucher_heads.ledger_id THEN tally_voucher_heads.amount END), 0) as payment_collection')
-            ->groupBy('tally_ledgers.ledger_id');
-
-
-            Log::info("Customer Query");
-            Log::info($this->reportService->getFinalQuery($customersQuery));
-
+    
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
-
+    
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -256,20 +241,100 @@ class CustomerController extends Controller
                         break;
                 }
             }
-            if ($startDate && $endDate) {
-                $customersQuery->whereBetween('tally_vouchers.voucher_date', [$startDate, $endDate]);
-            }
-
-            $customers = $customersQuery->get();
-
-            Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
-            Log::info('Start date:', ['startDate' => $startDate]);
-            Log::info('End date:', ['endDate' => $endDate]);
-
+    
+            $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
+            $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
+    
+            $companyIdsList = implode(',', $companyIds);
+    
+            $sql = "
+                WITH RECURSIVE ledger_group_hierarchy AS (
+                    SELECT
+                        ledger_group_id,
+                        ledger_group_name,
+                        parent,
+                        company_id
+                    FROM
+                        tally_ledger_groups
+                    WHERE
+                        ledger_group_name = 'Sundry Creditors'
+    
+                    UNION ALL
+    
+                    SELECT
+                        lg.ledger_group_id,
+                        lg.ledger_group_name,
+                        lg.parent,
+                        lg.company_id
+                    FROM
+                        tally_ledger_groups lg
+                    INNER JOIN
+                        ledger_group_hierarchy lgh
+                        ON lg.parent = lgh.ledger_group_name
+                        AND lg.company_id = lgh.company_id
+                )
+                SELECT
+                    tl.company_id,
+                    c.company_name, 
+                    tl.ledger_guid,
+                    tl.ledger_name,
+                    tl.party_gst_in,
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN tvt.voucher_type_name = 'Sales'
+                                THEN tvh.amount
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS total_sales,
+                    COALESCE(SUM(tvh.amount), 0) AS outstanding,
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN tvt.voucher_type_name = 'Receipt'
+                                THEN tvh.amount
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS payment_collection
+                FROM
+                    tally_ledgers tl
+                INNER JOIN
+                    ledger_group_hierarchy lgh
+                    ON tl.ledger_group_id = lgh.ledger_group_id
+                LEFT JOIN
+                    tally_voucher_heads tvh
+                    ON tl.ledger_id = tvh.ledger_id
+                LEFT JOIN
+                    tally_vouchers tv
+                    ON tvh.voucher_id = tv.voucher_id
+                    AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
+                    AND (tv.is_optional = 0 OR tv.is_optional IS NULL)
+                LEFT JOIN
+                    tally_voucher_types tvt
+                    ON tv.voucher_type_id = tvt.voucher_type_id
+                LEFT JOIN
+                    tally_companies c
+                    ON tl.company_id = c.company_id 
+                WHERE
+                    tl.company_id IN ({$companyIdsList})
+                    AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
+                    AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
+                GROUP BY
+                    tl.ledger_id;
+            ";
+    
+            Log::info("Other Customer Query", ['sql' => $sql]);
+    
+            $customers = DB::select(DB::raw($sql));
+    
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
-            Log::info('Total first db request execution time for CustomerController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
-
+            Log::info('Total first db request execution time for CustomerController.ledgergetData:', ['time_taken' => $executionTime1 . ' seconds']);
+    
             $dataTable = DataTables::of($customers)
                 ->addIndexColumn()
                 ->addColumn('sales', function ($data) {
@@ -278,18 +343,18 @@ class CustomerController extends Controller
                 })
                 ->addColumn('outstanding', function ($data) {
                     $outstanding = $data->outstanding;
-                    return indian_format(abs($outstanding));
+                    return indian_format(($outstanding));
                 })
                 ->addColumn('payment_collection', function ($data) {
                     $payment_collection = $data->payment_collection;
                     return indian_format(abs($payment_collection));
                 })
                 ->make(true);
-
+    
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
-            Log::info('Total end execution time for CustomerController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
-
+            Log::info('Total end execution time for CustomerController.ledgergetData:', ['time_taken' => $executionTime . ' seconds']);
+    
             return $dataTable;
         }
     }

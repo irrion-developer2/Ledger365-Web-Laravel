@@ -37,33 +37,14 @@ class SalesController extends Controller
     public function getData(Request $request)
     {
         $companyIds = $this->reportService->companyData();
-    
+
         if ($request->ajax()) {
             $startTime = microtime(true);
-      
-            $salesQuery = DB::table('tally_vouchers as tv')
-            ->select(
-                'tl.ledger_name',
-                'tv.voucher_date',
-                'tv.voucher_type_id',
-                'tv.voucher_number',
-                DB::raw('ABS(tvh.amount) as invoice_amount'),
-                'tv.place_of_supply'
-            )
-            ->leftJoin('tally_voucher_heads as tvh', 'tv.voucher_id', '=', 'tvh.voucher_id')
-            ->leftJoin('tally_ledgers as tl', 'tvh.ledger_id', '=', 'tl.ledger_id')
-            ->leftJoin('tally_voucher_types as tvt', 'tv.voucher_type_id', '=', 'tvt.voucher_type_id')
-            ->where('tvt.voucher_type_name', 'Sales')
-            ->whereIn('tv.company_id', $companyIds)
-            ->where('tvh.is_party_ledger', 1);
-
-            Log::info("Sales Query");        
-            Log::info($this->reportService->getFinalQuery($salesQuery));
 
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
-    
+
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -94,20 +75,49 @@ class SalesController extends Controller
                         break;
                 }
             }
-            if ($startDate && $endDate) {
-                $salesQuery->whereBetween('tv.voucher_date', [$startDate, $endDate]);
-            }
-    
-            $sales = $salesQuery->get();
 
-            Log::info('customDateRange:', ['customDateRange' => $customDateRange]);
-            Log::info('Start date:', ['startDate' => $startDate]);
-            Log::info('End date:', ['endDate' => $endDate]);
+            $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
+            $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
     
+            $companyIdsList = implode(',', $companyIds);
+
+            $sql = "
+                SELECT 
+                    tl.ledger_name,
+                    c.company_name,
+                    tv.voucher_id,
+                    tv.voucher_date,
+                    tv.voucher_type_id,
+                    tv.voucher_number,
+                    ABS(tvh.amount) AS invoice_amount,
+                    tv.place_of_supply
+                FROM 
+                    tally_vouchers tv
+                LEFT JOIN 
+                    tally_voucher_heads tvh ON tv.voucher_id = tvh.voucher_id
+                LEFT JOIN 
+                    tally_ledgers tl ON tvh.ledger_id = tl.ledger_id
+                LEFT JOIN 
+                    tally_voucher_types tvt ON tv.voucher_type_id = tvt.voucher_type_id
+                LEFT JOIN
+                    tally_companies c
+                    ON tv.company_id = c.company_id 
+                WHERE 
+                    tvt.voucher_type_name = 'Sales'
+                    AND tv.company_id IN ({$companyIdsList})
+                    AND tvh.is_party_ledger = 1
+                    AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
+                    AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
+            ";
+
+            Log::info("Sales Query", ['sql' => $sql]);
+
+            $sales = DB::select(DB::raw($sql));
+
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
             Log::info('Total first db request execution time for SalesController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
-    
+
             $dataTable = DataTables::of($sales)
                 ->addIndexColumn()
                 ->addColumn('debit', function ($data) {
@@ -118,11 +128,11 @@ class SalesController extends Controller
                     return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
                 })
                 ->make(true);
-    
+
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
             Log::info('Total end execution time for SalesController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
-    
+
             return $dataTable;
         }
     }

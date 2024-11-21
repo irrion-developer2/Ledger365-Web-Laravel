@@ -211,25 +211,23 @@
                 }
             },
             columns: [
-                {data: 'parent_group_name', name: 'parent_group_name', render: data => data || '-'},
-                {data: 'opening_balance', name: 'opening_balance', render: data => data || '-'},
-                {data: 'total_debit', name: 'total_debit', render: data => data || '-'},
-                {data: 'total_credit', name: 'total_credit', render: data => data || '-'},
-                {data: 'closing_balance', name: 'closing_balance', render: data => data || '-'},
+                {data: 'ledger_group_hierarchy', name: 'ledger_group_hierarchy', render: data => data || '-'},
+                {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: data => data || '-'},
+                {data: 'total_debit', name: 'total_debit', className: 'text-end', render: data => data || '-'},
+                {data: 'total_credit', name: 'total_credit', className: 'text-end', render: data => data || '-'},
+                {data: 'closing_balance', name: 'closing_balance', className: 'text-end', render: data => data || '-'},
             ],
             footerCallback: function (row, data, start, end, display) {
                 const api = this.api();
-                const columnIndexes = { sales: 2, outstanding: 3, payment: 4 };
+                const columnIndexes = { openingBalance: 1, closingBalance: 4 };
                 
                 const totals = {
-                    sales: api.column(columnIndexes.sales).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
-                    outstanding: api.column(columnIndexes.outstanding).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
-                    payment: api.column(columnIndexes.payment).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                    openingBalance: api.column(columnIndexes.openingBalance).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
+                    closingBalance: api.column(columnIndexes.closingBalance).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
                 };
 
-                $(api.column(columnIndexes.sales).footer()).html(jsIndianFormat(Math.abs(totals.sales)));
-                $(api.column(columnIndexes.outstanding).footer()).html(jsIndianFormat(Math.abs(totals.outstanding)));
-                $(api.column(columnIndexes.payment).footer()).html(jsIndianFormat(Math.abs(totals.payment)));
+                $(api.column(columnIndexes.openingBalance).footer()).html(jsIndianFormat(Math.abs(totals.openingBalance)));
+                $(api.column(columnIndexes.closingBalance).footer()).html(jsIndianFormat(Math.abs(totals.closingBalance)));
             },
             search: {
                 orthogonal: { search: 'plain' }

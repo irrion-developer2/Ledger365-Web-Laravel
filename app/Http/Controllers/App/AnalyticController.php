@@ -31,17 +31,17 @@ class AnalyticController extends Controller
 
     public function index()
     {
-        $companyGuids = $this->reportService->companyData();
+        $companyIds = $this->reportService->companyData();
 
         /* Sales Receipt chart */
-        $chartData = $this->chartSaleReceipt($companyGuids);
+        $chartData = $this->chartSaleReceipt($companyIds);
         $salesData = $chartData['sales'];
         $chartSaleAmt = abs(array_sum($chartData['sales']));
-        $chartReceiptAmt = abs(array_sum($chartData['receipts']));
-        $lastMonthsTotal = $this->getLastMonthsTotal($chartData);
-        /* Sales Receipt chart */
+        // $chartReceiptAmt = abs(array_sum($chartData['receipts']));
+        // $lastMonthsTotal = $this->getLastMonthsTotal($chartData);
+        // /* Sales Receipt chart */
 
-        /* Avg Sales */
+        // /* Avg Sales */
         $nonZeroSales = array_filter($salesData, function($value) {
             return $value != 0;
         });
@@ -50,132 +50,132 @@ class AnalyticController extends Controller
 
         $avg_sales = $monthsWithValueCount > 0 ? $totalSalesAmt / $monthsWithValueCount : 0;
         // $avg_sales = $th($averageSalesAmt);
-        /* Avg Sales */
+        // /* Avg Sales */
 
 
-        /* pie chart */
-        $pieChartData = $this->getPieChartData($companyGuids);
-        $pieChartDataTotal = $pieChartData['total'];
-        $pieChartDataOverall = $pieChartData['data'];
-        /* pie chart */
+        // /* pie chart */
+        // $pieChartData = $this->getPieChartData($companyGuids);
+        // $pieChartDataTotal = $pieChartData['total'];
+        // $pieChartDataOverall = $pieChartData['data'];
+        // /* pie chart */
 
-        /* No. Of Customers */
-        $number_of_customers = TallyLedger::where('parent', 'Sundry Debtors')->whereIn('company_guid', $companyGuids)->count();
-        /* No. Of Customers */
+        // /* No. Of Customers */
+        $number_of_customers = TallyLedger::where('parent', 'Sundry Debtors')->whereIn('company_id', $companyIds)->count();
+        // /* No. Of Customers */
 
-        /* Stock Value */
+        // /* Stock Value */
         // $stock_value = $this->reportService->calculateStockValue();
-        /* Stock Value */
+        // /* Stock Value */
 
-        /* Top 5 Customers */
-        $topCustomers = TallyLedger::where('parent', 'Sundry Debtors')
-        ->whereIn('company_guid', $companyGuids)
-        ->with(['vouchers' => function ($query) {
-            $query->where('voucher_type', 'Sales');
-        }])
-        ->get()
-        ->map(function ($ledger) {
-            $totalSales = TallyVoucherHead::whereIn('ledger_guid', $ledger->vouchers->pluck('ledger_guid'))
-                ->sum('amount');
+        // /* Top 5 Customers */
+        // $topCustomers = TallyLedger::where('parent', 'Sundry Debtors')
+        // ->whereIn('company_guid', $companyGuids)
+        // ->with(['vouchers' => function ($query) {
+        //     $query->where('voucher_type', 'Sales');
+        // }])
+        // ->get()
+        // ->map(function ($ledger) {
+        //     $totalSales = TallyVoucherHead::whereIn('ledger_guid', $ledger->vouchers->pluck('ledger_guid'))
+        //         ->sum('amount');
 
-            return [
-                'name' => $ledger->name,
-                'sales' => abs($totalSales)
-            ];
-        })
-        ->sortByDesc('sales')
-        ->take(5);
+        //     return [
+        //         'name' => $ledger->name,
+        //         'sales' => abs($totalSales)
+        //     ];
+        // })
+        // ->sortByDesc('sales')
+        // ->take(5);
 
-        /* Calculate max sales for top customers */
-        $maxSales = $topCustomers->max('sales');
+        // /* Calculate max sales for top customers */
+        // $maxSales = $topCustomers->max('sales');
 
-        /* Top 5 Customers */
+        // /* Top 5 Customers */
 
 
-        /* Top 5 Stock */
-        $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)->get();
+        // /* Top 5 Stock */
+        // $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)->get();
 
-        $stockItems = $tallyItems->map(function ($entry) {
-            $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
-            $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
+        // $stockItems = $tallyItems->map(function ($entry) {
+        //     $openingBalance = $this->reportService->extractNumericValue($entry->opening_balance);
+        //     $openingValue = $this->reportService->extractNumericValue($entry->opening_value);
 
-            $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
-            $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
-            $stockItemVoucherHandBalance = $stockItemData['balance'];
+        //     $stockItemData = $this->reportService->calculateStockItemVoucherBalance($entry->name);
+        //     $stockItemVoucherPurchaseBalance = $stockItemData['purchase_qty'];
+        //     $stockItemVoucherHandBalance = $stockItemData['balance'];
 
-            $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
-            $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
+        //     $stockAmountData = $this->reportService->calculateStockItemVoucherAmount($entry->name);
+        //     $stockItemVoucherAmount = $stockAmountData['purchase_amt'];
 
-            $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
-            $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
+        //     $finalOpeningValue = $openingValue - $stockItemVoucherAmount;
+        //     $finalOpeningBalance = $openingBalance + $stockItemVoucherPurchaseBalance;
 
-            $stockOnHandValue = 0; // Default to 0
+        //     $stockOnHandValue = 0; // Default to 0
 
-            if ($finalOpeningBalance != 0) {
-                $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
-                $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
-                $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
-                $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
-            }
+        //     if ($finalOpeningBalance != 0) {
+        //         $stockItemVoucherSaleValue = $finalOpeningValue / $finalOpeningBalance;
+        //         $stockItemVoucherSaleValue = number_format($stockItemVoucherSaleValue, 4, '.', '');
+        //         $stockOnHandBalance = $openingBalance - $stockItemVoucherHandBalance;
+        //         $stockOnHandValue = $stockItemVoucherSaleValue * $stockOnHandBalance;
+        //     }
 
-            return [
-                'name' => $entry->name,
-                'stock_value' => $stockOnHandValue
-            ];
-        });
+        //     return [
+        //         'name' => $entry->name,
+        //         'stock_value' => $stockOnHandValue
+        //     ];
+        // });
 
-        $top5StockItems = $stockItems->sortByDesc('stock_value')->take(5);
-        $maxStockValue = $top5StockItems->max('stock_value');
-        /* Top 5 Stock */
+        // $top5StockItems = $stockItems->sortByDesc('stock_value')->take(5);
+        // $maxStockValue = $top5StockItems->max('stock_value');
+        // /* Top 5 Stock */
 
-        /* Customer Category */
-        $customerCategory = TallyVoucher::where('voucher_type', 'Sales')
-                            ->whereIn('company_guid', $companyGuids)
-                            ->whereHas('ledger', function ($query) {
-                                $query->where('parent', 'Sundry Debtors');
-                            })
-                            ->with(['voucherHeads' => function ($query) {
-                                $query->select('ledger_guid', 'amount');
-                            }, 'ledger'])
-                            ->get()
-                            ->groupBy('gst_registration_type')
-                            ->map(function ($vouchers, $gstType) {
-                                $totalSales = $vouchers->pluck('voucherHeads')->flatten()
-                                    ->sum(function ($voucherHead) {
-                                        return abs($voucherHead->amount);
-                                    });
+        // /* Customer Category */
+        // $customerCategory = TallyVoucher::where('voucher_type', 'Sales')
+        //                     ->whereIn('company_guid', $companyGuids)
+        //                     ->whereHas('ledger', function ($query) {
+        //                         $query->where('parent', 'Sundry Debtors');
+        //                     })
+        //                     ->with(['voucherHeads' => function ($query) {
+        //                         $query->select('ledger_guid', 'amount');
+        //                     }, 'ledger'])
+        //                     ->get()
+        //                     ->groupBy('gst_registration_type')
+        //                     ->map(function ($vouchers, $gstType) {
+        //                         $totalSales = $vouchers->pluck('voucherHeads')->flatten()
+        //                             ->sum(function ($voucherHead) {
+        //                                 return abs($voucherHead->amount);
+        //                             });
 
-                                return [
-                                    'gst_registration_type' => $gstType,
-                                    'total_sales' => $totalSales,
-                                ];
-                            })->values();
-        /* Customer Category */
+        //                         return [
+        //                             'gst_registration_type' => $gstType,
+        //                             'total_sales' => $totalSales,
+        //                         ];
+        //                     })->values();
+        // /* Customer Category */
 
-        /* Closing Stock */
+        // /* Closing Stock */
         // $ClosingStock = $this->reportService->calculateStockValue();
 
-        $closingStockData = $this->getMonthlyClosingStockData($companyGuids);
+        // $closingStockData = $this->getMonthlyClosingStockData($companyGuids);
         /* Closing Stock */
 
 
         return view('app.analytics.index', [
             'chartSaleAmt' => $chartSaleAmt,
-            'chartReceiptAmt' => $chartReceiptAmt,
-            'lastMonthsTotal' => $lastMonthsTotal,
-            'pieChartDataTotal' => $pieChartDataTotal,
+            // 'chartReceiptAmt' => $chartReceiptAmt,
+            // 'lastMonthsTotal' => $lastMonthsTotal,
+            // 'pieChartDataTotal' => $pieChartDataTotal,
             'chartData' => $chartData,
-            'pieChartDataOverall' => $pieChartDataOverall,
+            // 'pieChartDataOverall' => $pieChartDataOverall,
             'number_of_customers' => $number_of_customers,
             'avg_sales' => $avg_sales,
             // 'stock_value' => $stock_value,
-            'topCustomers' => $topCustomers,
-            'maxSales' => $maxSales ,
-            'top5StockItems' => $top5StockItems,
-            'maxStockValue' => $maxStockValue,
-            'customerCategory' => $customerCategory,
+            // 'topCustomers' => $topCustomers,
+            // 'maxSales' => $maxSales ,
+            // 'top5StockItems' => $top5StockItems,
+            // 'maxStockValue' => $maxStockValue,
+            // 'customerCategory' => $customerCategory,
             // 'ClosingStock' => $ClosingStock,
-            'closingStockData' => $closingStockData,
+            // 'closingStockData' => $closingStockData,
         ]);
     }
 
@@ -185,7 +185,7 @@ class AnalyticController extends Controller
                 $query->where('voucher_type', 'Purchase')->whereIn('company_guid', $companyGuids);
             })
             ->selectRaw('SUM(ABS(amount)) as total_amount, DATE_FORMAT(tally_vouchers.voucher_date, "%Y-%m") as month') // Format month as "YYYY-MM"
-            ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
+            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
             ->groupBy('month')
             ->pluck('total_amount', 'month');
 
@@ -193,7 +193,7 @@ class AnalyticController extends Controller
                 $query->where('voucher_type', 'Debit Note')->whereIn('company_guid', $companyGuids);
             })
             ->selectRaw('SUM(ABS(amount)) as total_amount, DATE_FORMAT(tally_vouchers.voucher_date, "%Y-%m") as month') // Format month as "YYYY-MM"
-            ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
+            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
             ->groupBy('month')
             ->pluck('total_amount', 'month');
 
@@ -219,31 +219,32 @@ class AnalyticController extends Controller
         return $formattedData;
     }
 
-    private function chartSaleReceipt($companyGuids)
-    {
+    private function chartSaleReceipt($companyIds)
+    { $companyIds = $this->reportService->companyData();
         $salesData = [];
         $receiptData = [];
 
         for ($month = 4; $month <= 12; $month++) {
             $monthName = DateTime::createFromFormat('!m', $month)->format('F');
 
-            $totalSales = TallyVoucher::join('tally_voucher_heads', function($join) {
-                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
-                     ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
+            $totalSales = TallyVoucher::join('tally_voucher_heads', function ($join) {
+                $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                     ->on('tally_voucher_heads.ledger_id', '=', 'tally_vouchers.company_id');
             })
-            ->where('tally_vouchers.voucher_type', 'Sales')
-            ->whereIn('tally_vouchers.company_guid', $companyGuids)
-            ->whereMonth('tally_vouchers.voucher_date', $month)
+            ->where('tally_vouchers.voucher_type_id', 'Sales') 
+            ->whereIn('tally_vouchers.company_id', $companyIds) 
+            ->whereMonth('tally_vouchers.voucher_date', $month) 
             ->sum('tally_voucher_heads.amount');
 
-            $totalReceipts = TallyVoucher::join('tally_voucher_heads', function($join) {
-                $join->on('tally_voucher_heads.ledger_guid', '=', 'tally_vouchers.party_ledger_guid')
-                     ->on('tally_voucher_heads.tally_voucher_id', '=', 'tally_vouchers.id');
+            $totalReceipts = TallyVoucher::join('tally_voucher_heads', function ($join) {
+                $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                     ->on('tally_voucher_heads.ledger_id', '=', 'tally_vouchers.company_id');
             })
-            ->where('tally_vouchers.voucher_type', 'Receipt')
-            ->whereIn('tally_vouchers.company_guid', $companyGuids)
-            ->whereMonth('tally_vouchers.voucher_date', $month)
+            ->where('tally_vouchers.voucher_type_id', 'Receipt') 
+            ->whereIn('tally_vouchers.company_id', $companyIds) 
+            ->whereMonth('tally_vouchers.voucher_date', $month) 
             ->sum('tally_voucher_heads.amount');
+        
 
             $salesData[$monthName] = $totalSales;
             $receiptData[$monthName] = $totalReceipts;

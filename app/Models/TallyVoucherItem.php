@@ -12,9 +12,9 @@ class TallyVoucherItem extends Model
     protected $guarded = [];
 
     public function tallyVoucher()
-    {
-        return $this->belongsTo(TallyVoucher::class, 'tally_voucher_id', 'id');
-    }
+{
+    return $this->belongsTo(TallyVoucher::class, 'voucher_head_id', 'voucher_id'); // Update with correct foreign and local keys
+}
     public function voucherHead()
     {
         return $this->belongsTo(TallyVoucher::class, 'tally_voucher_id');

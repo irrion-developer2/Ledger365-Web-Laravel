@@ -15,11 +15,11 @@
 
                 @include('app.analytics.partials._analyticstop')
 
-                @include('app.analytics.partials._analyticsTopCustomerStockPiechart')
+                {{-- @include('app.analytics.partials._analyticsTopCustomerStockPiechart')
 
                 @include('partials.dashboardSaleReceipt')
 
-                @include('app.analytics.partials._closingStock')
+                @include('app.analytics.partials._closingStock') --}}
 
             </div>
     </div>
@@ -31,7 +31,7 @@
     <script src="assets/plugins/chartjs/js/chart.js"></script>
     <script src="assets/js/index.js"></script>
 
-    <script>
+    {{-- <script>
         document.addEventListener('DOMContentLoaded', function () {
             var ctx = document.getElementById('closingStockChart').getContext('2d');
 
@@ -299,6 +299,6 @@
                 badgeList.appendChild(listItem);
             });
         });
-    </script>
+    </script> --}}
 
 @endsection

@@ -71,10 +71,17 @@ class ReportService
     public function calculateStockItemVoucherBalance($stockItemName)
     {
         // Sum of billed quantities for 'Sales' vouchers
-        $stockItemVoucherSaleItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('voucher_type', 'Sales');
-            })->sum('billed_qty');
+        // $stockItemVoucherSaleItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
+        //     ->whereHas('tallyVoucher', function ($query) {
+        //         $query->where('voucher_type', 'Sales');
+        //     })->sum('billed_qty');
+
+        $stockItemVoucherSaleItem = TallyVoucherItem::whereHas('tallyVoucher', function ($query) {
+            $query->where('voucher_type_id', 'Sales');
+        })
+        ->join('tally_items', 'tally_voucher_items.item_id', '=', 'tally_items.item_id') // Join to access item_name
+        ->where('tally_items.item_name', $stockItemName) // Use correct column for stock item name
+        ->sum('billed_qty'); // Sum billed quantities
 
         // Sum of billed quantities for 'Purchase' vouchers
         $stockItemVoucherPurchaseItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
@@ -119,7 +126,7 @@ class ReportService
                 $query->where('voucher_type', 'Purchase');
             })
             ->selectRaw('SUM(amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date')
-            ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
+            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
             ->first();
 
         // Sum of billed quantities for 'Credit Note' vouchers
@@ -134,7 +141,7 @@ class ReportService
                 $query->where('voucher_type', 'Debit Note');
             })
             ->selectRaw('SUM(amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date')
-            ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
+            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
             ->first();
 
         return [
@@ -147,9 +154,9 @@ class ReportService
 
     public function calculateStockValue()
     {
-        $companyGuids = $this->companyData();
+        $companyIds = $this->companyData();
 
-        $tallyItems = TallyItem::whereIn('company_guid', $companyGuids)->get();
+        $tallyItems = TallyItem::whereIn('company_id', $companyIds)->get();
         $stock_value = 0;
 
         foreach ($tallyItems as $entry) {

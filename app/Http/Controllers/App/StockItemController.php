@@ -120,7 +120,7 @@ class StockItemController extends Controller
     //         //             SUM(CASE WHEN tally_voucher.voucher_type = 'Debit Note' THEN billed_qty ELSE 0 END))
     //         //         ) AS stock_item_voucher_balance
     //         //     ")
-    //         //     ->join('tally_voucher', 'tally_voucher.id', '=', 'tally_voucher_items.tally_voucher_id')
+    //         //     ->join('tally_voucher', 'tally_voucher.id', '=', 'tally_voucher_items.voucher_head_id')
     //         //     ->first();
 
     //         Log::info("stockItems Query");        
@@ -406,7 +406,7 @@ class StockItemController extends Controller
                 $query->where('voucher_type', 'Purchase');
             })
             ->selectRaw('SUM(amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date')
-            ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
+            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
             ->first();
 
         // Fetch the amount and the earliest voucher date for 'Debit Note' vouchers
@@ -415,7 +415,7 @@ class StockItemController extends Controller
                 $query->where('voucher_type', 'Debit Note');
             })
             ->selectRaw('SUM(amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date')
-            ->join('tally_vouchers', 'tally_voucher_items.tally_voucher_id', '=', 'tally_vouchers.id')
+            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
             ->first();
 
         // Prepare the result
@@ -654,7 +654,7 @@ class StockItemController extends Controller
                 'tally_voucher_items.rate'
             )
             ->leftJoin('tally_vouchers', 'tally_ledgers.name', '=', 'tally_vouchers.party_ledger_name')
-            ->leftJoin('tally_voucher_items', 'tally_vouchers.id', '=', 'tally_voucher_items.tally_voucher_id')
+            ->leftJoin('tally_voucher_items', 'tally_vouchers.id', '=', 'tally_voucher_items.voucher_head_id')
             ->whereIn('tally_ledgers.guid', $ledgerGuids)
             ->where('tally_vouchers.voucher_type', 'Sales')
             ->where('tally_voucher_items.stock_item_name', $saleStockItemName)

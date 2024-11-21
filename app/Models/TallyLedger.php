@@ -20,12 +20,12 @@ class TallyLedger extends Model
 
     public function tallyVoucherHead()
     {
-        return $this->belongsTo(TallyVoucherHead::class, 'ledger_guid', 'guid'); // 'guid' in TallyLedger and 'ledger_guid' in TallyVoucherHead
+        return $this->belongsTo(TallyVoucherHead::class, 'ledger_id', 'guid'); // 'guid' in TallyLedger and 'ledger_guid' in TallyVoucherHead
     }
 
     public function tallyVoucherHeads()
     {
-        return $this->hasMany(TallyVoucherHead::class, 'ledger_guid', 'guid');
+        return $this->hasMany(TallyVoucherHead::class, 'ledger_id', 'guid');
     }
 
     public function parentGroup()
@@ -45,7 +45,11 @@ class TallyLedger extends Model
 
     public function vouchersHeads()
     {
-        return $this->hasMany(TallyVoucherHead::class, 'ledger_guid', 'id');
+        return $this->hasMany(TallyVoucherHead::class, 'ledger_id', 'id');
+    }
+    public function voucherHeads()
+    {
+        return $this->hasMany(TallyVoucherHead::class, 'ledger_id', 'ledger_id');
     }
 
 }

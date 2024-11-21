@@ -54,13 +54,13 @@
         </div>
         </div>
 
-        <div class="col-12 col-lg-4 col-xl-4 d-flex">
+        {{-- <div class="col-12 col-lg-4 col-xl-4 d-flex">
             <div class="card radius-10 w-100">
             <div class="card-header bg-transparent">
                 <div class="d-flex align-items-center">
                     <div>
                         <h6 class="mb-0">Top N Stock</h6>
-                    </div>
+                    </div> --}}
                     {{-- <div class="dropdown ms-auto">
                         <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
                         </a>
@@ -76,7 +76,7 @@
                             </li>
                         </ul>
                     </div> --}}
-                </div>
+                {{-- </div>
                 </div>
             <div class="card-body">
                 <div class="row">
@@ -105,15 +105,15 @@
                 </div>
             </div>
             </div>
-        </div>
+        </div> --}}
 
-        <div class="col-12 col-lg-4 col-xl-4 d-flex">
+        {{-- <div class="col-12 col-lg-4 col-xl-4 d-flex">
             <div class="card radius-10 w-100">
             <div class="card-header bg-transparent">
                 <div class="d-flex align-items-center">
                     <div>
                         <h6 class="mb-0">Customer Category</h6>
-                    </div>
+                    </div> --}}
                     {{-- <div class="dropdown ms-auto">
                         <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown"><i class='bx bx-dots-horizontal-rounded font-22 text-option'></i>
                         </a>
@@ -132,7 +132,7 @@
 
                     {{-- <div class="highcharts-a11y-proxy-container" aria-hidden="false"><div aria-label="Chart menu" role="region" aria-hidden="false"><button aria-label="View chart menu" aria-expanded="false" class="highcharts-a11y-proxy-button" aria-hidden="false" style="border-width: 0px; background-color: transparent; cursor: pointer; outline: none; opacity: 0.001; z-index: 999; overflow: hidden; padding: 0px; margin: 0px; display: block; position: absolute; width: 24px; height: 22px; top: 10.5px;"></button></div></div> --}}
 
-                </div>
+                {{-- </div>
                 </div>
             <div class="card-body">
                 <div class="row">
@@ -146,7 +146,7 @@
                 </div>
             </div>
             </div>
-        </div>
+        </div> --}}
 
     </div>
 </div><!--end row-->

@@ -68,26 +68,56 @@ class AnalyticController extends Controller
         // /* Stock Value */
 
         // /* Top 5 Customers */
-        // $topCustomers = TallyLedger::where('parent', 'Sundry Debtors')
-        // ->whereIn('company_guid', $companyGuids)
-        // ->with(['vouchers' => function ($query) {
-        //     $query->where('voucher_type', 'Sales');
-        // }])
-        // ->get()
-        // ->map(function ($ledger) {
-        //     $totalSales = TallyVoucherHead::whereIn('ledger_guid', $ledger->vouchers->pluck('ledger_guid'))
-        //         ->sum('amount');
+    //     $topCustomers = TallyLedger::where('parent', 'Sundry Debtors')
+    //     ->whereIn('company_id', $companyIds)
+    //     ->with(['vouchers' => function ($query) {
+    //         $query->where('voucher_type_id', 'Sales'); // Ensure correct column for voucher type
+    //     }])
+    //     ->get()
+    //     ->map(function ($ledger) {
+    //     $totalSales = TallyVoucherHead::where('ledger_id', $ledger->id) // Use the correct ledger relationship
+    //         ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id') // Join with tally_vouchers
+    //         ->where('tally_vouchers.voucher_type_id', 'Sales') // Filter by Sales voucher type
+    //         ->sum('tally_voucher_heads.amount'); // Sum the sales amount
 
-        //     return [
-        //         'name' => $ledger->name,
-        //         'sales' => abs($totalSales)
-        //     ];
-        // })
-        // ->sortByDesc('sales')
-        // ->take(5);
+    //     return [
+    //         'name' => $ledger->name,
+    //         'sales' => abs($totalSales)
+    //     ];
+    // })
+    // ->sortByDesc('sales')
+    // ->take(5);
+
+    $topCustomers = TallyLedger::where('parent', 'Sundry Debtors')
+    ->whereIn('company_id', $companyIds) // Filter by the provided company IDs
+    ->with(['voucherHeads' => function ($query) {
+        $query->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+              ->where('tally_vouchers.voucher_type_id', 'Sales'); // Ensure correct column for voucher type
+    }])
+    ->get()
+    ->map(function ($ledger) {
+    $totalSales = TallyLedger::where('ledger_id', $ledger->id) // Filter by customer ID
+    ->where('parent', 'Sundry Debtors') // Ensure it's under 'Sundry Debtors'
+    ->with(['voucherHeads' => function ($query) {
+        $query->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+              ->where('tally_vouchers.voucher_type_id', 'Sales'); // Replace 'Sales' with your actual sales ID
+    }])
+    ->get()
+    ->sum(function ($ledger) {
+        return $ledger->voucherHeads->sum('amount'); // Sum the amount from the voucher heads
+    });
+
+        return [
+            'name' => $ledger->ledger_name, // Use the ledger name
+            'sales' => abs($totalSales) // Ensure sales is absolute value
+        ];
+    })
+    ->sortByDesc('sales') // Sort by sales in descending order
+    ->take(5); // Take the top 5 customers
+
 
         // /* Calculate max sales for top customers */
-        // $maxSales = $topCustomers->max('sales');
+        $maxSales = $topCustomers->max('sales');
 
         // /* Top 5 Customers */
 
@@ -169,8 +199,8 @@ class AnalyticController extends Controller
             'number_of_customers' => $number_of_customers,
             'avg_sales' => $avg_sales,
             'stock_value' => $stock_value,
-            // 'topCustomers' => $topCustomers,
-            // 'maxSales' => $maxSales ,
+            'topCustomers' => $topCustomers,
+            'maxSales' => $maxSales ,
             // 'top5StockItems' => $top5StockItems,
             // 'maxStockValue' => $maxStockValue,
             // 'customerCategory' => $customerCategory,

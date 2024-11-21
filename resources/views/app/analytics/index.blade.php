@@ -15,9 +15,9 @@
 
                 @include('app.analytics.partials._analyticstop')
 
-                {{-- @include('app.analytics.partials._analyticsTopCustomerStockPiechart')
+                @include('app.analytics.partials._analyticsTopCustomerStockPiechart')
 
-                @include('partials.dashboardSaleReceipt')
+                {{-- @include('partials.dashboardSaleReceipt')
 
                 @include('app.analytics.partials._closingStock') --}}
 

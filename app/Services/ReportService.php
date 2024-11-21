@@ -84,22 +84,43 @@ class ReportService
         ->sum('billed_qty'); // Sum billed quantities
 
         // Sum of billed quantities for 'Purchase' vouchers
-        $stockItemVoucherPurchaseItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('voucher_type', 'Purchase');
-            })->sum('billed_qty');
+        // $stockItemVoucherPurchaseItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
+        //     ->whereHas('tallyVoucher', function ($query) {
+        //         $query->where('voucher_type', 'Purchase');
+        //     })->sum('billed_qty');
+
+        $stockItemVoucherPurchaseItem = TallyVoucherItem::whereHas('tallyVoucher', function ($query) {
+            $query->where('voucher_type_id', 'Purchase');
+        })
+        ->join('tally_items', 'tally_voucher_items.item_id', '=', 'tally_items.item_id') // Join to access item_name
+        ->where('tally_items.item_name', $stockItemName) // Use correct column for stock item name
+        ->sum('billed_qty'); // Sum billed quantities
 
         // Sum of billed quantities for 'Credit Note' vouchers
-        $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('voucher_type', 'Credit Note');
-            })->sum('billed_qty');
+        // $stockItemVoucherCreditNoteItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
+        //     ->whereHas('tallyVoucher', function ($query) {
+        //         $query->where('voucher_type', 'Credit Note');
+        //     })->sum('billed_qty');
+
+        $stockItemVoucherCreditNoteItem = TallyVoucherItem::whereHas('tallyVoucher', function ($query) {
+            $query->where('voucher_type_id', 'Credit Note');
+        })
+        ->join('tally_items', 'tally_voucher_items.item_id', '=', 'tally_items.item_id') // Join to access item_name
+        ->where('tally_items.item_name', $stockItemName) // Use correct column for stock item name
+        ->sum('billed_qty'); // Sum billed quantities
 
         // Sum of billed quantities for 'Debit Note' vouchers
-        $stockItemVoucherDebitNoteItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('voucher_type', 'Debit Note');
-            })->sum('billed_qty');
+        // $stockItemVoucherDebitNoteItem = TallyVoucherItem::where('stock_item_name', $stockItemName)
+        //     ->whereHas('tallyVoucher', function ($query) {
+        //         $query->where('voucher_type', 'Debit Note');
+        //     })->sum('billed_qty');
+
+        $stockItemVoucherDebitNoteItem = TallyVoucherItem::whereHas('tallyVoucher', function ($query) {
+            $query->where('voucher_type_id', 'Debit Note');
+        })
+        ->join('tally_items', 'tally_voucher_items.item_id', '=', 'tally_items.item_id') // Join to access item_name
+        ->where('tally_items.item_name', $stockItemName) // Use correct column for stock item name
+        ->sum('billed_qty'); // Sum billed quantities
 
         // Calculate total stock item voucher balance
         $stockItemVoucherBalance = ($stockItemVoucherSaleItem - $stockItemVoucherCreditNoteItem) - ($stockItemVoucherPurchaseItem - $stockItemVoucherDebitNoteItem);
@@ -115,34 +136,57 @@ class ReportService
     public function calculateStockItemVoucherAmount($stockItemName)
     {
         // Sum of billed quantities for 'Sales' vouchers
-        $stockItemVoucherSaleAmount = TallyVoucherItem::where('stock_item_name', $stockItemName)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('voucher_type', 'Sales');
-            })->sum('amount');
+        $stockItemVoucherSaleAmount = TallyVoucherItem::whereHas('tallyVoucher', function ($query) {
+            $query->where('voucher_type_id', 'Sales');
+        })
+        ->join('tally_items', 'tally_voucher_items.item_id', '=', 'tally_items.item_id') // Join to access item_name
+        ->where('tally_items.item_name', $stockItemName) // Use correct column for stock item name
+        ->sum('amount'); // Sum billed quantities
 
         // Sum of billed quantities for 'Purchase' vouchers
-        $purchaseVoucherData = TallyVoucherItem::where('stock_item_name', $stockItemName)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('voucher_type', 'Purchase');
-            })
-            ->selectRaw('SUM(amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date')
-            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
+        // $purchaseVoucherData = TallyVoucherItem::where('stock_item_name', $stockItemName)
+        //     ->whereHas('tallyVoucher', function ($query) {
+        //         $query->where('voucher_type', 'Purchase');
+        //     })
+        //     ->selectRaw('SUM(amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date')
+        //     ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
+        //     ->first();
+
+        $purchaseVoucherData = TallyVoucherItem::join('tally_items', 'tally_voucher_items.item_id', '=', 'tally_items.item_id') // Join to access item_name
+            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.voucher_id') // Join to access voucher details
+            ->where('tally_items.item_name', $stockItemName) // Filter by stock item name
+            ->where('tally_vouchers.voucher_type_id', 'Purchase') // Filter for 'Purchase' vouchers
+            ->selectRaw('SUM(tally_voucher_items.amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date') // Aggregate data
             ->first();
+
 
         // Sum of billed quantities for 'Credit Note' vouchers
-        $stockItemVoucherCreditNoteAmount = TallyVoucherItem::where('stock_item_name', $stockItemName)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('voucher_type', 'Credit Note');
-            })->sum('amount');
+        // $stockItemVoucherCreditNoteAmount = TallyVoucherItem::where('stock_item_name', $stockItemName)
+        //     ->whereHas('tallyVoucher', function ($query) {
+        //         $query->where('voucher_type', 'Credit Note');
+        //     })->sum('amount');
+        $stockItemVoucherCreditNoteAmount = TallyVoucherItem::whereHas('tallyVoucher', function ($query) {
+            $query->where('voucher_type_id', 'Credit Note');
+        })
+        ->join('tally_items', 'tally_voucher_items.item_id', '=', 'tally_items.item_id') // Join to access item_name
+        ->where('tally_items.item_name', $stockItemName) // Use correct column for stock item name
+        ->sum('amount'); // Sum billed quantities
 
         // Sum of billed quantities for 'Debit Note' vouchers
-        $debitNoteVoucherData = TallyVoucherItem::where('stock_item_name', $stockItemName)
-            ->whereHas('tallyVoucher', function ($query) {
-                $query->where('voucher_type', 'Debit Note');
-            })
-            ->selectRaw('SUM(amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date')
-            ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
-            ->first();
+        // $debitNoteVoucherData = TallyVoucherItem::where('stock_item_name', $stockItemName)
+        //     ->whereHas('tallyVoucher', function ($query) {
+        //         $query->where('voucher_type', 'Debit Note');
+        //     })
+        //     ->selectRaw('SUM(amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date')
+        //     ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.id')
+        //     ->first();
+
+            $debitNoteVoucherData = TallyVoucherItem::join('tally_items', 'tally_voucher_items.item_id', '=', 'tally_items.item_id') // Join to access the stock item name
+        ->join('tally_vouchers', 'tally_voucher_items.voucher_head_id', '=', 'tally_vouchers.voucher_id') // Join to access voucher details
+        ->where('tally_items.item_name', $stockItemName) // Filter by the stock item name
+        ->where('tally_vouchers.voucher_type_id', 'Debit Note') // Filter for 'Debit Note' vouchers
+        ->selectRaw('SUM(tally_voucher_items.amount) as total_amount, MIN(tally_vouchers.voucher_date) as voucher_date') // Aggregate data
+        ->first();
 
         return [
             'purchase_amt' => $purchaseVoucherData->total_amount ?? 0,

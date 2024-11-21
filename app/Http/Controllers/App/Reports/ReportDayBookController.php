@@ -103,6 +103,7 @@ class ReportDayBookController extends Controller
                         AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
                     GROUP BY 
                         tv.voucher_date, 
+                        c.company_name,
                         tl.ledger_name, 
                         tvt.voucher_type_name, 
                         tv.voucher_number

@@ -97,7 +97,7 @@ class ReportBalanceSheetController extends Controller
                     FROM
                         tally_ledger_groups tlg
                     WHERE
-                        tlg.ledger_group_name IN ('Capital Account', 'Loans (Liability)', 'Current Liabilities', 'Fixed Assets', 'Investments', 'Current Assets')
+                        tlg.ledger_group_name IN ('Suspense A/c', 'Capital Account', 'Loans (Liability)', 'Current Liabilities', 'Fixed Assets', 'Investments', 'Current Assets')
                         AND tlg.company_id = ({$companyIdsList})
                     UNION ALL
                     SELECT

@@ -257,7 +257,7 @@ class CustomerController extends Controller
                     FROM
                         tally_ledger_groups
                     WHERE
-                        ledger_group_name = 'Sundry Creditors'
+                        ledger_group_name NOT IN ('Sundry Creditors', 'Sundry Debtors')
     
                     UNION ALL
     

@@ -82,6 +82,7 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Ledger</th>
+                                    <th>Company Name</th>
                                     <th>Transaction Type</th>
                                     <th>Transaction</th>
                                     <th>Debit</th>
@@ -234,6 +235,7 @@
             columns: [
                 {data: 'voucher_date', name: 'voucher_date'},
                 {data: 'ledger_name', name: 'ledger_name'},
+                {data: 'company_name', name: 'company_name'},
                 {data: 'voucher_type_name', name: 'voucher_type_name'},
                 {data: 'voucher_number', name: 'voucher_number'},
                 {data: 'debit', name: 'debit'},

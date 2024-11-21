@@ -8,11 +8,10 @@ use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use App\Models\TallyVoucher;
-use App\Models\TallyVoucherHead;
+use Illuminate\Support\Facades\DB;
 use App\Services\ReportService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log; 
-use App\DataTables\SuperAdmin\DayBookDataTable;
 
 class ReportDayBookController extends Controller
 {
@@ -34,50 +33,6 @@ class ReportDayBookController extends Controller
 
         if ($request->ajax()) {
             $startTime = microtime(true);
-
-            $vouchers = TallyVoucher::select(
-                        'tally_vouchers.voucher_id',
-                        'tally_vouchers.company_id',
-                        'tally_vouchers.is_optional',
-                        'tally_vouchers.is_cancelled',
-                        'tally_vouchers.voucher_date',
-                        'tally_voucher_types.voucher_type_name',
-                        'tally_vouchers.voucher_number',
-                        'tally_ledgers.ledger_name'
-                    )
-                    ->leftJoin('tally_voucher_heads', function ($join) {
-                        $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id');
-                    })
-                    ->leftJoin('tally_voucher_types', function ($join) {
-                        $join->on('tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-                            ->on('tally_vouchers.company_id', '=', 'tally_voucher_types.company_id');
-                    })
-                    ->leftJoin('tally_ledgers', function ($join) {
-                        $join->on('tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id');
-                    })
-                    ->where('tally_vouchers.is_optional', '!=', 1)
-                    ->where('tally_vouchers.is_cancelled', '!=', 1)
-                    ->whereIn('tally_vouchers.company_id', $companyIds)
-                    ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END) as total_credit')
-                    ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as total_debit')
-                    ->groupBy(
-                        'tally_vouchers.voucher_id',
-                        'tally_vouchers.company_id',
-                        'tally_vouchers.is_optional',
-                        'tally_vouchers.is_cancelled',
-                        'tally_vouchers.voucher_date',
-                        'tally_voucher_types.voucher_type_name',
-                        'tally_vouchers.voucher_number',
-                        'tally_ledgers.ledger_name'
-                    );
-
-
-            Log::info("vouchers Query");        
-            Log::info($this->reportService->getFinalQuery($vouchers));
-         
-            $endTime1 = microtime(true);
-            $executionTime1 = $endTime1 - $startTime;
-            Log::info('Initial DB request execution time:', ['time_taken' => $executionTime1 . ' seconds']);
 
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
@@ -109,26 +64,63 @@ class ReportDayBookController extends Controller
                         $startDate = now()->subYear()->startOfYear()->toDateString();
                         $endDate = now()->subYear()->endOfYear()->toDateString();
                         break;
+                    case 'all':
+                        break;
                 }
             }
 
-            Log::info('Custom Date Range:', ['customDateRange' => $customDateRange]);
-            Log::info('Start Date:', ['startDate' => $startDate]);
-            Log::info('End Date:', ['endDate' => $endDate]);
+            $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
+            $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
+    
+            $companyIdsList = implode(',', $companyIds);
 
-            if ($startDate && $endDate) {
-                $vouchers->whereBetween('voucher_date', [$startDate, $endDate]);
-            }
+            $sql = "
+                    SELECT 
+                        tv.voucher_date,
+                        c.company_name,
+                        tl.ledger_name,
+                        tvt.voucher_type_name,
+                        tv.voucher_number,
+                        SUM(CASE WHEN tvh.entry_type = 'Debit' THEN tvh.amount ELSE 0 END) AS `total_debit`,
+                        SUM(CASE WHEN tvh.entry_type = 'Credit' THEN tvh.amount ELSE 0 END) AS `total_credit`
+                    FROM 
+                        tally_vouchers tv
+                    JOIN 
+                        tally_voucher_heads tvh ON tv.voucher_id = tvh.voucher_id
+                    JOIN 
+                        tally_ledgers tl ON tvh.ledger_id = tl.ledger_id
+                    JOIN 
+                        tally_voucher_types tvt ON tv.voucher_type_id = tvt.voucher_type_id
+                    LEFT JOIN
+                        tally_companies c
+                        ON tv.company_id = c.company_id 
+                    WHERE
+                        (tv.is_optional = 0 OR tv.is_optional IS NULL)
+                        AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
+                        AND tv.company_id IN ({$companyIdsList})
+                        AND tvh.is_party_ledger = 1
+                        AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
+                        AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
+                    GROUP BY 
+                        tv.voucher_date, 
+                        tl.ledger_name, 
+                        tvt.voucher_type_name, 
+                        tv.voucher_number
+                    ORDER BY 
+                        tv.voucher_date, 
+                        tv.voucher_number
+                ";
 
-            if ($request->has('voucher_type_name')) {
-                $voucherType = $request->get('voucher_type_name');
-                if ($voucherType) {
-                    $vouchers->where('voucher_type_name', $voucherType);
-                    Log::info('Voucher Type Filter Applied:', ['voucher_type_name' => $voucherType]);
-                }
-            }
 
-            $dataTable = DataTables::of($vouchers)
+            Log::info("Daybook Query", ['sql' => $sql]);
+
+            $dayBook = DB::select(DB::raw($sql));
+
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for ReportDayBookController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+
+            $dataTable = DataTables::of($dayBook)
                 ->addIndexColumn()
                 ->addColumn('credit', function ($data) {
                     return indian_format(abs($data->total_credit));
@@ -140,7 +132,7 @@ class ReportDayBookController extends Controller
 
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
-            Log::info('Total execution time for getData:', ['time_taken' => $executionTime . ' seconds']);
+            Log::info('Total end execution time for ReportDayBookController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
 
             return $dataTable;
         }

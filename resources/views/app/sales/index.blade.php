@@ -71,6 +71,7 @@
                             <thead>
                                 <tr>
                                     <th>Ledger Name</th>
+                                    <th>Company Name</th>
                                     <th>Invoice Date</th>
                                     <th>Invoice Number</th>
                                     <th>Invoice Amount</th>
@@ -216,6 +217,9 @@
             },
             columns: [
                 {data: 'ledger_name', name: 'ledger_name'},
+                {data: 'company_name', name: 'company_name', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
                 {data: 'voucher_date', name: 'voucher_date', render: function(data, type, row) {
                     return data ? data : '-';
                 }},

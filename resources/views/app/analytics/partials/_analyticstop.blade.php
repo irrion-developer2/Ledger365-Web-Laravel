@@ -61,7 +61,7 @@
             <div class="d-flex align-items-center">
                 <div>
                     <p class="mb-0 text-secondary">Stock Value</p>
-                    {{-- <h4 class="my-1 text-warning">{{ ($stock_value) }}</h4> --}}
+                    <h4 class="my-1 text-warning">{{ ($stock_value) }}</h4>
                 </div>
                 <div class="widgets-icons-2 rounded-circle bg-gradient-moonlit text-white ms-auto"><i class='bx bxs-group'></i>
                 </div>

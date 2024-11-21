@@ -64,7 +64,7 @@ class AnalyticController extends Controller
         // /* No. Of Customers */
 
         // /* Stock Value */
-        // $stock_value = $this->reportService->calculateStockValue();
+        $stock_value = $this->reportService->calculateStockValue();
         // /* Stock Value */
 
         // /* Top 5 Customers */
@@ -168,7 +168,7 @@ class AnalyticController extends Controller
             // 'pieChartDataOverall' => $pieChartDataOverall,
             'number_of_customers' => $number_of_customers,
             'avg_sales' => $avg_sales,
-            // 'stock_value' => $stock_value,
+            'stock_value' => $stock_value,
             // 'topCustomers' => $topCustomers,
             // 'maxSales' => $maxSales ,
             // 'top5StockItems' => $top5StockItems,

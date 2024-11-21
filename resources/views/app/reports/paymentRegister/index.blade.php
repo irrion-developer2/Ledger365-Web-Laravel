@@ -230,10 +230,10 @@
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
-                {data: 'debit', name: 'debit', render: function(data, type, row) {
+                {data: 'debit', name: 'debit', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'credit', name: 'credit', render: function(data, type, row) {
+                {data: 'credit', name: 'credit', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
             ],

@@ -43,7 +43,7 @@
                                         <br>
                                         <span style="font-size: smaller;color: gray;">Value</span>
                                     </th>
-                                    <th>
+                                    {{-- <th>
                                         Stock On Hand
                                         <br>
                                         <span style="font-size: smaller;color: gray;">Qty</span>
@@ -52,7 +52,7 @@
                                         Stock On Hand
                                         <br>
                                         <span style="font-size: smaller;color: gray;">Value</span>
-                                    </th>
+                                    </th> --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -66,8 +66,8 @@
                                     <th></th>
                                     <th></th>
                                     <th></th>
-                                    <th></th>
-                                    <th></th>
+                                    {{-- <th></th>
+                                    <th></th> --}}
                                 </tr>
                             </tfoot>
                         </table>
@@ -114,18 +114,18 @@
                 {data: 'category', name: 'category', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'opening_balance', name: 'opening_balance', render: function(data, type, row) {
+                {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'opening_value', name: 'opening_value', render: function(data, type, row) {
+                {data: 'opening_value', name: 'opening_value', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'stockonhand_opening_balance', name: 'stockonhand_opening_balance', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'stockonhand_opening_value', name: 'stockonhand_opening_value', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                // {data: 'stockonhand_opening_balance', name: 'stockonhand_opening_balance', render: function(data, type, row) {
+                //     return data ? data : '-';
+                // }},
+                // {data: 'stockonhand_opening_value', name: 'stockonhand_opening_value', render: function(data, type, row) {
+                //     return data ? data : '-';
+                // }},
             ],
             {{--  footerCallback: function (row, data, start, end, display) {
                 var api = this.api();

@@ -218,10 +218,10 @@
                         return `<a href="${url}" style="color: #337ab7;">${data}</a>`;
                     }
                 },
-                {data: 'opening_balance', name: 'opening_balance', render: data => data || '-'},
-                {data: 'total_debit', name: 'total_debit', render: data => data || '-'},
-                {data: 'total_credit', name: 'total_credit', render: data => data || '-'},
-                {data: 'closing_balance', name: 'closing_balance', render: data => data || '-'},
+                {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: data => data || '-'},
+                {data: 'total_debit', name: 'total_debit', className: 'text-end', render: data => data || '-'},
+                {data: 'total_credit', name: 'total_credit', className: 'text-end', render: data => data || '-'},
+                {data: 'closing_balance', name: 'closing_balance', className: 'text-end', render: data => data || '-'},
             ],
             footerCallback: function (row, data, start, end, display) {
                 const api = this.api();

@@ -230,7 +230,7 @@
                     return data ? data : '-';
                 }},
                 {{--  {data: 'sales', name: 'sales'},  --}}
-                {data: 'outstanding', name: 'outstanding', render: function(data, type, row) {
+                {data: 'outstanding', name: 'outstanding', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {{--  {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {

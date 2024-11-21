@@ -238,8 +238,8 @@
                 {data: 'company_name', name: 'company_name'},
                 {data: 'voucher_type_name', name: 'voucher_type_name'},
                 {data: 'voucher_number', name: 'voucher_number'},
-                {data: 'debit', name: 'debit'},
-                {data: 'credit', name: 'credit'},
+                {data: 'debit', name: 'debit', className: 'text-end'},
+                {data: 'credit', name: 'credit', className: 'text-end'},
             ]
         });
 

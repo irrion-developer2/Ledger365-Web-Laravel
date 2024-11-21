@@ -224,13 +224,13 @@
                     return data ? data : '-';
                 }},
                 {data: 'voucher_number', name: 'voucher_number',
-                    render: function(data, type, row) {
-                        var url = '{{ route("sales.items", ":id") }}';
-                        url = url.replace(':id', row.voucher_id);
-                        return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
-                    }
+                    // render: function(data, type, row) {
+                    //     var url = '{{ route("sales.items", ":id") }}';
+                    //     url = url.replace(':id', row.voucher_id);
+                    //     return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
+                    // }
                 },
-                {data: 'debit', name: 'debit', render: function(data, type, row) {
+                {data: 'debit', name: 'debit', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'place_of_supply', name: 'place_of_supply', render: function(data, type, row) {

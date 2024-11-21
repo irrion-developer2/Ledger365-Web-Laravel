@@ -93,7 +93,7 @@
                     }
                 },
                 {data: 'parent', name: 'parent'},
-                {data: 'total_sales', name: 'total_sales'},
+                {data: 'total_sales', name: 'total_sales', className: 'text-end'},
                 {data: 'transaction', name: 'transaction', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},

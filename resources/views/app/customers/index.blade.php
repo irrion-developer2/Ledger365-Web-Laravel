@@ -227,7 +227,7 @@
                 {data: 'company_name', name: 'company_name', render: data => data || '-'},
                 {data: 'party_gst_in', name: 'party_gst_in', render: data => data || '-'},
                 {{--  {data: 'sales', name: 'sales', render: data => data || '-'},  --}}
-                {data: 'outstanding', name: 'outstanding', render: data => data || '-'},
+                {data: 'outstanding', name: 'outstanding', className: 'text-end', render: data => data || '-'},
                 {{--  {data: 'payment_collection', name: 'payment_collection', render: data => data || '-'},  --}}
             ],
             footerCallback: function (row, data, start, end, display) {

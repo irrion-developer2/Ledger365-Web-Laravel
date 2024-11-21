@@ -107,7 +107,9 @@
                     }
                 },
                 {data: 'parent', name: 'parent'},
-                {data: 'total_sales', name: 'total_sales'},
+                {data: 'total_sales', name: 'total_sales', className: 'text-end', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
                 {data: 'qty_sold', name: 'qty_sold', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
                 }},

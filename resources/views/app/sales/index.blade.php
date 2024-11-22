@@ -59,11 +59,11 @@
                                 </form>
                             </div>
 
-                            <div class="col-lg-7 text-end">
+                            {{--  <div class="col-lg-7 text-end">
                                 <a href="{{ route('columnar.index') }}" class="btn btn-outline-primary border-1">
                                     <span>Sales Columnar Report</span>
                                 </a>
-                            </div>
+                            </div>  --}}
                         </div>
                     </div>
                     <div class="table-responsive table-responsive-scroll border-0">

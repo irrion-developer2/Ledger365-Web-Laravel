@@ -75,41 +75,45 @@ class ReportDayBookController extends Controller
             $companyIdsList = implode(',', $companyIds);
 
             $sql = "
-                    SELECT 
-                        tv.voucher_date,
+                    SELECT
+                        v.voucher_date,
+                        GROUP_CONCAT(l.ledger_name SEPARATOR ', ') AS `ledger_name`,
                         c.company_name,
-                        tl.ledger_name,
-                        tvt.voucher_type_name,
-                        tv.voucher_number,
-                        SUM(CASE WHEN tvh.entry_type = 'Debit' THEN tvh.amount ELSE 0 END) AS `total_debit`,
-                        SUM(CASE WHEN tvh.entry_type = 'Credit' THEN tvh.amount ELSE 0 END) AS `total_credit`
-                    FROM 
-                        tally_vouchers tv
-                    JOIN 
-                        tally_voucher_heads tvh ON tv.voucher_id = tvh.voucher_id
-                    JOIN 
-                        tally_ledgers tl ON tvh.ledger_id = tl.ledger_id
-                    JOIN 
-                        tally_voucher_types tvt ON tv.voucher_type_id = tvt.voucher_type_id
-                    LEFT JOIN
-                        tally_companies c
-                        ON tv.company_id = c.company_id 
+                        vt.voucher_type_name,
+                        v.voucher_number,
+                        SUM(CASE 
+                                WHEN vh.entry_type = 'debit' THEN ABS(vh.amount) 
+                                ELSE 0 
+                            END) AS `total_debit`,
+                        SUM(CASE 
+                                WHEN vh.entry_type = 'credit' THEN vh.amount 
+                                ELSE 0 
+                            END) AS `total_credit`
+                    FROM
+                        tally_vouchers v
+                    JOIN
+                        tally_companies c ON v.company_id = c.company_id
+                    JOIN
+                        tally_voucher_types vt ON v.voucher_type_id = vt.voucher_type_id
+                    JOIN
+                        tally_voucher_heads vh ON v.voucher_id = vh.voucher_id
+                    JOIN
+                        tally_ledgers l ON vh.ledger_id = l.ledger_id
                     WHERE
-                        (tv.is_optional = 0 OR tv.is_optional IS NULL)
-                        AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
-                        AND tv.company_id IN ({$companyIdsList})
-                        AND tvh.is_party_ledger = 1
-                        AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
-                        AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
-                    GROUP BY 
-                        tv.voucher_date, 
+                        v.is_optional = 0
+                        AND l.company_id IN ({$companyIdsList})
+                        AND v.is_cancelled = 0
+                        AND vh.is_party_ledger = 1
+                        AND ({$startDateFilter} IS NULL OR v.voucher_date >= {$startDateFilter})
+                        AND ({$endDateFilter} IS NULL OR v.voucher_date <= {$endDateFilter})  
+                    GROUP BY
+                        v.voucher_id,
+                        v.voucher_date,
                         c.company_name,
-                        tl.ledger_name, 
-                        tvt.voucher_type_name, 
-                        tv.voucher_number
-                    ORDER BY 
-                        tv.voucher_date, 
-                        tv.voucher_number
+                        vt.voucher_type_name,
+                        v.voucher_number
+                    ORDER BY
+                        v.voucher_date ASC
                 ";
 
 

@@ -80,93 +80,91 @@ class CustomerController extends Controller
             $companyIdsList = implode(',', $companyIds);
 
             $sql = "
-                WITH RECURSIVE ledger_group_hierarchy AS (
-                    SELECT
-                        ledger_group_id,
-                        ledger_group_name,
-                        parent,
-                        company_id
-                    FROM
-                        tally_ledger_groups
-                    WHERE
-                        ledger_group_name = 'Sundry Debtors'
+                    WITH RECURSIVE ledger_group_hierarchy AS (
+                        SELECT
+                            lg.ledger_group_id,
+                            lg.ledger_group_name,
+                            lg.parent
+                        FROM
+                            tally_ledger_groups lg
+                        WHERE
+                            lg.ledger_group_name = 'Sundry Debtors'
+                            AND lg.company_id IN ({$companyIdsList})
 
-                    UNION ALL
+                        UNION ALL
 
+                        SELECT
+                            lg_child.ledger_group_id,
+                            lg_child.ledger_group_name,
+                            lg_child.parent
+                        FROM
+                            tally_ledger_groups lg_child
+                        INNER JOIN
+                            ledger_group_hierarchy lg_parent
+                            ON lg_child.parent = lg_parent.ledger_group_name
+                            AND lg_child.company_id IN ({$companyIdsList})
+                    )
                     SELECT
-                        lg.ledger_group_id,
-                        lg.ledger_group_name,
-                        lg.parent,
-                        lg.company_id
+                        l.ledger_name,
+                        l.ledger_guid,
+                        c.company_name,
+                        l.party_gst_in AS gstin,
+                        (
+                            IFNULL(l.opening_balance, 0) 
+                            + IFNULL(ob.total_transactions_before_start_date, 0)
+                        ) AS opening_balance_as_of_start_date,
+                        IFNULL(tp.total_transactions_in_period, 0) AS transactions_in_period,
+                        (
+                            IFNULL(l.opening_balance, 0)
+                            + IFNULL(ob.total_transactions_before_start_date, 0)
+                            + IFNULL(tp.total_transactions_in_period, 0)
+                        ) AS outstanding
                     FROM
-                        tally_ledger_groups lg
+                        tally_ledgers l
                     INNER JOIN
-                        ledger_group_hierarchy lgh
-                        ON lg.parent = lgh.ledger_group_name
-                        AND lg.company_id = lgh.company_id
-                )
-                SELECT
-                    tl.company_id,
-                    c.company_name,
-                    tl.ledger_guid,
-                    tl.ledger_name,
-                    tl.party_gst_in,
-                    COALESCE(tl.opening_balance, 0) AS opening_balance,
-                    COALESCE(
-                        SUM(
-                            CASE
-                                WHEN tvt.voucher_type_name = 'Sales'
-                                THEN tvh.amount
-                                ELSE 0
-                            END
-                        ),
-                        0
-                    ) AS total_sales,
-                    COALESCE(tl.opening_balance, 0) + COALESCE(
-                    SUM(
-                        CASE
-                            WHEN (tv.voucher_date <= {$endDateFilter} OR {$endDateFilter} IS NULL)
-                            THEN tvh.amount
-                            ELSE 0
-                        END
-                    ),
-                    0
-                ) AS outstanding,
-                    COALESCE(
-                        SUM(
-                            CASE
-                                WHEN tvt.voucher_type_name = 'Receipt'
-                                THEN tvh.amount
-                                ELSE 0
-                            END
-                        ),
-                        0
-                    ) AS payment_collection
-                FROM
-                    tally_ledgers tl
-                INNER JOIN
-                    ledger_group_hierarchy lgh
-                    ON tl.ledger_group_id = lgh.ledger_group_id
-                LEFT JOIN
-                    tally_voucher_heads tvh
-                    ON tl.ledger_id = tvh.ledger_id
-                LEFT JOIN
-                    tally_vouchers tv
-                    ON tvh.voucher_id = tv.voucher_id
-                    AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
-                    AND (tv.is_optional = 0 OR tv.is_optional IS NULL)
-                LEFT JOIN
-                    tally_voucher_types tvt
-                    ON tv.voucher_type_id = tvt.voucher_type_id
-                LEFT JOIN
-                    tally_companies c
-                    ON tl.company_id = c.company_id
-                WHERE
-                    tl.company_id IN ({$companyIdsList})
-                    AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
-                    AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
-                GROUP BY
-                    tl.ledger_id;
+                        ledger_group_hierarchy lg_h ON l.ledger_group_id = lg_h.ledger_group_id
+                    INNER JOIN
+                        tally_companies c ON l.company_id = c.company_id
+                    LEFT JOIN (
+                        SELECT
+                            vh.ledger_id,
+                            SUM(vh.amount) AS total_transactions_before_start_date
+                        FROM
+                            tally_voucher_heads vh
+                        INNER JOIN
+                            tally_vouchers v ON vh.voucher_id = v.voucher_id
+                        WHERE
+                            v.company_id IN ({$companyIdsList})
+                            AND v.voucher_date < {$startDateFilter}
+                            AND (v.is_optional = 0 OR v.is_optional IS NULL)
+                            AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
+                        GROUP BY
+                            vh.ledger_id
+                    ) ob ON l.ledger_id = ob.ledger_id
+                    LEFT JOIN (
+                        -- Sum of transactions during the period
+                        SELECT
+                            vh.ledger_id,
+                            SUM(vh.amount) AS total_transactions_in_period
+                        FROM
+                            tally_voucher_heads vh
+                        INNER JOIN
+                            tally_vouchers v ON vh.voucher_id = v.voucher_id
+                        WHERE
+                            v.company_id IN ({$companyIdsList})
+                            AND (
+                                v.voucher_date BETWEEN {$startDateFilter} AND {$endDateFilter}
+                                OR ({$endDateFilter} IS NULL AND {$startDateFilter} IS NULL)
+                            )
+                            AND (v.is_optional = 0 OR v.is_optional IS NULL)
+                            AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
+                        GROUP BY
+                            vh.ledger_id
+                    ) tp ON l.ledger_id = tp.ledger_id
+                    WHERE
+                        l.company_id IN ({$companyIdsList})
+                    ORDER BY
+                        l.ledger_name;
             ";
 
             Log::info("Customer Query", ['sql' => $sql]);
@@ -179,17 +177,9 @@ class CustomerController extends Controller
 
             $dataTable = DataTables::of($customers)
                 ->addIndexColumn()
-                ->addColumn('sales', function ($data) {
-                    $totalSales = $data->total_sales;
-                    return indian_format(abs($totalSales));
-                })
                 ->addColumn('outstanding', function ($data) {
                     $outstanding = $data->outstanding;
                     return indian_format(($outstanding));
-                })
-                ->addColumn('payment_collection', function ($data) {
-                    $payment_collection = $data->payment_collection;
-                    return indian_format(abs($payment_collection));
                 })
                 ->make(true);
 
@@ -259,82 +249,90 @@ class CustomerController extends Controller
 
             $sql = "
                 WITH RECURSIVE ledger_group_hierarchy AS (
-                    SELECT
-                        ledger_group_id,
-                        ledger_group_name,
-                        parent,
-                        company_id
-                    FROM
-                        tally_ledger_groups
-                    WHERE
-                        ledger_group_name NOT IN ('Sundry Creditors', 'Sundry Debtors')
+                        SELECT
+                            lg.ledger_group_id,
+                            lg.ledger_group_name,
+                            lg.parent
+                        FROM
+                            tally_ledger_groups lg
+                        WHERE
+                            lg.ledger_group_name NOT IN ('Sundry Creditors', 'Sundry Debtors')
+                            AND lg.company_id IN ({$companyIdsList})
 
-                    UNION ALL
+                        UNION ALL
 
+                        SELECT
+                            lg_child.ledger_group_id,
+                            lg_child.ledger_group_name,
+                            lg_child.parent
+                        FROM
+                            tally_ledger_groups lg_child
+                        INNER JOIN
+                            ledger_group_hierarchy lg_parent
+                            ON lg_child.parent = lg_parent.ledger_group_name
+                            AND lg_child.company_id IN ({$companyIdsList})
+                    )
                     SELECT
-                        lg.ledger_group_id,
-                        lg.ledger_group_name,
-                        lg.parent,
-                        lg.company_id
+                        l.ledger_name,
+                        l.ledger_guid,
+                        c.company_name,
+                        l.party_gst_in AS gstin,
+                        (
+                            IFNULL(l.opening_balance, 0) 
+                            + IFNULL(ob.total_transactions_before_start_date, 0)
+                        ) AS opening_balance_as_of_start_date,
+                        IFNULL(tp.total_transactions_in_period, 0) AS transactions_in_period,
+                        (
+                            IFNULL(l.opening_balance, 0)
+                            + IFNULL(ob.total_transactions_before_start_date, 0)
+                            + IFNULL(tp.total_transactions_in_period, 0)
+                        ) AS outstanding
                     FROM
-                        tally_ledger_groups lg
+                        tally_ledgers l
                     INNER JOIN
-                        ledger_group_hierarchy lgh
-                        ON lg.parent = lgh.ledger_group_name
-                        AND lg.company_id = lgh.company_id
-                )
-                SELECT
-                    tl.company_id,
-                    c.company_name,
-                    tl.ledger_guid,
-                    tl.ledger_name,
-                    tl.party_gst_in,
-                    COALESCE(
-                        SUM(
-                            CASE
-                                WHEN tvt.voucher_type_name = 'Sales'
-                                THEN tvh.amount
-                                ELSE 0
-                            END
-                        ),
-                        0
-                    ) AS total_sales,
-                    COALESCE(SUM(tvh.amount), 0) AS outstanding,
-                    COALESCE(
-                        SUM(
-                            CASE
-                                WHEN tvt.voucher_type_name = 'Receipt'
-                                THEN tvh.amount
-                                ELSE 0
-                            END
-                        ),
-                        0
-                    ) AS payment_collection
-                FROM
-                    tally_ledgers tl
-                INNER JOIN
-                    ledger_group_hierarchy lgh
-                    ON tl.ledger_group_id = lgh.ledger_group_id
-                LEFT JOIN
-                    tally_voucher_heads tvh
-                    ON tl.ledger_id = tvh.ledger_id
-                LEFT JOIN
-                    tally_vouchers tv
-                    ON tvh.voucher_id = tv.voucher_id
-                    AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
-                    AND (tv.is_optional = 0 OR tv.is_optional IS NULL)
-                LEFT JOIN
-                    tally_voucher_types tvt
-                    ON tv.voucher_type_id = tvt.voucher_type_id
-                LEFT JOIN
-                    tally_companies c
-                    ON tl.company_id = c.company_id
-                WHERE
-                    tl.company_id IN ({$companyIdsList})
-                    AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
-                    AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
-                GROUP BY
-                    tl.ledger_id;
+                        ledger_group_hierarchy lg_h ON l.ledger_group_id = lg_h.ledger_group_id
+                    INNER JOIN
+                        tally_companies c ON l.company_id = c.company_id
+                    LEFT JOIN (
+                        SELECT
+                            vh.ledger_id,
+                            SUM(vh.amount) AS total_transactions_before_start_date
+                        FROM
+                            tally_voucher_heads vh
+                        INNER JOIN
+                            tally_vouchers v ON vh.voucher_id = v.voucher_id
+                        WHERE
+                            v.company_id IN ({$companyIdsList})
+                            AND v.voucher_date < {$startDateFilter}
+                            AND (v.is_optional = 0 OR v.is_optional IS NULL)
+                            AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
+                        GROUP BY
+                            vh.ledger_id
+                    ) ob ON l.ledger_id = ob.ledger_id
+                    LEFT JOIN (
+                        -- Sum of transactions during the period
+                        SELECT
+                            vh.ledger_id,
+                            SUM(vh.amount) AS total_transactions_in_period
+                        FROM
+                            tally_voucher_heads vh
+                        INNER JOIN
+                            tally_vouchers v ON vh.voucher_id = v.voucher_id
+                        WHERE
+                            v.company_id IN ({$companyIdsList})
+                            AND (
+                                v.voucher_date BETWEEN {$startDateFilter} AND {$endDateFilter}
+                                OR ({$endDateFilter} IS NULL AND {$startDateFilter} IS NULL)
+                            )
+                            AND (v.is_optional = 0 OR v.is_optional IS NULL)
+                            AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
+                        GROUP BY
+                            vh.ledger_id
+                    ) tp ON l.ledger_id = tp.ledger_id
+                    WHERE
+                        l.company_id IN ({$companyIdsList})
+                    ORDER BY
+                        l.ledger_name;
             ";
 
             Log::info("Other Customer Query", ['sql' => $sql]);
@@ -347,17 +345,9 @@ class CustomerController extends Controller
 
             $dataTable = DataTables::of($customers)
                 ->addIndexColumn()
-                ->addColumn('sales', function ($data) {
-                    $totalSales = $data->total_sales;
-                    return indian_format(abs($totalSales));
-                })
                 ->addColumn('outstanding', function ($data) {
                     $outstanding = $data->outstanding;
                     return indian_format(($outstanding));
-                })
-                ->addColumn('payment_collection', function ($data) {
-                    $payment_collection = $data->payment_collection;
-                    return indian_format(abs($payment_collection));
                 })
                 ->make(true);
 

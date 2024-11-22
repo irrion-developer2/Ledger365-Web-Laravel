@@ -99,11 +99,11 @@
             columns: [
                 // {data: 'id', name: 'id'},
                 {data: 'item_name', name: 'item_name',
-                    render: function(data, type, row) {
+                    {{--  render: function(data, type, row) {
                         var url = '{{ route("StockItem.items", ":id") }}';
                         url = url.replace(':id', row.id);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
-                    }
+                    }  --}}
                 },
                 {data: 'alias1', name: 'alias1', render: function(data, type, row) {
                     return data ? data : '-';

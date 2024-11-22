@@ -398,26 +398,27 @@ class LedgerController extends Controller
                     // $parent = $ledgerData['PARENT'] ?? null;
                     // $ledgerGroup = TallyLedgerGroup::where('ledger_group_name', $parent)->first();
                     // $ledgerGroupId = $ledgerGroup ? $ledgerGroup->ledger_group_id : null;
-
+                    
                     $parent = trim($ledgerData['PARENT'] ?? '');
 
                     if (!empty($parent)) {
-                        // Enhanced Ledger Group Lookup
                         $ledgerGroup = TallyLedgerGroup::where('company_id', $companyId)
-                            ->whereRaw('LOWER(TRIM(ledger_group_name)) = ?', [strtolower($parent)])
+                            ->where(function($query) use ($parent) {
+                                $query->whereRaw('LOWER(TRIM(ledger_group_name)) = ?', [strtolower($parent)])
+                                      ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', [strtolower($parent) . ',%'])
+                                      ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', ['%,' . strtolower($parent)])
+                                      ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', ['%,' . strtolower($parent) . ',%']);
+                            })
                             ->first();
-            
                         if (!$ledgerGroup) {
                             Log::error("Ledger group '{$parent}' not found for company_id: {$companyId}");
-                            // Optionally, create the ledger group or assign to a default group
-                            continue; // Skip this ledger if ledger group not found
+                            continue;
                         }
-            
                         $ledgerGroupId = $ledgerGroup->ledger_group_id;
                         Log::info("Found Ledger Group '{$ledgerGroup->ledger_group_name}' with ID: {$ledgerGroupId}");
                     } else {
                         Log::warning("Parent ledger group is empty for ledger GUID: {$guid}");
-                        $ledgerGroupId = null; // Or assign to a default ledger group
+                        $ledgerGroupId = null; 
                     }
 
                     $tallyLedger = TallyLedger::updateOrCreate(

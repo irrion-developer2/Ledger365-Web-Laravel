@@ -208,6 +208,10 @@ class ReportBalanceSheetProfitLossController extends Controller
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
+
+            $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
+            $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
+    
     
             if ($customDateRange) {
                 switch ($customDateRange) {
@@ -256,7 +260,7 @@ class ReportBalanceSheetProfitLossController extends Controller
                     FROM
                         tally_ledger_groups tlg
                     WHERE
-                        tlg.ledger_group_name IN ('Purchase Accounts', 'Sales Accounts', 'Direct Expenses', 'Direct Incomes', 'Indirect Expenses', 'Indirect Incomes')
+                        tlg.ledger_group_name IN ('Purchase Accounts', 'Sales Accounts', 'Direct Expenses, Expenses (Direct)', 'Direct Incomes, Income (Direct)', 'Indirect Expenses, Expenses (Indirect)', 'Indirect Incomes, Income (Indirect)')
                         AND tlg.company_id = ({$companyIdsList})
                     UNION ALL
                     SELECT

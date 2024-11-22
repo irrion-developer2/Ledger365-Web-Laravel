@@ -98,6 +98,10 @@ class ReportGroupSummaryController extends Controller
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
 
+            $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
+            $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
+    
+
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':

@@ -211,7 +211,7 @@
                 }
             },
             columns: [
-                {data: 'ledger_name', name: 'ledger_name', 
+                {data: 'name', name: 'name', 
                     render: function(data, type, row) {
                         let url = '{{ route("customers.show", ":guid") }}';
                         url = url.replace(':guid', row.ledger_guid);

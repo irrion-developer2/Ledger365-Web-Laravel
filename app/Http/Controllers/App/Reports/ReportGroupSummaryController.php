@@ -32,18 +32,18 @@ class ReportGroupSummaryController extends Controller
         if (empty($companyIds)) {
             return DataTables::of([])->make(true);
         }
-    
+
         if ($request->ajax()) {
             $startTime = microtime(true);
-    
+
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
 
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
-    
-    
+
+
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -74,12 +74,12 @@ class ReportGroupSummaryController extends Controller
                         break;
                 }
             }
-    
+
             $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
             $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
-    
+
             $companyIdsList = implode(',', $companyIds);
-    
+
             $sql = "
                     WITH RECURSIVE ledger_group_hierarchy AS (
                         -- Base case: select top-level ledger groups (parent IS NULL)
@@ -93,7 +93,7 @@ class ReportGroupSummaryController extends Controller
                         FROM
                             tally_ledger_groups lg
                         WHERE
-                            lg.parent IS NULL
+                            (lg.parent IS NULL OR COALESCE(lg.parent, '') = '')
                             AND lg.company_id = ({$companyIdsList})  -- Replace with your company_id
 
                         UNION ALL
@@ -220,14 +220,14 @@ class ReportGroupSummaryController extends Controller
                 ";
 
             Log::info("Balance Sheet Query", ['sql' => $sql]);
-    
+
             $balanceSheet = DB::select(DB::raw($sql));
             // dd($balanceSheet);
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
             Log::info('Total first db request execution time for ReportBalanceSheetController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
-    
+
             $dataTable = DataTables::of($balanceSheet)
                 ->addIndexColumn()
                 ->addColumn('opening_balance', function ($data) {
@@ -243,11 +243,11 @@ class ReportGroupSummaryController extends Controller
                     return indian_format($data->closing_balance);
                 })
                 ->make(true);
-    
+
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
             Log::info('Total end execution time for ReportBalanceSheetController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
-    
+
             return $dataTable;
         }
     }

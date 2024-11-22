@@ -38,6 +38,10 @@ class SalesController extends Controller
     {
         $companyIds = $this->reportService->companyData();
 
+        if (empty($companyIds)) {
+            return DataTables::of([])->make(true);
+        }
+
         if ($request->ajax()) {
             $startTime = microtime(true);
 
@@ -88,6 +92,7 @@ class SalesController extends Controller
             $sql = "
                 SELECT 
                     tl.ledger_name,
+                    tl.ledger_guid,
                     c.company_name,
                     tv.voucher_id,
                     tv.voucher_date,

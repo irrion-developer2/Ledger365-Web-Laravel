@@ -201,7 +201,7 @@
             fixedColumns: { start: 1, },
             processing: true,
             serverSide: true,
-            paging: false,
+            paging: true,
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,

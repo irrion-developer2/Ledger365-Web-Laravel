@@ -72,7 +72,7 @@
                 }
             });
         });
-    </script>
+    </script> --}}
 
     <script>
         // Prepare data for the chart
@@ -130,7 +130,7 @@
         });
     </script>
 
-    <script>
+    {{--<script>
         document.addEventListener('DOMContentLoaded', function () {
             var ctx = document.getElementById('salereceiptchart').getContext('2d');
 

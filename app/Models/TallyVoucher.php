@@ -18,7 +18,7 @@ class TallyVoucher extends Model
 
     public function voucherHeads()
     {
-        return $this->hasMany(TallyVoucherHead::class, 'ledger_id', 'ledger_guid');
+        return $this->hasMany(TallyVoucherHead::class, 'voucher_id', 'voucher_id');
     }
 
     public function tallyVoucherItems()
@@ -33,7 +33,7 @@ class TallyVoucher extends Model
 
     public function ledger()
     {
-        return $this->belongsTo(TallyLedger::class, 'ledger_guid', 'guid');
+        return $this->belongsTo(TallyLedger::class, 'ledger_id', 'ledger_guid');
     }
 
 

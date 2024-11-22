@@ -260,7 +260,7 @@ class ReportBalanceSheetProfitLossController extends Controller
                     FROM
                         tally_ledger_groups tlg
                     WHERE
-                        tlg.ledger_group_name IN ('Purchase Accounts', 'Sales Accounts', 'Direct Expenses, Expenses (Direct)', 'Direct Incomes, Income (Direct)', 'Indirect Expenses, Expenses (Indirect)', 'Indirect Incomes, Income (Indirect)')
+                        tlg.ledger_group_name IN ('Purchase Accounts', 'Sales Accounts', 'Direct Expenses', 'Direct Incomes', 'Indirect Expenses', 'Indirect Incomes')
                         AND tlg.company_id = ({$companyIdsList})
                     UNION ALL
                     SELECT

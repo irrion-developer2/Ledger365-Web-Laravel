@@ -395,31 +395,31 @@ class LedgerController extends Controller
                     $alias2 = $aliases[1] ?? null;
                     $alias3 = $aliases[2] ?? null;
 
-                    // $parent = $ledgerData['PARENT'] ?? null;
-                    // $ledgerGroup = TallyLedgerGroup::where('ledger_group_name', $parent)->first();
-                    // $ledgerGroupId = $ledgerGroup ? $ledgerGroup->ledger_group_id : null;
+                    $parent = $ledgerData['PARENT'] ?? null;
+                    $ledgerGroup = TallyLedgerGroup::where('ledger_group_name', $parent)->first();
+                    $ledgerGroupId = $ledgerGroup ? $ledgerGroup->ledger_group_id : null;
                     
-                    $parent = trim($ledgerData['PARENT'] ?? '');
+                    // $parent = trim($ledgerData['PARENT'] ?? '');
 
-                    if (!empty($parent)) {
-                        $ledgerGroup = TallyLedgerGroup::where('company_id', $companyId)
-                            ->where(function($query) use ($parent) {
-                                $query->whereRaw('LOWER(TRIM(ledger_group_name)) = ?', [strtolower($parent)])
-                                      ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', [strtolower($parent) . ',%'])
-                                      ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', ['%,' . strtolower($parent)])
-                                      ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', ['%,' . strtolower($parent) . ',%']);
-                            })
-                            ->first();
-                        if (!$ledgerGroup) {
-                            Log::error("Ledger group '{$parent}' not found for company_id: {$companyId}");
-                            continue;
-                        }
-                        $ledgerGroupId = $ledgerGroup->ledger_group_id;
-                        Log::info("Found Ledger Group '{$ledgerGroup->ledger_group_name}' with ID: {$ledgerGroupId}");
-                    } else {
-                        Log::warning("Parent ledger group is empty for ledger GUID: {$guid}");
-                        $ledgerGroupId = null; 
-                    }
+                    // if (!empty($parent)) {
+                    //     $ledgerGroup = TallyLedgerGroup::where('company_id', $companyId)
+                    //         ->where(function($query) use ($parent) {
+                    //             $query->whereRaw('LOWER(TRIM(ledger_group_name)) = ?', [strtolower($parent)])
+                    //                   ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', [strtolower($parent) . ',%'])
+                    //                   ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', ['%,' . strtolower($parent)])
+                    //                   ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', ['%,' . strtolower($parent) . ',%']);
+                    //         })
+                    //         ->first();
+                    //     if (!$ledgerGroup) {
+                    //         Log::error("Ledger group '{$parent}' not found for company_id: {$companyId}");
+                    //         continue;
+                    //     }
+                    //     $ledgerGroupId = $ledgerGroup->ledger_group_id;
+                    //     Log::info("Found Ledger Group '{$ledgerGroup->ledger_group_name}' with ID: {$ledgerGroupId}");
+                    // } else {
+                    //     Log::warning("Parent ledger group is empty for ledger GUID: {$guid}");
+                    //     $ledgerGroupId = null; 
+                    // }
 
                     $tallyLedger = TallyLedger::updateOrCreate(
                         ['ledger_guid' => $guid],

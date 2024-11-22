@@ -65,8 +65,7 @@
                         <table id="group-summary-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Parent Group Name</th>
-                                    <th>Ledger group Name</th>
+                                    <th>Ledger Group</th>      
                                     <th>Opening Balance</th>
                                     <th>Total Debit</th>
                                     <th>Total Credit</th>
@@ -79,7 +78,6 @@
                             <tfoot>
                                 <tr>
                                     <th>Total</th>
-                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -213,16 +211,15 @@
                 }
             },
             columns: [
-                {data: 'parent_group_name', name: 'parent_group_name', render: data => data || '-'},
-                { data: 'ledger_group_name', render: data => data || '-' },
-                {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: data => data || '-'},
+                {data: 'hierarchy', name: 'hierarchy', render: data => data || '-'},
+                 {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: data => data || '-'},
                 {data: 'total_debit', name: 'total_debit', className: 'text-end', render: data => data || '-'},
                 {data: 'total_credit', name: 'total_credit', className: 'text-end', render: data => data || '-'},
                 {data: 'closing_balance', name: 'closing_balance', className: 'text-end', render: data => data || '-'},
             ],
             footerCallback: function (row, data, start, end, display) {
                 const api = this.api();
-                const columnIndexes = { sales: 3, outstanding: 4, payment: 5 };
+                const columnIndexes = { sales: 2, outstanding: 3, payment: 4 };
                 
                 const totals = {
                     sales: api.column(columnIndexes.sales).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),

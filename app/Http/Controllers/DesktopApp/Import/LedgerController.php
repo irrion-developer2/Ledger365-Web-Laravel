@@ -313,7 +313,7 @@ class LedgerController extends Controller
                             'parent' => $groupData['PARENT'] ?? null,
                             'affects_stock' => isset($groupData['AFFECTSSTOCK']) && $groupData['AFFECTSSTOCK'] === 'Yes',
                             'alter_id' => $groupData['ALTERID'] ?? null,
-                            'ledger_group_name' => $nameField,
+                            'ledger_group_name' => $groupData['NAME'] ?? null,
                             'is_primary' => $isPrimary,
                         ]
                     );
@@ -593,9 +593,23 @@ class LedgerController extends Controller
                         $nameField = implode(', ', $nameField);
                     }
 
+                    $guid = $godownData['GUID'] ?? null;
+                    $companyGuid = substr($guid, 0, 36);
+
+                    $company = TallyCompany::where('company_guid', $companyGuid)->first();
+
+                    if (!$company) {
+                        Log::error('Company GUID not found in tally_companies: ' . $companyGuid);
+                        continue;
+                    }
+
+                    $companyId = $company->company_id;
+                    $companyIds[$companyId] = true;
+
                     $tallyGodown = TallyGodown::updateOrCreate(
                         ['godown_guid' => $godownData['GUID'] ?? null],
                         [
+                            'company_id' => $companyId,
                             'parent' => $godownData['PARENT'] ?? null,
                             'alter_id' => $godownData['ALTERID'] ?? null,
                             'godown_name' => $nameField,

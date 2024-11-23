@@ -42,11 +42,14 @@ class CustomerController extends Controller
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
+            $ledgerGroupName = 'Sundry Debtors';
+
+            $ledgerGroupName = ($ledgerGroupName && strtolower($ledgerGroupName) !== 'null') ? $ledgerGroupName : 'Sundry Debtors';
 
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
-    
 
+            // Adjust dates based on custom date range
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -78,102 +81,31 @@ class CustomerController extends Controller
                 }
             }
 
-            $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
-            $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
-
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "
-                    WITH RECURSIVE ledger_group_hierarchy AS (
-                        SELECT
-                            lg.ledger_group_id,
-                            lg.ledger_group_name,
-                            lg.parent
-                        FROM
-                            tally_ledger_groups lg
-                        WHERE
-                            lg.ledger_group_name = 'Sundry Debtors'
-                            AND lg.company_id IN ({$companyIdsList})
+            $sql = "CALL get_ledgers_data(:company_ids, :start_date, :end_date, :ledger_group_name)";
 
-                        UNION ALL
+            Log::info("Calling Stored Procedure", [
+                'sql' => $sql,
+                'params' => [
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'ledger_group_name' => $ledgerGroupName,
+                ]
+            ]);
 
-                        SELECT
-                            lg_child.ledger_group_id,
-                            lg_child.ledger_group_name,
-                            lg_child.parent
-                        FROM
-                            tally_ledger_groups lg_child
-                        INNER JOIN
-                            ledger_group_hierarchy lg_parent
-                            ON lg_child.parent = lg_parent.ledger_group_name
-                            AND lg_child.company_id IN ({$companyIdsList})
-                    )
-                    SELECT
-                        l.ledger_name,
-                        l.ledger_guid,
-                        c.company_name,
-                        l.party_gst_in AS gstin,
-                        (
-                            IFNULL(l.opening_balance, 0) 
-                            + IFNULL(ob.total_transactions_before_start_date, 0)
-                        ) AS opening_balance_as_of_start_date,
-                        IFNULL(tp.total_transactions_in_period, 0) AS transactions_in_period,
-                        (
-                            IFNULL(l.opening_balance, 0)
-                            + IFNULL(ob.total_transactions_before_start_date, 0)
-                            + IFNULL(tp.total_transactions_in_period, 0)
-                        ) AS outstanding
-                    FROM
-                        tally_ledgers l
-                    INNER JOIN
-                        ledger_group_hierarchy lg_h ON l.ledger_group_id = lg_h.ledger_group_id
-                    INNER JOIN
-                        tally_companies c ON l.company_id = c.company_id
-                    LEFT JOIN (
-                        SELECT
-                            vh.ledger_id,
-                            SUM(vh.amount) AS total_transactions_before_start_date
-                        FROM
-                            tally_voucher_heads vh
-                        INNER JOIN
-                            tally_vouchers v ON vh.voucher_id = v.voucher_id
-                        WHERE
-                            v.company_id IN ({$companyIdsList})
-                            AND v.voucher_date < {$startDateFilter}
-                            AND (v.is_optional = 0 OR v.is_optional IS NULL)
-                            AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
-                        GROUP BY
-                            vh.ledger_id
-                    ) ob ON l.ledger_id = ob.ledger_id
-                    LEFT JOIN (
-                        -- Sum of transactions during the period
-                        SELECT
-                            vh.ledger_id,
-                            SUM(vh.amount) AS total_transactions_in_period
-                        FROM
-                            tally_voucher_heads vh
-                        INNER JOIN
-                            tally_vouchers v ON vh.voucher_id = v.voucher_id
-                        WHERE
-                            v.company_id IN ({$companyIdsList})
-                            AND (
-                                v.voucher_date BETWEEN {$startDateFilter} AND {$endDateFilter}
-                                OR ({$endDateFilter} IS NULL AND {$startDateFilter} IS NULL)
-                            )
-                            AND (v.is_optional = 0 OR v.is_optional IS NULL)
-                            AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
-                        GROUP BY
-                            vh.ledger_id
-                    ) tp ON l.ledger_id = tp.ledger_id
-                    WHERE
-                        l.company_id IN ({$companyIdsList})
-                    ORDER BY
-                        l.ledger_name;
-            ";
-
-            Log::info("Customer Query", ['sql' => $sql]);
-
-            $customers = DB::select(DB::raw($sql));
+            try {
+                $customers = DB::select($sql, [
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'ledger_group_name' => $ledgerGroupName,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error executing stored procedure get_ledgers_data:', ['error' => $e->getMessage()]);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
+            }
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
@@ -193,7 +125,10 @@ class CustomerController extends Controller
 
             return $dataTable;
         }
+
+        return response()->json(['message' => 'Invalid request.'], 400);
     }
+
 
     public function otherLedgers()
     {
@@ -366,6 +301,109 @@ class CustomerController extends Controller
             return $dataTable;
         }
     }
+
+
+    // public function ledgergetData(Request $request)
+    // {
+    //     $companyIds = $this->reportService->companyData();
+
+    //     if (empty($companyIds)) {
+    //         return DataTables::of([])->make(true);
+    //     }
+
+    //     if ($request->ajax()) {
+    //         $startTime = microtime(true);
+
+    //         $startDate = $request->get('start_date');
+    //         $endDate = $request->get('end_date');
+    //         $customDateRange = $request->get('custom_date_range');
+    //         // $ledgerGroupName = $request->get('ledger_group_name');
+    //         $ledgerGroupName =  ['Sundry Creditors', 'Sundry Debtors'];
+          
+    //         // dd($ledgerGroupName);
+    //         $ledgerGroupName = ($ledgerGroupName && strtolower($ledgerGroupName) !== 'null') ? $ledgerGroupName : 'Sundry Debtors';
+
+    //         $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
+    //         $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
+
+    //         if ($customDateRange) {
+    //             switch ($customDateRange) {
+    //                 case 'this_month':
+    //                     $startDate = now()->startOfMonth()->toDateString();
+    //                     $endDate = now()->endOfMonth()->toDateString();
+    //                     break;
+    //                 case 'last_month':
+    //                     $startDate = now()->subMonth()->startOfMonth()->toDateString();
+    //                     $endDate = now()->subMonth()->endOfMonth()->toDateString();
+    //                     break;
+    //                 case 'this_quarter':
+    //                     $startDate = now()->firstOfQuarter()->toDateString();
+    //                     $endDate = now()->lastOfQuarter()->toDateString();
+    //                     break;
+    //                 case 'prev_quarter':
+    //                     $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
+    //                     $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
+    //                     break;
+    //                 case 'this_year':
+    //                     $startDate = now()->startOfYear()->toDateString();
+    //                     $endDate = now()->endOfYear()->toDateString();
+    //                     break;
+    //                 case 'prev_year':
+    //                     $startDate = now()->subYear()->startOfYear()->toDateString();
+    //                     $endDate = now()->subYear()->endOfYear()->toDateString();
+    //                     break;
+    //                 case 'all':
+    //                     break;
+    //             }
+    //         }
+
+    //         $companyIdsList = implode(',', $companyIds);
+
+    //         $sql = "CALL get_ledgers_data(:company_ids, :start_date, :end_date, :ledger_group_name)";
+
+    //         Log::info("Calling Stored Procedure", [
+    //             'sql' => $sql,
+    //             'params' => [
+    //                 'company_ids' => $companyIdsList,
+    //                 'start_date' => $startDate,
+    //                 'end_date' => $endDate,
+    //                 'ledger_group_name' => $ledgerGroupName,
+    //             ]
+    //         ]);
+
+    //         try {
+    //             $customers = DB::select($sql, [
+    //                 'company_ids' => $companyIdsList,
+    //                 'start_date' => $startDate,
+    //                 'end_date' => $endDate,
+    //                 'ledger_group_name' => $ledgerGroupName,
+    //             ]);
+    //         } catch (\Exception $e) {
+    //             Log::error('Error executing stored procedure get_ledgers_data:', ['error' => $e->getMessage()]);
+    //             return response()->json(['error' => 'Failed to retrieve data.'], 500);
+    //         }
+
+    //         $endTime1 = microtime(true);
+    //         $executionTime1 = $endTime1 - $startTime;
+    //         Log::info('Total first db request execution time for CustomerController.ledgergetData:', ['time_taken' => $executionTime1 . ' seconds']);
+
+    //         $dataTable = DataTables::of($customers)
+    //             ->addIndexColumn()
+    //             ->addColumn('outstanding', function ($data) {
+    //                 $outstanding = $data->outstanding;
+    //                 return indian_format(($outstanding));
+    //             })
+    //             ->make(true);
+
+    //         $endTime = microtime(true);
+    //         $executionTime = $endTime - $startTime;
+    //         Log::info('Total end execution time for CustomerController.ledgergetData:', ['time_taken' => $executionTime . ' seconds']);
+
+    //         return $dataTable;
+    //     }
+
+    //     return response()->json(['message' => 'Invalid request.'], 400);
+    // }
 
     public function show($customer)
     {

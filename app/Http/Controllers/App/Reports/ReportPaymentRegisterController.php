@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\DB;
 use App\Services\ReportService;
 use App\Models\TallyVoucher;
 use App\DataTables\SuperAdmin\PaymentRegisterDataTable;
@@ -27,62 +28,27 @@ class ReportPaymentRegisterController extends Controller
         return view ('app.reports.paymentRegister.index');
     }
 
-
     public function getData(Request $request)
     {
         $companyIds = $this->reportService->companyData();
 
+        if (empty($companyIds)) {
+            return DataTables::of([])->make(true);
+        }
+
         if ($request->ajax()) {
             $startTime = microtime(true);
-
-            $vouchers = TallyVoucher::select(
-                        'tally_vouchers.voucher_id',
-                        'tally_vouchers.company_id',
-                        'tally_vouchers.is_optional',
-                        'tally_vouchers.is_cancelled',
-                        'tally_vouchers.voucher_date',
-                        'tally_voucher_types.voucher_type_name',
-                        'tally_vouchers.voucher_number',
-                        'tally_ledgers.ledger_name'
-                    )
-                    ->leftJoin('tally_voucher_heads', function ($join) {
-                        $join->on('tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id');
-                    })
-                    ->leftJoin('tally_voucher_types', function ($join) {
-                        $join->on('tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-                            ->on('tally_vouchers.company_id', '=', 'tally_voucher_types.company_id');
-                    })
-                    ->leftJoin('tally_ledgers', function ($join) {
-                        $join->on('tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id');
-                    })
-                    ->where('tally_voucher_types.voucher_type_name', 'Payment')
-                    ->where('tally_vouchers.is_optional', 0)
-                    ->where('tally_vouchers.is_cancelled', 0)
-                    ->whereIn('tally_vouchers.company_id', $companyIds)
-                    ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "credit" THEN tally_voucher_heads.amount ELSE 0 END) as total_credit')
-                    ->selectRaw('SUM(CASE WHEN tally_voucher_heads.entry_type = "debit" THEN tally_voucher_heads.amount ELSE 0 END) as total_debit')
-                    ->groupBy(
-                        'tally_vouchers.voucher_id',
-                        'tally_vouchers.company_id',
-                        'tally_vouchers.is_optional',
-                        'tally_vouchers.is_cancelled',
-                        'tally_vouchers.voucher_date',
-                        'tally_voucher_types.voucher_type_name',
-                        'tally_vouchers.voucher_number',
-                        'tally_ledgers.ledger_name'
-                    );
-
-
-            Log::info("vouchers Query");        
-            Log::info($this->reportService->getFinalQuery($vouchers));
-         
-            $endTime1 = microtime(true);
-            $executionTime1 = $endTime1 - $startTime;
-            Log::info('Initial DB request execution time:', ['time_taken' => $executionTime1 . ' seconds']);
 
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
+            $isCancelled = $request->get('is_cancelled', 0);
+            $isOptional = $request->get('is_optional', 0);
+            $voucherTypeName = 'Payment';
+
+            $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
+            $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
+            $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
 
             if ($customDateRange) {
                 switch ($customDateRange) {
@@ -110,19 +76,53 @@ class ReportPaymentRegisterController extends Controller
                         $startDate = now()->subYear()->startOfYear()->toDateString();
                         $endDate = now()->subYear()->endOfYear()->toDateString();
                         break;
+                    case 'all':
+                        break;
                 }
             }
 
-            Log::info('Custom Date Range:', ['customDateRange' => $customDateRange]);
-            Log::info('Start Date:', ['startDate' => $startDate]);
-            Log::info('End Date:', ['endDate' => $endDate]);
+            $companyIdsList = implode(',', $companyIds);
 
-            if ($startDate && $endDate) {
-                $vouchers->whereBetween('voucher_date', [$startDate, $endDate]);
+            $sql = "CALL get_daybook_data(?, ?, ?, ?, ?, ?)";
+
+            Log::info("Calling Stored Procedure get_daybook_data", [
+                'sql' => $sql,
+                'params' => [
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'is_cancelled' => $isCancelled,
+                    'is_optional' => $isOptional,
+                    'voucher_type_name' => $voucherTypeName,
+                ]
+            ]);
+
+            try {
+                $dayBook = DB::select($sql, [
+                    $companyIdsList,    
+                    $startDate,         
+                    $endDate,           
+                    $isCancelled,       
+                    $isOptional,       
+                    $voucherTypeName,   
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error executing stored procedure get_daybook_data:', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
             }
 
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first DB request execution time for ReportPaymentRegisterController.getData:', [
+                'time_taken' => $executionTime1 . ' seconds'
+            ]);
 
-            $dataTable = DataTables::of($vouchers)
+            $dataTable = DataTables::of($dayBook)
                 ->addIndexColumn()
                 ->addColumn('credit', function ($data) {
                     return indian_format(abs($data->total_credit));
@@ -134,10 +134,14 @@ class ReportPaymentRegisterController extends Controller
 
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
-            Log::info('Total execution time for getData:', ['time_taken' => $executionTime . ' seconds']);
+            Log::info('Total end execution time for ReportPaymentRegisterController.getData:', [
+                'time_taken' => $executionTime . ' seconds'
+            ]);
 
             return $dataTable;
         }
+
+        return response()->json(['message' => 'Invalid request.'], 400);
     }
 
 }

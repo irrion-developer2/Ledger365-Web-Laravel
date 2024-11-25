@@ -77,7 +77,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th>Total</th>
+                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -217,20 +217,6 @@
                 {data: 'total_credit', name: 'total_credit', className: 'text-end', render: data => data || '-'},
                 {data: 'closing_balance', name: 'closing_balance', className: 'text-end', render: data => data || '-'},
             ],
-            footerCallback: function (row, data, start, end, display) {
-                const api = this.api();
-                const columnIndexes = { openingBalance: 1, closingBalance: 4 };
-
-                const totals = {
-                    openingBalance: api.column(columnIndexes.openingBalance).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
-                    {{--  outstanding: api.column(columnIndexes.outstanding).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),  --}}
-                    closingBalance: api.column(columnIndexes.closingBalance).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
-                };
-
-                $(api.column(columnIndexes.openingBalance).footer()).html(jsIndianFormat(Math.abs(totals.openingBalance)));
-                {{--  $(api.column(columnIndexes.outstanding).footer()).html(jsIndianFormat(Math.abs(totals.outstanding)));  --}}
-                $(api.column(columnIndexes.closingBalance).footer()).html(jsIndianFormat(Math.abs(totals.closingBalance)));
-            },
             search: {
                 orthogonal: { search: 'plain' }
             }

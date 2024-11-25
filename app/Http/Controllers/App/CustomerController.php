@@ -49,7 +49,6 @@ class CustomerController extends Controller
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
 
-            // Adjust dates based on custom date range
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':

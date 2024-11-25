@@ -31,16 +31,23 @@ class ReportDayBookController extends Controller
     {
         $companyIds = $this->reportService->companyData();
 
+        if (empty($companyIds)) {
+            return DataTables::of([])->make(true);
+        }
+
         if ($request->ajax()) {
             $startTime = microtime(true);
 
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
+            $isCancelled = $request->get('is_cancelled', 0);
+            $isOptional = $request->get('is_optional', 0);
+            $voucherTypeName = $request->get('voucher_type_name');
 
+            $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
-    
 
             if ($customDateRange) {
                 switch ($customDateRange) {
@@ -73,61 +80,46 @@ class ReportDayBookController extends Controller
                 }
             }
 
-            $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
-            $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
-    
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "
-                    SELECT
-                        v.voucher_date,
-                        GROUP_CONCAT(l.ledger_name SEPARATOR ', ') AS `ledger_name`,
-                        c.company_name,
-                        vt.voucher_type_name,
-                        v.voucher_number,
-                        SUM(CASE 
-                                WHEN vh.entry_type = 'debit' THEN ABS(vh.amount) 
-                                ELSE 0 
-                            END) AS `total_debit`,
-                        SUM(CASE 
-                                WHEN vh.entry_type = 'credit' THEN vh.amount 
-                                ELSE 0 
-                            END) AS `total_credit`
-                    FROM
-                        tally_vouchers v
-                    JOIN
-                        tally_companies c ON v.company_id = c.company_id
-                    JOIN
-                        tally_voucher_types vt ON v.voucher_type_id = vt.voucher_type_id
-                    JOIN
-                        tally_voucher_heads vh ON v.voucher_id = vh.voucher_id
-                    JOIN
-                        tally_ledgers l ON vh.ledger_id = l.ledger_id
-                    WHERE
-                        v.is_optional = 0
-                        AND l.company_id IN ({$companyIdsList})
-                        AND v.is_cancelled = 0
-                        AND vh.is_party_ledger = 1
-                        AND ({$startDateFilter} IS NULL OR v.voucher_date >= {$startDateFilter})
-                        AND ({$endDateFilter} IS NULL OR v.voucher_date <= {$endDateFilter})  
-                    GROUP BY
-                        v.voucher_id,
-                        v.voucher_date,
-                        c.company_name,
-                        vt.voucher_type_name,
-                        v.voucher_number
-                    ORDER BY
-                        v.voucher_date ASC
-                ";
+            $sql = "CALL get_daybook_data(?, ?, ?, ?, ?, ?)";
 
+            Log::info("Calling Stored Procedure get_daybook_data", [
+                'sql' => $sql,
+                'params' => [
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'is_cancelled' => $isCancelled,
+                    'is_optional' => $isOptional,
+                    'voucher_type_name' => $voucherTypeName,
+                ]
+            ]);
 
-            Log::info("Daybook Query", ['sql' => $sql]);
-
-            $dayBook = DB::select(DB::raw($sql));
+            try {
+                $dayBook = DB::select($sql, [
+                    $companyIdsList,    
+                    $startDate,         
+                    $endDate,           
+                    $isCancelled,       
+                    $isOptional,       
+                    $voucherTypeName,   
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error executing stored procedure get_daybook_data:', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
+            }
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
-            Log::info('Total first db request execution time for ReportDayBookController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+            Log::info('Total first DB request execution time for ReportDayBookController.getData:', [
+                'time_taken' => $executionTime1 . ' seconds'
+            ]);
 
             $dataTable = DataTables::of($dayBook)
                 ->addIndexColumn()
@@ -141,9 +133,13 @@ class ReportDayBookController extends Controller
 
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
-            Log::info('Total end execution time for ReportDayBookController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+            Log::info('Total end execution time for ReportDayBookController.getData:', [
+                'time_taken' => $executionTime . ' seconds'
+            ]);
 
             return $dataTable;
         }
+
+        return response()->json(['message' => 'Invalid request.'], 400);
     }
 }

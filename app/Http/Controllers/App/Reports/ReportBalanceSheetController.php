@@ -42,18 +42,20 @@ class ReportBalanceSheetController extends Controller
         if (empty($companyIds)) {
             return DataTables::of([])->make(true);
         }
-    
+
         if ($request->ajax()) {
             $startTime = microtime(true);
-    
+
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
+            $ledgerGroupName = ['Suspense A/c', 'Capital Account', 'Loans (Liability)', 'Current Liabilities', 'Fixed Assets', 'Investments', 'Current Assets'];
+
+            $ledgerGroupName = (!empty($ledgerGroupName)) ? implode(',', $ledgerGroupName) : null;
 
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
-    
-    
+
             if ($customDateRange) {
                 switch ($customDateRange) {
                     case 'this_month':
@@ -84,119 +86,45 @@ class ReportBalanceSheetController extends Controller
                         break;
                 }
             }
-    
-            $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
-            $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
-    
-            $companyIdsList = implode(',', $companyIds);
-    
-            $sql = "
-                    WITH RECURSIVE ledger_group_hierarchy AS (
-                    SELECT
-                        tlg.ledger_group_id,
-                        tlg.ledger_group_name,
-                        tlg.parent,
-                        CAST(tlg.ledger_group_name AS CHAR(1000)) AS full_group_path,
-                        0 AS level
-                    FROM
-                        tally_ledger_groups tlg
-                    WHERE
-                        tlg.ledger_group_name IN ('Suspense A/c', 'Capital Account', 'Loans (Liability)', 'Current Liabilities', 'Fixed Assets', 'Investments', 'Current Assets')
-                        AND tlg.company_id = ({$companyIdsList})
-                    UNION ALL
-                    SELECT
-                        tlg_child.ledger_group_id,
-                        tlg_child.ledger_group_name,
-                        tlg_child.parent,
-                        CAST(CONCAT(tlg_h.full_group_path, ' > ', tlg_child.ledger_group_name) AS CHAR(1000)) AS full_group_path,
-                        tlg_h.level + 1 AS level
-                    FROM
-                        tally_ledger_groups tlg_child
-                    INNER JOIN
-                        ledger_group_hierarchy tlg_h ON tlg_child.parent = tlg_h.ledger_group_name
-                    WHERE
-                        tlg_child.company_id = ({$companyIdsList})
-                        AND tlg_h.level < 10
-                ),
-                voucher_amounts_before AS (
-                    SELECT
-                        tvh.ledger_id,
-                        SUM(tvh.amount) AS total_amount
-                    FROM
-                        tally_voucher_heads tvh
-                    INNER JOIN
-                        tally_vouchers tv ON tvh.voucher_id = tv.voucher_id
-                    WHERE 
-                        (tv.is_optional = 0 OR tv.is_optional IS NULL)
-                        AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
-                        AND tv.company_id = ({$companyIdsList})
-                    GROUP BY
-                        tvh.ledger_id
-                ),
-                voucher_amounts_in_range AS (
-                    SELECT
-                        tvh.ledger_id,
-                        SUM(tvh.amount) AS total_amount,
-                        SUM(CASE WHEN tvh.amount < 0 THEN ABS(tvh.amount) ELSE 0 END) AS debit_amount,
-                        SUM(CASE WHEN tvh.amount > 0 THEN tvh.amount ELSE 0 END) AS credit_amount
-                    FROM
-                        tally_voucher_heads tvh
-                    INNER JOIN
-                        tally_vouchers tv ON tvh.voucher_id = tv.voucher_id
-                    WHERE 
-                        (tv.is_optional = 0 OR tv.is_optional IS NULL)
-                        AND (tv.is_cancelled = 0 OR tv.is_cancelled IS NULL)
-                        AND tv.company_id = ({$companyIdsList})
-                        
-                        AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
-                        AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
-                    GROUP BY
-                        tvh.ledger_id
-                ),
-                ledger_balances AS (
-                    SELECT
-                        tl.ledger_id,
-                        tl.ledger_name,
-                        tlg_h.full_group_path AS ledger_group_hierarchy,
-                        (IFNULL(tl.opening_balance, 0) + IFNULL(vab.total_amount, 0)) AS closing_balance,
-                        ABS(IFNULL(vai.debit_amount, 0)) AS total_debit,
-                        IFNULL(vai.credit_amount, 0) AS total_credit,
-                        (IFNULL(tl.opening_balance, 0) + IFNULL(vab.total_amount, 0) + ABS(IFNULL(vai.debit_amount, 0)) - IFNULL(vai.credit_amount, 0)) AS opening_balance
-                    FROM
-                        ledger_group_hierarchy tlg_h
-                    INNER JOIN
-                        tally_ledgers tl ON tl.ledger_group_id = tlg_h.ledger_group_id
-                    LEFT JOIN
-                        voucher_amounts_before vab ON vab.ledger_id = tl.ledger_id
-                    LEFT JOIN
-                        voucher_amounts_in_range vai ON vai.ledger_id = tl.ledger_id
-                    WHERE
-                        tl.company_id = ({$companyIdsList})
-                )
-                SELECT
-                    lb.ledger_group_hierarchy,
-                    SUM(lb.opening_balance) AS opening_balance,
-                    SUM(lb.total_debit) AS total_debit,
-                    SUM(lb.total_credit) AS total_credit,
-                    SUM(lb.closing_balance) AS closing_balance
-                FROM
-                    ledger_balances lb
-                GROUP BY
-                    lb.ledger_group_hierarchy
-                ORDER BY
-                    lb.ledger_group_hierarchy;
-            ";
 
-            Log::info("Balance Sheet Query", ['sql' => $sql]);
-    
-            $balanceSheet = DB::select(DB::raw($sql));
-            // dd($balanceSheet);
+            $companyIdsList = implode(',', $companyIds);
+
+            $sql = "CALL get_balance_sheet_data(?, ?, ?, ?)";
+
+            Log::info("Calling Stored Procedure get_balance_sheet_data", [
+                'sql' => $sql,
+                'params' => [
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'ledger_group_name' => $ledgerGroupName
+                ]
+            ]);
+
+            try {
+                $dayBook = DB::select($sql, [
+                    $companyIdsList,    
+                    $startDate,         
+                    $endDate,          
+                    $ledgerGroupName
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error executing stored procedure get_balance_sheet_data:', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
+            }
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
-            Log::info('Total first db request execution time for ReportBalanceSheetController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
-    
-            $dataTable = DataTables::of($balanceSheet)
+            Log::info('Total first DB request execution time for ReportBalanceSheetController.getData:', [
+                'time_taken' => $executionTime1 . ' seconds'
+            ]);
+
+            $dataTable = DataTables::of($dayBook)
                 ->addIndexColumn()
                 ->addColumn('opening_balance', function ($data) {
                     return indian_format($data->opening_balance);
@@ -211,13 +139,17 @@ class ReportBalanceSheetController extends Controller
                     return indian_format($data->closing_balance);
                 })
                 ->make(true);
-    
+
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
-            Log::info('Total end execution time for ReportBalanceSheetController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
-    
+            Log::info('Total end execution time for ReportBalanceSheetController.getData:', [
+                'time_taken' => $executionTime . ' seconds'
+            ]);
+
             return $dataTable;
         }
+
+        return response()->json(['message' => 'Invalid request.'], 400);
     }
 
 }

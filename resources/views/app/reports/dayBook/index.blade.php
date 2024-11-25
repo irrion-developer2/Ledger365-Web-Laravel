@@ -59,7 +59,7 @@
                                 </form>
                             </div>
 
-                            <div class="col-lg-2">
+                            {{--  <div class="col-lg-2">
                                 <form id="voucherTypeForm">
                                     <select id="voucher_type_name" name="voucher_type_name" class="form-select">
                                         <option value="">All</option>
@@ -71,7 +71,7 @@
                                         <option value="Payment">Payment</option>
                                     </select>
                                 </form>
-                            </div>
+                            </div>  --}}
 
                         </div>
                     </div>

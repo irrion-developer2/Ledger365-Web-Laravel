@@ -69,6 +69,7 @@
                                             <tr>
                                                 <th>Date</th>
                                                 <th>Ledger</th>
+                                                <th>Company Name</th>
                                                 <th>Transaction Type</th>
                                                 <th>Transaction</th>
                                                 <th>Debit</th>
@@ -81,6 +82,7 @@
                                         <tfoot>
                                             <tr>
                                                 <th>Total</th>
+                                                <th></th>
                                                 <th></th>
                                                 <th></th>
                                                 <th></th>
@@ -220,15 +222,16 @@
                 {data: 'ledger_name', name: 'ledger_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
+                {data: 'company_name', name: 'company_name'},
                 {data: 'voucher_type_name', name: 'voucher_type_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'voucher_number', name: 'voucher_number',
-                    render: function(data, type, row) {
+                    {{--  render: function(data, type, row) {
                         var url = '{{ route("reports.VoucherItem", ":id") }}';
                         url = url.replace(':id', row.voucher_id);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
-                    }
+                    }  --}}
                 },
                 {data: 'debit', name: 'debit', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';
@@ -239,8 +242,8 @@
             ],
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();
-                var DebitToTotal = 4;
-                var CreditToTotal = 5;
+                var DebitToTotal = 5;
+                var CreditToTotal = 6;
 
                 var Debittotal = api.column(DebitToTotal).data().reduce(function (a, b) {
                     return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);

@@ -63,7 +63,7 @@ return new class extends Migration
                     AND (p_end_date IS NULL OR v.voucher_date <= p_end_date)
                     AND (
                         p_voucher_type_name IS NULL 
-                        OR vt.voucher_type_name = p_voucher_type_name COLLATE utf8mb4_0900_ai_ci
+                        OR vt.voucher_type_name = p_voucher_type_name
                     )
                 GROUP BY
                     v.voucher_id,

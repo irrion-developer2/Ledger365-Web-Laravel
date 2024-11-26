@@ -21,10 +21,10 @@ return new class extends Migration
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
           
             $table->unsignedInteger('item_group_id')->nullable();
-            $table->foreign('item_group_id')->references('item_group_id')->on('tally_item_groups');
+            $table->foreign('item_group_id')->references('item_group_id')->on('tally_item_groups')->onDelete('cascade');
             
             $table->unsignedInteger('unit_id')->nullable();
-            $table->foreign('unit_id')->references('unit_id')->on('tally_units');
+            $table->foreign('unit_id')->references('unit_id')->on('tally_units')->onDelete('cascade');
 
             $table->integer('alter_id')->nullable();
             $table->string('item_name',150);

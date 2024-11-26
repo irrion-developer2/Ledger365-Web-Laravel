@@ -82,6 +82,11 @@ Route::middleware([
 
     Route::group(['middleware' => 'checkUserRoleAndStatus'], function () {
 
+        
+        Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
+        Route::get('/companies/get-data', [CompanyController::class, 'getData'])->name('companies.get-data');
+        Route::post('/companies/delete', [CompanyController::class, 'deleteCompanies'])->name('companies.delete');
+
         Route::get('/analytics', [AnalyticController::class, 'index'])->name('analytics.index');
 
         Route::get('/fetch-company-data/{company_id}', [CompanyController::class, 'fetchCompanyData'])->name('fetch.company.data');
@@ -211,9 +216,10 @@ Route::middleware([
         Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
         Route::get('/users/{users}/get-data', [UserController::class, 'getData'])->name('users-company.get-data');
 
-        Route::post('/users/company/delete', [UserController::class, 'deleteCompany'])->name('users-company.delete');
+        Route::post('/users/delete', [UserController::class, 'deleteCompanies'])->name('companies.delete');
 
-        // Route::resource('/settings', SettingController::class);
+        Route::get('/companiesMapping/{user}', [UserController::class, 'companiesMapping'])->name('companiesMapping.show');
+         // Route::resource('/settings', SettingController::class);
         // Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
 
     });

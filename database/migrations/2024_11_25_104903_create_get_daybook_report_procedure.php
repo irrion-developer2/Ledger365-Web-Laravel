@@ -26,6 +26,12 @@ return new class extends Migration
                 IN p_voucher_type_name VARCHAR(100)
             )
             BEGIN
+            
+                SET p_start_date = IFNULL(p_start_date, NULL);
+                SET p_end_date = IFNULL(p_end_date, NULL);
+                SET p_voucher_type_name = IF(CHAR_LENGTH(TRIM(p_voucher_type_name)) = 0, NULL, p_voucher_type_name);
+                   
+
                 SELECT
                     v.voucher_date,
                     GROUP_CONCAT(l.ledger_name SEPARATOR ', ') AS `ledger_name`,

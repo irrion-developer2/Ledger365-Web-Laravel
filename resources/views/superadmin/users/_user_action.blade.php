@@ -5,3 +5,7 @@
     <li><a class="dropdown-item" href="#" onclick="changeStatus({{ $user->id }}, 1)">Active</a></li>
     <li><a class="dropdown-item" href="#" onclick="changeStatus({{ $user->id }}, 0)">Inactive</a></li>
 </ul>
+<button type="button" class="btn btn-primary btn-sm" 
+        href="{{ route('companiesMapping.show', ['user' => $user->id]) }}" >
+        Company Mapping
+</button>

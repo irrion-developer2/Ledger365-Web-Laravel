@@ -599,7 +599,14 @@
                             <li>
                                 <div class="dropdown-divider mb-0"></div>
                             </li>
-                                <li><a class="dropdown-item d-flex align-items-center" href="{{ route('settings.index') }}"><i class="bx bx-cog fs-5"></i><span>Settings</span></a></li>
+                
+                            <li class="nav-item dropend">
+                                <a class="dropdown-item dropdown-toggle dropdown-toggle-nocaret" href="javascript:;"><i class="bx bx-cog fs-5"></i>Settings</a>
+                                <ul class="dropdown-menu submenu">
+                                    <li><a class="dropdown-item" href="{{ route('settings.index') }}"><i class="bx bx-radio-circle"></i>License Settings</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('companies.index') }}"><i class="bx bx-radio-circle"></i>Companies Settings</a></li>
+                                </ul>
+                            </li>  
                             @endif
                         </ul>
                     </div>

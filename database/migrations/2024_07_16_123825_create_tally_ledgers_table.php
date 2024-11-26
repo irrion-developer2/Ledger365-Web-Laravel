@@ -25,7 +25,7 @@ return new class extends Migration
             
             // Foreign key to the ledger group (no auto_increment here)
             $table->unsignedInteger('ledger_group_id')->nullable();
-            $table->foreign('ledger_group_id')->references('ledger_group_id')->on('tally_ledger_groups');
+            $table->foreign('ledger_group_id')->references('ledger_group_id')->on('tally_ledger_groups')->onDelete('cascade');
            
             // Other columns
             $table->integer('alter_id')->nullable();

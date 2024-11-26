@@ -33,6 +33,7 @@ class User extends Authenticatable
         'remember_token',
         'tally_connector_id',
         'role',
+        'status',
     ];
 
     /**

@@ -82,7 +82,10 @@ class ReportDayBookController extends Controller
 
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "CALL get_daybook_data(?, ?, ?, ?, ?, ?)";
+            // $sql = "CALL get_daybook_data(?, ?, ?, ?, ?, ?)";
+
+            $sql = "CALL get_daybook_data(:company_ids, :start_date, :end_date, :is_cancelled, :is_optional, :voucher_type_name)";
+
 
             Log::info("Calling Stored Procedure get_daybook_data", [
                 'sql' => $sql,
@@ -97,13 +100,13 @@ class ReportDayBookController extends Controller
             ]);
 
             try {
-                $dayBook = DB::select($sql, [
-                    $companyIdsList,    
-                    $startDate,         
-                    $endDate,           
-                    $isCancelled,       
-                    $isOptional,       
-                    $voucherTypeName,   
+                $dayBook = DB::select($sql, [ 
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'is_cancelled' => $isCancelled,
+                    'is_optional' => $isOptional,
+                    'ledger_group_name' => $voucherTypeName,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Error executing stored procedure get_daybook_data:', [

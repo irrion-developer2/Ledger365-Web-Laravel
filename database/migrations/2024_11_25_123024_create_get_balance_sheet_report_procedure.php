@@ -26,6 +26,8 @@ return new class extends Migration
                 BEGIN
                     -- Handle empty string for p_ledger_group_name
                     SET p_ledger_group_name = IF(CHAR_LENGTH(TRIM(p_ledger_group_name)) = 0, NULL, p_ledger_group_name);
+                    SET p_start_date = IFNULL(p_start_date, NULL);
+                    SET p_end_date = IFNULL(p_end_date, NULL);
 
                     WITH RECURSIVE ledger_group_hierarchy AS (
                         SELECT

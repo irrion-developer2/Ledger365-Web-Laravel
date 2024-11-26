@@ -31,6 +31,7 @@
                             <thead>
                                 <tr>
                                     <th>Guid</th>
+                                    <th>Alter Id</th>
                                     <th>Company Name</th>
                                     <th>State</th>
                                     <th>Sub Id</th>
@@ -42,6 +43,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
+                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -80,27 +82,24 @@
                 }
             },
             columns: [
-                {data: 'guid', name: 'guid', render: function(data, type, row) {
+                {data: 'company_guid', name: 'company_guid', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'name', name: 'name', render: function(data, type, row) {
+                {data: 'alter_id', name: 'alter_id', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
+                {data: 'company_name', name: 'company_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'state', name: 'state', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'sub_id', name: 'sub_id', render: function(data, type, row) {
+                {data: 'license_number', name: 'license_number', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {
-                    data: null,
-                    orderable: false,
-                    render: function(data, type, row) {
-                        return `<button class="btn btn-danger btn-sm delete-company" data-guid="${row.guid}">
-                                    Delete
-                                </button>`;
-                    }
-                },
+                {data: 'action', name: 'action', render: function(data, type, row) {
+                    return data ? data : '-';
+                }},
             ],
             search: {
                 orthogonal: {
@@ -109,22 +108,35 @@
             }
         });
 
-        $('#users-company-datatable').on('click', '.delete-company', function() {
-            var guid = $(this).data('guid');
-            if (confirm('Are you sure you want to delete this company and all related data?')) {
+        $('#users-company-datatable').on('click', '.delete', function(){
+            var companyId = $(this).data('id');
+            var deleteRoute = $(this).data('route');
+            var button = $(this);
+
+            if(confirm("Are you sure you want to delete this company? This action cannot be undone.")) {
+                button.prop('disabled', true).text('Deleting...');
+
                 $.ajax({
-                    url: "{{ route('users-company.delete') }}", // Add the route for deletion
+                    url: deleteRoute,
                     type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: {
-                        guid: guid,
-                        _token: '{{ csrf_token() }}' // Add CSRF token for security
+                        company_ids: companyId
                     },
                     success: function(response) {
-                        alert('Company deleted successfully!');
-                        $('#users-company-datatable').DataTable().ajax.reload(); // Reload the DataTable
+                        if(response.success){
+                            dataTable.ajax.reload(null, false);
+                            alert(response.message);
+                        } else {
+                            alert(response.message);
+                        }
+                        button.prop('disabled', false).text('Delete');
                     },
-                    error: function(xhr) {
-                        alert('Error deleting company!');
+                    error: function(xhr, status, error) {
+                        alert('An error occurred while deleting the company.');
+                        button.prop('disabled', false).text('Delete');
                     }
                 });
             }

@@ -20,10 +20,10 @@ return new class extends Migration
             $table->foreign('voucher_head_id')->references('voucher_head_id')->on('tally_voucher_heads')->onDelete('cascade');
         
             $table->unsignedInteger('item_id');
-            $table->foreign('item_id')->references('item_id')->on('tally_items');
+            $table->foreign('item_id')->references('item_id')->on('tally_items')->onDelete('cascade');
        
             $table->unsignedInteger('unit_id')->nullable();
-            $table->foreign('unit_id')->references('unit_id')->on('tally_units');
+            $table->foreign('unit_id')->references('unit_id')->on('tally_units')->onDelete('cascade');
        
             $table->string('gst_taxability',20)->nullable();
             $table->string('gst_source_type',100)->nullable();

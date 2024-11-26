@@ -23,6 +23,10 @@ return new class extends Migration
                 IN p_end_date DATE
             )
             BEGIN
+            
+                SET p_start_date = IFNULL(p_start_date, NULL);
+                SET p_end_date = IFNULL(p_end_date, NULL);
+                
                 WITH RECURSIVE ledger_group_hierarchy AS (
                     -- Base case: select top-level ledger groups (parent IS NULL)
                     SELECT

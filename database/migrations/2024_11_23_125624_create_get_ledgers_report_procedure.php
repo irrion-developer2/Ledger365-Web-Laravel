@@ -26,6 +26,8 @@ return new class extends Migration
             BEGIN
                 DECLARE companyIdsList TEXT;
                 SET companyIdsList = company_ids;
+                SET start_date = IFNULL(start_date, NULL);
+                SET end_date = IFNULL(end_date, NULL);
 
                 WITH RECURSIVE ledger_group_hierarchy AS (
                     SELECT

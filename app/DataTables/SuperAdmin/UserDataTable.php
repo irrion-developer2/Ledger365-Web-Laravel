@@ -25,7 +25,7 @@ class UserDataTable extends DataTable
                 return '<a href="' . htmlspecialchars($url) . '" style="color: #337ab7;">' . htmlspecialchars($user->name) . '</a>';
             })
             
-            ->addColumn('status', function ($user) {
+            ->addColumn('action', function ($user) {
                 return view('superadmin.users._user_action', compact('user'));
             })
 
@@ -108,9 +108,9 @@ class UserDataTable extends DataTable
             Column::make('email')->title(__('Email')),
             Column::make('tally_connector_id')->title(__('Tally Connector Id')),
             Column::make('role')->title(__('Role')),
-            Column::make('status')->title(__('Status')),
             Column::make('created_at')->title(__('Created At')),
             Column::make('updated_at')->title(__('Updated At')),
+            Column::make('action')->title(__('action')),
         ];
     }
 

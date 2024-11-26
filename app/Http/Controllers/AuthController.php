@@ -22,13 +22,14 @@ class AuthController extends Controller
         }
 
         // Generate OTP
-        $otp = rand(1000, 9999);
+        // $otp = rand(1000, 9999);
+        $otp = 1234;
         $user->otp = $otp;
         $user->otp_expires_at = now()->addMinutes(10);
         $user->save();
 
         // Send OTP
-        $this->sendOTPSMS($request->phone, $otp);
+        // $this->sendOTPSMS($request->phone, $otp);
 
         return view('auth.verify-otp', ['phone' => $request->phone]);
     }

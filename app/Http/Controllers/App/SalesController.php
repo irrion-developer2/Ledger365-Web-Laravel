@@ -48,6 +48,9 @@ class SalesController extends Controller
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
+            $voucherTypeName = 'Sales';
+
+            $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null') ? $voucherTypeName : 'Sundry Debtors';
 
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
@@ -83,45 +86,33 @@ class SalesController extends Controller
                         break;
                 }
             }
-
-            $startDateFilter = $startDate ? "'{$startDate}'" : 'NULL';
-            $endDateFilter = $endDate ? "'{$endDate}'" : 'NULL';
     
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "
-                SELECT 
-                    tl.ledger_name,
-                    tl.ledger_guid,
-                    c.company_name,
-                    tv.voucher_id,
-                    tv.voucher_date,
-                    tv.voucher_type_id,
-                    tv.voucher_number,
-                    ABS(tvh.amount) AS invoice_amount,
-                    tv.place_of_supply
-                FROM 
-                    tally_vouchers tv
-                LEFT JOIN 
-                    tally_voucher_heads tvh ON tv.voucher_id = tvh.voucher_id
-                LEFT JOIN 
-                    tally_ledgers tl ON tvh.ledger_id = tl.ledger_id
-                LEFT JOIN 
-                    tally_voucher_types tvt ON tv.voucher_type_id = tvt.voucher_type_id
-                LEFT JOIN
-                    tally_companies c
-                    ON tv.company_id = c.company_id 
-                WHERE 
-                    tvt.voucher_type_name = 'Sales'
-                    AND tv.company_id IN ({$companyIdsList})
-                    AND tvh.is_party_ledger = 1
-                    AND ({$startDateFilter} IS NULL OR tv.voucher_date >= {$startDateFilter})
-                    AND ({$endDateFilter} IS NULL OR tv.voucher_date <= {$endDateFilter})
-            ";
+            $sql = "CALL get_voucher_data(?, ?, ?, ?)";
 
-            Log::info("Sales Query", ['sql' => $sql]);
+            Log::info("Calling Stored Procedure", [
+                'sql' => $sql,
+                'params' => [
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'voucher_type_name' => $voucherTypeName,
+                ]
+            ]);
 
-            $sales = DB::select(DB::raw($sql));
+            try {
+                $sales = DB::select($sql, [
+                    $companyIdsList,      
+                    $voucherTypeName,     
+                    $startDate,          
+                    $endDate   
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error executing stored procedure get_voucher_data:', ['error' => $e->getMessage()]);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
+            }
+
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;

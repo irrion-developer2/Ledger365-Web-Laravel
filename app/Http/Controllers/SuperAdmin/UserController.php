@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log; 
 use Yajra\DataTables\Facades\DataTables;
 use App\DataTables\SuperAdmin\UserDataTable;
+use App\Models\UserCompanyMapping;
 
 class UserController extends Controller
 {
@@ -37,18 +38,13 @@ class UserController extends Controller
 
         $user = User::find($request->user_id);
         $user->status = $request->status;
-        dd($user);
+ 
         $user->save();
 
         return response()->json(['success' => true]);
     
     }
 
-    public function show($user)
-    {
-        $users = User::where('id', $user)->firstOrFail();
-        return view('superadmin.users._user_details', compact('users'));
-    }
 
     public function getData(Request $request, $users)
     {
@@ -180,9 +176,99 @@ class UserController extends Controller
 
     public function companiesMapping(User $user)
     {
-        $users = User::where('id', $user)->firstOrFail();
-        // dd($user);
-        return view('superadmin.users._user_details', compact('users'));
+        return view('superadmin.users._company_mapping', ['userMapping' => $user]);
     }
 
+    public function companiesMappingGetData(Request $request, $users)
+    {
+        $user = User::find($users);
+
+        if (!$user) {
+            return DataTables::of([])->make(true);
+        }
+
+        if ($request->ajax()) {
+            $startTime = microtime(true);
+
+            $sql = "
+                SELECT 
+                    tc.company_id,
+                    tc.company_guid,
+                    tc.alter_id,
+                    tc.company_name,
+                    tc.state,
+                    tc.license_number,
+                    CASE 
+                        WHEN ucm.user_id IS NULL THEN 0 
+                        ELSE 1 
+                    END AS mapped
+                FROM 
+                    tally_companies tc
+                LEFT JOIN 
+                    user_company_mappings ucm 
+                ON 
+                    tc.company_id = ucm.company_id AND ucm.user_id = :user_id
+            ";
+
+            Log::info("Company Mapping Query", ['sql' => $sql, 'user_id' => $user->id]);
+
+            $companies = DB::select(DB::raw($sql), ['user_id' => $user->id]);
+
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('First DB request execution time for companiesMappingGetData:', ['time_taken' => $executionTime1 . ' seconds']);
+
+            $dataTable = DataTables::of($companies)
+                ->addIndexColumn()
+                ->make(true);
+
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total execution time for companiesMappingGetData:', ['time_taken' => $executionTime . ' seconds']);
+
+            return $dataTable;
+        }
+
+        return response()->json(['message' => 'Invalid request.'], 400);
+    }
+
+    public function updateCompanyMapping(Request $request, $userId)
+    {
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found.'], 404);
+        }
+
+        $validated = $request->validate([
+            'company_ids' => 'array',
+            'company_ids.*' => 'integer|exists:tally_companies,company_id',
+        ]);
+
+        $companyIds = $validated['company_ids'] ?? [];
+
+        DB::transaction(function() use ($userId, $companyIds) {
+            $currentCompanyIds = UserCompanyMapping::where('user_id', $userId)
+                                                   ->pluck('company_id')
+                                                   ->toArray();
+
+            $companyIdsToAdd = array_diff($companyIds, $currentCompanyIds);
+            $companyIdsToRemove = array_diff($currentCompanyIds, $companyIds);
+
+            foreach ($companyIdsToAdd as $companyId) {
+                UserCompanyMapping::create([
+                    'user_id' => $userId,
+                    'company_id' => $companyId,
+                ]);
+            }
+
+            if(!empty($companyIdsToRemove)){
+                UserCompanyMapping::where('user_id', $userId)
+                                  ->whereIn('company_id', $companyIdsToRemove)
+                                  ->delete();
+            }
+        });
+
+        return response()->json(['success' => true, 'message' => 'Company mappings updated successfully.']);
+    }
 }

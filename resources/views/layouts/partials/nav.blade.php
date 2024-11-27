@@ -53,24 +53,6 @@
           </li>
           @endif
 
-            {{-- <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
-                  <div class="parent-icon"><i class='bx bx-cube'></i>
-                  </div>
-                  <div class="menu-title d-flex align-items-center">Apps & Pages</div>
-                  <div class="ms-auto dropy-icon"><i class='bx bx-chevron-down'></i></div>
-              </a>
-              <ul class="dropdown-menu">
-                <li class="nav-item dropend">
-                  <a class="dropdown-item dropdown-toggle dropdown-toggle-nocaret" href="javascript:;"><i class='bx bx-file'></i>Tenants</a>
-                  <ul class="dropdown-menu submenu">
-                      <li><a class="dropdown-item" href="{{ route('tenants.create') }}"><i class='bx bx-radio-circle'></i>Create Tenant</a></li>
-                      <li><a class="dropdown-item" href="{{ route('tenants.index') }}"><i class='bx bx-radio-circle'></i>Tenant list</a></li>
-                    </ul>
-                </li>
-              </ul>
-            </li> --}}
-
             @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('customers.index') ? 'active' : '' }}" href="{{ route('customers.index') }}">
@@ -81,16 +63,6 @@
               </a>
             </li>
             @endif
-
-            {{-- @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('otherLedgers.index') ? 'active' : '' }}" href="{{ route('otherLedgers.index') }}">
-                  <div class="parent-icon"><i class='bx bx-group'></i>
-                  </div>
-                  <div class="menu-title d-flex align-items-center">Other Ledgers</div>
-              </a>
-            </li>
-            @endif --}}
 
 
             @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
@@ -149,7 +121,7 @@
             @endif
 
             
-            @if(auth()->check() && auth()->user()->status == 'Active' && auth()->user()->role == 'Owner')
+            {{--  @if(auth()->check() && auth()->user()->status == 'Active' && auth()->user()->role == 'Owner')
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('employees.*') ? 'active' : '' }}" href="{{ route('employees.index') }}">
                   <div class="parent-icon"><i class='bx bx-building'></i><i class='bx bx-group'></i>
@@ -157,7 +129,7 @@
                   <div class="menu-title d-flex align-items-center">Employee</div>
               </a>
             </li>
-            @endif
+            @endif  --}}
 
             <li class="nav-item dropdown d-none">
                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">

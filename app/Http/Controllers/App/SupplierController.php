@@ -95,10 +95,10 @@ class SupplierController extends Controller
 
             try {
                 $customers = DB::select($sql, [
-                    'company_ids' => $companyIdsList,
-                    'start_date' => $startDate,
-                    'end_date' => $endDate,
-                    'ledger_group_name' => $ledgerGroupName,
+                    $companyIdsList,
+                    $startDate,
+                    $endDate,
+                    $ledgerGroupName,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Error executing stored procedure get_ledgers_data:', ['error' => $e->getMessage()]);

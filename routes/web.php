@@ -213,15 +213,13 @@ Route::middleware([
         Route::resource('users', UserController::class);
         Route::post('/update-user-status', [UserController::class, 'updateStatus'])->name('update.user.status');
 
-        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
         Route::get('/users/{users}/get-data', [UserController::class, 'getData'])->name('users-company.get-data');
 
         Route::post('/users/delete', [UserController::class, 'deleteCompanies'])->name('companies.delete');
-
-        Route::get('/companiesMapping/{user}', [UserController::class, 'companiesMapping'])->name('companiesMapping.show');
-         // Route::resource('/settings', SettingController::class);
-        // Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
-
+        Route::get('/companiesMapping/{user}', [UserController::class, 'companiesMapping'])->name('companiesMapping.index');
+        
+        Route::get('/companiesMapping/{users}/data', [UserController::class, 'companiesMappingGetData'])->name('companiesMapping.data');
+        Route::post('users/{user}/company-mapping/update', [UserController::class, 'updateCompanyMapping'])->name('companiesMapping.update');
     });
 
     //  JET STREAM

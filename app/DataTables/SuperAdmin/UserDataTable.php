@@ -20,16 +20,10 @@ class UserDataTable extends DataTable
             ->editColumn('updated_at', function ($user) {
                 return Carbon::parse($user->updated_at)->format('Y-m-d');
             })
-            ->addColumn('name', function ($user) {
-                $url = route('users.show', ['user' => $user->id]);
-                return '<a href="' . htmlspecialchars($url) . '" style="color: #337ab7;">' . htmlspecialchars($user->name) . '</a>';
-            })
-            
             ->addColumn('action', function ($user) {
                 return view('superadmin.users._user_action', compact('user'));
-            })
+            });
 
-            ->rawColumns(['name']);
     }
 
     public function query(User $model)

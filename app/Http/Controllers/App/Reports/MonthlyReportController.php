@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers\App\Reports;
 
-use App\Http\Controllers\Controller;
-use Carbon\Carbon;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use App\Services\ReportService;
-use App\Models\TallyLedger;
 use Illuminate\Http\Request;
+use App\Services\ReportService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Yajra\DataTables\Facades\DataTables;
 
-class ReportLedgerSummaryController extends Controller
+class MonthlyReportController extends Controller
 {
     protected $reportService;
 
@@ -19,10 +17,10 @@ class ReportLedgerSummaryController extends Controller
     {
         $this->reportService = $reportService;
     }
-
+    
     public function index()
     {
-        return view('app.reports.ledgerSummary.index');
+        return view ('app.reports.monthlyReport._sales');
     }
 
     public function getData(Request $request)
@@ -39,7 +37,9 @@ class ReportLedgerSummaryController extends Controller
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
+            $voucherTypeName = $request->get('voucher_type_name');
 
+            $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
 
@@ -71,60 +71,60 @@ class ReportLedgerSummaryController extends Controller
                         break;
                     case 'all':
                         break;
-                    default:
-                        break;
                 }
             }
 
             $companyIdsList = implode(',', $companyIds);
 
-            Log::info("Calling Balance Sheet Stored Procedure", [
-                'company_ids' => $companyIdsList,
-                'start_date' => $startDate,
-                'end_date' => $endDate
+            $sql = "CALL get_MonthlyReport_data(?, ?, ?, ?)";
+
+
+            Log::info("Calling Stored Procedure get_MonthlyReport_data", [
+                'sql' => $sql,
+                'params' => [
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'voucher_type_name' => $voucherTypeName,
+                ]
             ]);
 
             try {
-                $balanceSheet = DB::select('CALL get_ledger_summary_data(?, ?, ?)', [
+                $monthlyReport = DB::select($sql, [ 
                     $companyIdsList,
                     $startDate,
-                    $endDate
+                    $endDate,
+                    $voucherTypeName,
                 ]);
             } catch (\Exception $e) {
-                Log::error("Error executing stored procedure get_ledger_summary_data", [
-                    'error' => $e->getMessage()
+                Log::error('Error executing stored procedure get_MonthlyReport_data:', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
-                return response()->json([
-                    'error' => 'An error occurred while fetching the balance sheet data.'
-                ], 500);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
             }
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
-            Log::info('Stored procedure execution time for ReportLedgerSummaryController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+            Log::info('Total first DB request execution time for MonthlyReportController.getData:', [
+                'time_taken' => $executionTime1 . ' seconds'
+            ]);
 
-            $dataTable = DataTables::of($balanceSheet)
+            $dataTable = DataTables::of($monthlyReport)
                 ->addIndexColumn()
-                ->addColumn('opening_balance', function ($data) {
-                    return indian_format($data->opening_balance);
-                })
-                ->addColumn('total_debit', function ($data) {
-                    return indian_format($data->total_debit);
-                })
-                ->addColumn('total_credit', function ($data) {
-                    return indian_format($data->total_credit);
-                })
-                ->addColumn('closing_balance', function ($data) {
-                    return indian_format($data->closing_balance);
-                })
                 ->make(true);
 
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
-            Log::info('Total end execution time for ReportLedgerSummaryController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+            Log::info('Total end execution time for MonthlyReportController.getData:', [
+                'time_taken' => $executionTime . ' seconds'
+            ]);
 
             return $dataTable;
         }
-    }
 
+        return response()->json(['message' => 'Invalid request.'], 400);
+    }
 }

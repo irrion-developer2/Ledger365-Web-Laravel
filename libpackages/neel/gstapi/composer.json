@@ -1,0 +1,15 @@
+{
+    "name": "neel/gstapi",
+    "description": "Master GST API Library",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nilesh",
+            "email": "nileshahire03@gmail.com"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.0"
+    }
+}

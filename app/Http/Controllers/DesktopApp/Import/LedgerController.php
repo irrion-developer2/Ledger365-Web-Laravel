@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers\DesktopApp\Import;
 
-use App\Http\Controllers\Controller;
-use App\Models\TallyBankAllocation;
-use App\Models\TallyBatchAllocation;
-use App\Models\TallyBillAllocation;
-use App\Models\TallyCompany;
-use App\Models\TallyCurrency;
-use App\Models\TallyGodown;
+use DB;
+use Carbon\Carbon;
 use App\Models\TallyItem;
-use App\Models\TallyItemGroup;
-use App\Models\TallyLedger;
-use App\Models\TallyLedgerGroup;
-use App\Models\TallyLicense;
 use App\Models\TallyUnit;
+use App\Models\TallyGodown;
+use App\Models\TallyLedger;
+use App\Models\TallyCompany;
+use App\Models\TallyLicense;
 use App\Models\TallyVoucher;
+use Illuminate\Http\Request;
+use App\Models\TallyCurrency;
+use App\Models\TallyItemGroup;
+use App\Models\TallyLedgerGroup;
 use App\Models\TallyVoucherHead;
 use App\Models\TallyVoucherItem;
 use App\Models\TallyVoucherType;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
+use App\Models\TallyBankAllocation;
+use App\Models\TallyBillAllocation;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use App\Models\TallyBatchAllocation;
 
 class LedgerController extends Controller
 {
@@ -396,30 +397,11 @@ class LedgerController extends Controller
                     $alias3 = $aliases[2] ?? null;
 
                     $parent = $ledgerData['PARENT'] ?? null;
-                    $ledgerGroup = TallyLedgerGroup::where('ledger_group_name', $parent)->first();
+                    $ledgerGroup = TallyLedgerGroup::where('ledger_group_name', $parent)
+                                                    ->where('company_id', $companyId)
+                                                    ->first();
                     $ledgerGroupId = $ledgerGroup ? $ledgerGroup->ledger_group_id : null;
                     
-                    // $parent = trim($ledgerData['PARENT'] ?? '');
-
-                    // if (!empty($parent)) {
-                    //     $ledgerGroup = TallyLedgerGroup::where('company_id', $companyId)
-                    //         ->where(function($query) use ($parent) {
-                    //             $query->whereRaw('LOWER(TRIM(ledger_group_name)) = ?', [strtolower($parent)])
-                    //                   ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', [strtolower($parent) . ',%'])
-                    //                   ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', ['%,' . strtolower($parent)])
-                    //                   ->orWhereRaw('LOWER(TRIM(ledger_group_name)) LIKE ?', ['%,' . strtolower($parent) . ',%']);
-                    //         })
-                    //         ->first();
-                    //     if (!$ledgerGroup) {
-                    //         Log::error("Ledger group '{$parent}' not found for company_id: {$companyId}");
-                    //         continue;
-                    //     }
-                    //     $ledgerGroupId = $ledgerGroup->ledger_group_id;
-                    //     Log::info("Found Ledger Group '{$ledgerGroup->ledger_group_name}' with ID: {$ledgerGroupId}");
-                    // } else {
-                    //     Log::warning("Parent ledger group is empty for ledger GUID: {$guid}");
-                    //     $ledgerGroupId = null; 
-                    // }
 
                     $tallyLedger = TallyLedger::updateOrCreate(
                         ['ledger_guid' => $guid],
@@ -721,11 +703,12 @@ class LedgerController extends Controller
                     $companyId = $company->company_id;
 
                     $itemParentName = $stockItemData['PARENT'] ?? null;
-                    $itemGroup = TallyItemGroup::where('item_group_name', $itemParentName)->first();
+                    $itemGroup = TallyItemGroup::where('item_group_name', $itemParentName)
+                                    ->where('company_id', $companyId)->first();
                     $itemGroupIds = $itemGroup ? $itemGroup->item_group_id : null;
 
                     $unitName = $stockItemData['BASEUNITS'] ?? null;
-                    $unitId = TallyUnit::where('unit_name', $unitName)->first();
+                    $unitId = TallyUnit::where('unit_name', $unitName)->where('company_id', $companyId)->first();
                     $unitIds = $unitId ? $unitId->unit_id : null;
 
                     $tallyStockItem = TallyItem::updateOrCreate(
@@ -1252,7 +1235,7 @@ class LedgerController extends Controller
                 continue;
             }
 
-            $itemId = TallyItem::whereRaw('LOWER(item_name) = ?', [strtolower($itemName)])->value('item_id');
+            $itemId = TallyItem::whereRaw('LOWER(item_name) = ?', [strtolower($itemName)])->where('company_id', $companyId)->value('item_id');
 
             if (!$itemId) {
                 Log::error('Item ID not found for stock item:', [
@@ -1279,7 +1262,7 @@ class LedgerController extends Controller
 
             $unitId = null;
             if ($unit) {
-                $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->value('unit_id');
+                $unitId = TallyUnit::whereRaw('LOWER(unit_name) = ?', [strtolower($unit)])->where('company_id', $companyId)->value('unit_id');
                 // Log::info('Extracted unit and unitId Data:', ['unit' => $unit, 'unitId' => $unitId]);
             }
 
@@ -1357,9 +1340,8 @@ class LedgerController extends Controller
                     if (isset($batch['BATCHNAME'], $batch['AMOUNT'])) {
 
                         $godownId = TallyGodown::select('tally_godowns.godown_id')
-                            ->join('tally_companies', \DB::raw('LEFT(tally_godowns.godown_guid, 36)'), '=', 'tally_companies.company_guid')
                             ->where('tally_godowns.godown_name', $batch['GODOWNNAME'] ?? null)
-                            ->where('tally_companies.company_id', $companyId)
+                            ->where('tally_godowns.company_id', $companyId)
                             ->value('tally_godowns.godown_id');
 
 

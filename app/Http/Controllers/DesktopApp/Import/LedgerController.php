@@ -398,10 +398,33 @@ class LedgerController extends Controller
 
                     $parent = $ledgerData['PARENT'] ?? null;
                     $ledgerGroup = TallyLedgerGroup::where('ledger_group_name', $parent)
-                                                    ->where('company_id', $companyId)
-                                                    ->first();
+                        ->where('company_id', $companyId)
+                        ->first();
                     $ledgerGroupId = $ledgerGroup ? $ledgerGroup->ledger_group_id : null;
 
+                    $pincode = null;
+                    if (isset($ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE'])) {
+                        $pincodeValue = $ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE'];
+                        if (ctype_digit($pincodeValue)) {
+                            $pincode = $pincodeValue;
+                        }
+                    }
+
+                    $party_gst_in = null;
+                    if (isset($ledgerData['PARTYGSTIN'])) {
+                        $partyGstIn = $ledgerData['PARTYGSTIN'];
+                        if (strlen($partyGstIn) == 15) {
+                            $party_gst_in = $partyGstIn;
+                        }
+                    }
+
+                    $gst_in = null;
+                    if (isset($ledgerData['LEDGSTREGDETAILS.LIST']['GSTIN'])) {
+                        $gstIn = $ledgerData['LEDGSTREGDETAILS.LIST']['GSTIN'];
+                        if (strlen($gstIn) == 15) {
+                            $gst_in = $gstIn;
+                        }
+                    }
 
                     $tallyLedger = TallyLedger::updateOrCreate(
                         ['ledger_guid' => $guid],
@@ -419,7 +442,7 @@ class LedgerController extends Controller
                             'bill_credit_period' => $ledgerData['BILLCREDITPERIOD'] ?? null,
                             'credit_limit' => !empty($ledgerData['CREDITLIMIT']) ? $ledgerData['CREDITLIMIT'] : null,
                             'gst_type' => html_entity_decode($ledgerData['GSTTYPE'] ?? null),
-                            'party_gst_in' => $ledgerData['PARTYGSTIN'] ?? null,
+                            'party_gst_in' => $party_gst_in,
                             'gst_duty_head' => $ledgerData['GSTDUTYHEAD'] ?? null,
                             'service_category' => html_entity_decode($ledgerData['SERVICECATEGORY'] ?? null),
                             'gst_registration_type' => $ledgerData['GSTREGISTRATIONTYPE'] ?? null,
@@ -431,11 +454,11 @@ class LedgerController extends Controller
                             'opening_balance' => !empty($ledgerData['OPENINGBALANCE']) ? $ledgerData['OPENINGBALANCE'] : null,
                             'applicable_from' => $applicableFrom,
                             'ledger_gst_registration_type' => $ledgerData['LEDGSTREGDETAILS.LIST']['GSTREGISTRATIONTYPE'] ?? null,
-                            'gst_in' => $ledgerData['LEDGSTREGDETAILS.LIST']['GSTIN'] ?? null,
+                            'gst_in' => $gst_in,
                             'email' => $ledgerData['EMAIL'] ?? null,
                             'phone_number' => substr($ledgerData['LEDGERMOBILE'] ?? null, 0, 20),
                             'mailing_applicable_from' => $mailingApplicableFrom,
-                            'pincode' => isset($ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE']) && is_numeric($ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE']) ? $ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE'] : null,
+                            'pincode' => $pincode,
                             'mailing_name' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['MAILINGNAME'] ?? null),
                             'address' => $addressList,
                             'state' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['STATE'] ?? null),
@@ -704,7 +727,7 @@ class LedgerController extends Controller
 
                     $itemParentName = $stockItemData['PARENT'] ?? null;
                     $itemGroup = TallyItemGroup::where('item_group_name', $itemParentName)
-                                    ->where('company_id', $companyId)->first();
+                        ->where('company_id', $companyId)->first();
                     $itemGroupIds = $itemGroup ? $itemGroup->item_group_id : null;
 
                     $unitName = $stockItemData['BASEUNITS'] ?? null;
@@ -771,17 +794,17 @@ class LedgerController extends Controller
                             'base_units' => $stockItemData['BASEUNITS'] ?? null,
                             'opening_balance' => isset($stockItemData['OPENINGBALANCE'])
                                 ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGBALANCE']))
-                                    ? (float) $cleaned
+                                    ? (float)$cleaned
                                     : 0)
                                 : 0,
                             'opening_value' => isset($stockItemData['OPENINGVALUE'])
                                 ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGVALUE']))
-                                    ? (float) $cleaned
+                                    ? (float)$cleaned
                                     : 0)
                                 : 0,
                             'opening_rate' => isset($stockItemData['OPENINGRATE'])
                                 ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGRATE']))
-                                    ? (float) $cleaned
+                                    ? (float)$cleaned
                                     : 0)
                                 : 0,
                             // 'unit' => $unit,
@@ -965,7 +988,6 @@ class LedgerController extends Controller
                     $deliveryNotesStr = implode(', ', $deliveryNotes);
 
 
-
                     $ledgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['LEDGERENTRIES.LIST'] ?? []));
                     $allLedgerEntries = $this->normalizeEntries($this->ensureArray($voucherData['ALLLEDGERENTRIES.LIST'] ?? []));
                     $combinedLedgerEntries = array_merge($ledgerEntries, $allLedgerEntries);
@@ -1005,8 +1027,8 @@ class LedgerController extends Controller
 
                     $voucherType = $voucherData['VOUCHERTYPENAME'] ?? null;
                     $voucherTypeId = TallyVoucherType::where('voucher_type_name', $voucherType)
-                                ->where('company_Id', $companyId)
-                                ->value('voucher_type_id');
+                        ->where('company_Id', $companyId)
+                        ->value('voucher_type_id');
 
                     // Log::info('jsonFilePath Data:', ['jsonFilePath' => $jsonFilePath]);
 
@@ -1040,8 +1062,8 @@ class LedgerController extends Controller
                             'bill_lading_date' => !empty($voucherData['BILLOFLADINGDATE']) ? $voucherData['BILLOFLADINGDATE'] : null,
                             'vehicle_no' => $voucherData['BASICSHIPVESSELNO'] ?? null,
                             'terms' => is_array($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null)
-                                        ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'])
-                                        : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
+                                ? implode(', ', $voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'])
+                                : ($voucherData['BASICORDERTERMS.LIST']['BASICORDERTERMS'] ?? null),
                             'consignee_name' => $voucherData['BASICBUYERNAME'] ?? null,
                             'consignee_state_name' => $voucherData['CONSIGNEESTATENAME'] ?? null,
                             'consignee_gstin' => $voucherData['CONSIGNEEGSTIN'] ?? null,
@@ -1074,7 +1096,7 @@ class LedgerController extends Controller
                     $this->processAccountingAllocationForVoucher($tallyVoucher->voucher_id, $accountingAllocations, $companyId);
 
                     if (!empty($inventoryEntriesWithId)) {
-                    $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId);
+                        $this->processBatchAllocationsForVoucher($inventoryEntriesWithId, $batchAllocations, $companyId);
                     } else {
                         // Log::info('No inventory entries with ID found; skipping batch allocations.');
                     }
@@ -1087,8 +1109,8 @@ class LedgerController extends Controller
             }
 
             return response()->json(['message' => 'Tally Voucher data saved successfully.',
-                                        'vouchers_processed' => $voucherCount,
-                                    ]);
+                'vouchers_processed' => $voucherCount,
+            ]);
         } catch (\Exception $e) {
             Log::error('Error saving Tally voucher data:', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'Failed to save Tally data', 'message' => $e->getMessage()], 500);
@@ -1293,14 +1315,14 @@ class LedgerController extends Controller
                 'gst_hsn_infer_applicability' => $inventoryEntry['GSTHSNINFERAPPLICABILITY'] ?? null,
                 'rate' => isset($data['RATE'])
                     ? (is_numeric($cleanedRate = preg_replace('/[^0-9.-]/', '', $data['RATE']))
-                        ? (float) $cleanedRate
+                        ? (float)$cleanedRate
                         : 0)
                     : 0,
                 'billed_qty' => $billed_qty ?? 0,
                 'actual_qty' => $actual_qty ?? 0,
                 'amount' => isset($data['AMOUNT'])
                     ? (is_numeric($cleanedAmount = preg_replace('/[^0-9.-]/', '', $data['AMOUNT']))
-                        ? (float) $cleanedAmount
+                        ? (float)$cleanedAmount
                         : 0)
                     : 0,
                 'discount' => $inventoryEntry['DISCOUNT'] ?? 0,
@@ -1356,7 +1378,7 @@ class LedgerController extends Controller
                                 'destination_godown_name' => $batch['DESTINATIONGODOWNNAME'] ?? null,
                                 'amount' => $amount,
                                 'actual_qty' => $actual_qty,
-                                'billed_qty' =>  $billed_qty,
+                                'billed_qty' => $billed_qty,
                                 'order_no' => $batch['ORDERNO'] ?? null,
                                 'godown_id' => $godownId,
                             ]

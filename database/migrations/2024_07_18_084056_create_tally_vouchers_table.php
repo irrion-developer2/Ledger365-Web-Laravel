@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedInteger('company_id');
             $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
 
-            $table->unsignedInteger('voucher_type_id')->nullable();
+            $table->unsignedInteger('voucher_type_id');
             $table->foreign('voucher_type_id')->references('voucher_type_id')->on('tally_voucher_types')->onDelete('cascade');
 
             $table->integer('alter_id')->nullable();

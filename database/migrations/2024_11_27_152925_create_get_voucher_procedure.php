@@ -51,7 +51,7 @@ return new class extends Migration
                         tally_companies c ON tv.company_id = c.company_id 
                     WHERE 
                         voucher_type_name IS NULL
-                        OR FIND_IN_SET(tvt.voucher_type_name COLLATE utf8mb4_unicode_ci, p_voucher_type_name COLLATE utf8mb4_unicode_ci)
+                        OR FIND_IN_SET(tvt.voucher_type_name , p_voucher_type_name)
                         AND FIND_IN_SET(tv.company_id, p_company_ids)
                         AND tvh.is_party_ledger = 1
                         AND (p_start_date IS NULL OR tv.voucher_date >= p_start_date)

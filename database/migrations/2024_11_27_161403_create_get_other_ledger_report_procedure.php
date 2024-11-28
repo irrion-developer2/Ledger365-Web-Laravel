@@ -38,7 +38,7 @@ return new class extends Migration
                         tally_ledger_groups lg
                     WHERE
                         (p_excluded_group_names IS NULL 
-                         OR lg.ledger_group_name COLLATE utf8mb4_unicode_ci NOT IN (
+                         OR lg.ledger_group_name NOT IN (
                              SELECT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(p_excluded_group_names, ',', numbers.n), ',', -1))
                              FROM (
                                  SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
@@ -64,7 +64,7 @@ return new class extends Migration
                         AND FIND_IN_SET(lg_child.company_id, company_ids) > 0
                     WHERE
                         (p_excluded_group_names IS NULL 
-                         OR lg_child.ledger_group_name COLLATE utf8mb4_unicode_ci NOT IN (
+                         OR lg_child.ledger_group_name NOT IN (
                              SELECT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(p_excluded_group_names, ',', numbers.n), ',', -1))
                              FROM (
                                  SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4

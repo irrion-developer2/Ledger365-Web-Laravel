@@ -32,10 +32,10 @@ return new class extends Migration
                 SUM(CASE WHEN vh.entry_type = 'credit' THEN vh.amount ELSE 0 END) AS total_credit
                 FROM
                 tally_vouchers v
-                JOIN tally_voucher_types vt ON v.voucher_type_id = vt.voucher_type_id COLLATE utf8mb4_0900_ai_ci
+                JOIN tally_voucher_types vt ON v.voucher_type_id = vt.voucher_type_id
                 JOIN tally_voucher_heads vh ON v.voucher_id = vh.voucher_id
                 WHERE
-                vt.voucher_type_name = p_voucher_type_name COLLATE utf8mb4_0900_ai_ci
+                vt.voucher_type_name = p_voucher_type_name 
                 AND v.is_optional = 0
                 AND v.is_cancelled = 0
                 GROUP BY

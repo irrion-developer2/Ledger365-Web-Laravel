@@ -69,7 +69,7 @@ return new class extends Migration
                     AND (p_end_date IS NULL OR v.voucher_date <= p_end_date)
                     AND (
                      p_voucher_type_name IS NULL
-                        OR FIND_IN_SET(vt.voucher_type_name COLLATE utf8mb4_unicode_ci, p_voucher_type_name COLLATE utf8mb4_unicode_ci)
+                        OR FIND_IN_SET(vt.voucher_type_name, p_voucher_type_name)
                     )  
                 GROUP BY
                     v.voucher_id,

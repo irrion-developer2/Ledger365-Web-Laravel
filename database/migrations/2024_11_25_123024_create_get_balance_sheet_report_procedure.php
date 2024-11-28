@@ -42,7 +42,7 @@ return new class extends Migration
                             FIND_IN_SET(tlg.company_id, p_company_ids)
                             AND (
                                 p_ledger_group_name IS NULL
-                                OR FIND_IN_SET(tlg.ledger_group_name COLLATE utf8mb4_unicode_ci, p_ledger_group_name COLLATE utf8mb4_unicode_ci)
+                                OR FIND_IN_SET(tlg.ledger_group_name, p_ledger_group_name)
                             )
                         UNION ALL
                         SELECT

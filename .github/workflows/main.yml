@@ -3,13 +3,13 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main
-      
+      - main  # Trigger the workflow on push to the main branch
+
 jobs:
   run_pull:
     name: run pull
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+
     steps:
     - name: install ssh keys
       run: |

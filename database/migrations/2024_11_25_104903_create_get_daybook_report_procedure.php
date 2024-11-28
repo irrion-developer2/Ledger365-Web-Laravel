@@ -23,13 +23,13 @@ return new class extends Migration
                 IN p_end_date DATE,
                 IN p_is_cancelled TINYINT(1),
                 IN p_is_optional TINYINT(1),
-                IN p_voucher_type_name VARCHAR(100)
+                IN p_voucher_type_name VARCHAR(255)
             )
             BEGIN
             
                 SET p_start_date = IFNULL(p_start_date, NULL);
                 SET p_end_date = IFNULL(p_end_date, NULL);
-                SET p_voucher_type_name = IF(CHAR_LENGTH(TRIM(p_voucher_type_name)) = 0, NULL, p_voucher_type_name);
+                SET p_voucher_type_names = NULLIF(TRIM(p_voucher_type_names), '');
                    
 
                 SELECT
@@ -68,9 +68,9 @@ return new class extends Migration
                     AND (p_start_date IS NULL OR v.voucher_date >= p_start_date)
                     AND (p_end_date IS NULL OR v.voucher_date <= p_end_date)
                     AND (
-                     p_voucher_type_name IS NULL
-                        OR FIND_IN_SET(vt.voucher_type_name, p_voucher_type_name)
-                    )  
+                        p_voucher_type_names IS NULL
+                        OR FIND_IN_SET(vt.voucher_type_name, p_voucher_type_names)
+                    ) 
                 GROUP BY
                     v.voucher_id,
                     v.voucher_date,

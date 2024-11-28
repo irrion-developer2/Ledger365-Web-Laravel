@@ -401,7 +401,7 @@ class LedgerController extends Controller
                                                     ->where('company_id', $companyId)
                                                     ->first();
                     $ledgerGroupId = $ledgerGroup ? $ledgerGroup->ledger_group_id : null;
-                    
+
 
                     $tallyLedger = TallyLedger::updateOrCreate(
                         ['ledger_guid' => $guid],
@@ -435,7 +435,7 @@ class LedgerController extends Controller
                             'email' => $ledgerData['EMAIL'] ?? null,
                             'phone_number' => substr($ledgerData['LEDGERMOBILE'] ?? null, 0, 20),
                             'mailing_applicable_from' => $mailingApplicableFrom,
-                            'pincode' => $ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE'] ?? null,
+                            'pincode' => isset($ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE']) && is_numeric($ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE']) ? $ledgerData['LEDMAILINGDETAILS.LIST']['PINCODE'] : null,
                             'mailing_name' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['MAILINGNAME'] ?? null),
                             'address' => $addressList,
                             'state' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['STATE'] ?? null),
@@ -1094,7 +1094,7 @@ class LedgerController extends Controller
             return response()->json(['status' => 'Failed to save Tally data', 'message' => $e->getMessage()], 500);
         }
     }
-    
+
     private function processLedgerEntries(array $voucherData, TallyVoucher $tallyVoucher, $companyId)
     {
         $ledgerEntries = array_merge(

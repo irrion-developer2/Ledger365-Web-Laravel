@@ -24,8 +24,12 @@ class SendMailController extends Controller
 
         if ($request->ajax()) {
             if(request()->company_id && request()->date) {
-                $ledger_data = TallyLedger::where('tally_ledgers.company_id',request()->company_id)                
-                    // ->whereIn('tally_ledgers.parent', ['Sundry Debtors', 'Sundry Creditors'])
+                $ledger_data = TallyLedger::
+                    join('tally_ledger_groups','tally_ledgers.ledger_group_id','=','tally_ledger_groups.ledger_group_id')
+                    // ->where('tally_ledgers.parent','tally_ledger_groups.ledger_group_name')
+                    ->whereIn('tally_ledger_groups.parent', ['Sundry Debtors', 'Sundry Creditors'])
+
+                    ->where('tally_ledgers.company_id',request()->company_id)
                     ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
                     ->where('tally_voucher_heads.entry_type',"debit")
                     ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
@@ -38,7 +42,7 @@ class SendMailController extends Controller
                             'tally_voucher_heads.voucher_id',
                             'tally_vouchers.voucher_date',
                             'tally_companies.company_name')
-                    ->orderBy('tally_vouchers.voucher_date', 'asc');
+                    ->orderBy('tally_ledgers.ledger_name', 'asc');
             } else {
                 $ledger_data = TallyLedger::join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
                     ->whereRaw('1 = 0');

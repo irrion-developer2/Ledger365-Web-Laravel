@@ -25,7 +25,7 @@
             Message
     </a>
 
-    <a href="{{ route('send-email', ['voucher_id' => $ledger_data->voucher_id]) }}" class="btn btn-success btn-sm ms-2">
+    <a href="{{ route('send-email', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" class="btn btn-success btn-sm ms-2">
         Send
     </a>
 

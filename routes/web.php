@@ -19,6 +19,7 @@ use App\Http\Controllers\SuperAdmin\UserController;
 use App\Http\Controllers\SuperAdmin\TallyController;
 use App\Http\Controllers\App\Reports\ReportController;
 use App\Http\Controllers\SuperAdmin\SettingController;
+use App\Http\Controllers\App\Reports\MonthlyReportController;
 use App\Http\Controllers\App\Reports\ReportDayBookController;
 use Laravel\Jetstream\Http\Controllers\CurrentTeamController;
 use App\Http\Controllers\App\Reports\ReportCashBankController;
@@ -196,6 +197,10 @@ Route::middleware([
         Route::get('reports/GroupSummary', [ReportGroupSummaryController::class, 'index'])->name('reports.GroupSummary');
         Route::get('/groupSummary/get-data', [ReportGroupSummaryController::class, 'getData'])->name('GroupSummary.get-data');
        
+
+        Route::get('/MonthlySales', [MonthlyReportController::class, 'index'])->name('reports.MonthlySales');
+        Route::get('/MonthlySales/get-data', [MonthlyReportController::class, 'getData'])->name('MonthlySales.get-data');
+
 
         Route::resource('/settings', SettingController::class);
         Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');

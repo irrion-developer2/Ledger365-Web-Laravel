@@ -78,8 +78,10 @@
                                            <hr class="border-1">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_sale' => 'true']) }}">Inactive Customers</a></h5>
                                            <hr class="border-1">  --}}
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('sales.index', ['start_date' => $startDate, 'end_date' => $endDate]) }}">Monthly Sales</a></h5>
+                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.MonthlySales') }}">Monthly Sales</a></h5>
                                            <hr class="border-1">
+                                           {{--  <h5 class="my-1"><a class="nav-link " href="{{ route('sales.index', ['start_date' => $startDate, 'end_date' => $endDate]) }}">Monthly Sales</a></h5>
+                                           <hr class="border-1">  --}}
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers Group</a></h5>
                                            <hr class="border-1">
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ItemGroup') }}">Sales by Items Group</a></h5>

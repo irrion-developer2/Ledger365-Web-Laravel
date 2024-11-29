@@ -37,9 +37,11 @@ class MonthlyReportController extends Controller
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
-            $voucherTypeName = $request->get('voucher_type_name');
+            $voucherTypeName = 'Sales';
+            $entryType = 'credit';
 
             $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
+            $entryType = ($entryType && strtolower($entryType) !== 'null' && trim($entryType) !== '') ? $entryType : null;
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
 
@@ -76,25 +78,27 @@ class MonthlyReportController extends Controller
 
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "CALL get_MonthlyReport_data(?, ?, ?, ?)";
+            $sql = "CALL get_MonthlyReport_data(?, ?, ?, ?, ?)";
 
 
             Log::info("Calling Stored Procedure get_MonthlyReport_data", [
                 'sql' => $sql,
                 'params' => [
+                    'p_voucher_type_name' => $voucherTypeName,
                     'company_ids' => $companyIdsList,
-                    'start_date' => $startDate,
-                    'end_date' => $endDate,
-                    'voucher_type_name' => $voucherTypeName,
+                    'p_start_date' => $startDate,
+                    'p_end_date' => $endDate,
+                    'p_entry_types' => $entryType,
                 ]
             ]);
 
             try {
                 $monthlyReport = DB::select($sql, [ 
+                    $voucherTypeName,
                     $companyIdsList,
                     $startDate,
                     $endDate,
-                    $voucherTypeName,
+                    $entryType,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Error executing stored procedure get_MonthlyReport_data:', [
@@ -105,6 +109,7 @@ class MonthlyReportController extends Controller
                 ]);
                 return response()->json(['error' => 'Failed to retrieve data.'], 500);
             }
+            dd($sql);
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;

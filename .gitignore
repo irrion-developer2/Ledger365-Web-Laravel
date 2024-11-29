@@ -1,0 +1,64 @@
+# Node modules and vendor directory
+/node_modules
+/vendor
+
+# Debug and log files
+npm-debug.log
+yarn-error.log
+storage/logs/laravel.log
+
+# Laravel specific directories and files
+/public/hot
+/public/storage
+/public/build
+/storage/*.key
+
+# Environment and backup files
+.env
+.env.backup
+.env.production
+
+# PHPUnit result cache
+.phpunit.result.cache
+
+# Homestead/Vagrant files
+Homestead.json
+Homestead.yaml
+/.vagrant
+
+# IDE and editor specific files
+/.fleet
+/.idea
+/.vscode
+
+# PhpStorm-specific files
+/.idea/*
+!.idea/fileTemplates
+!.idea/php.xml
+!.idea/codeStyles
+!.idea/codeStyles/codeStyleConfig.xml
+!.idea/codeStyles/Project.xml
+*.iml
+*.iws
+
+# Laravel 4 specific
+bootstrap/compiled.php
+app/storage/
+
+# Laravel 5 & Lumen specific with changed public path
+public_html/storage
+public_html/hot
+
+# Authentication and config files
+auth.json
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files from editors
+*.swp
+*.swo
+
+# Composer lock file (optional, depending on your workflow)
+# /composer.lock

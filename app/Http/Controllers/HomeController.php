@@ -85,11 +85,12 @@ class HomeController extends Controller
                         ->sum('tally_voucher_heads.amount');
         /* Cash Amount */
 
-
+        $numberOfCustomers = TallyLedger::where('parent', 'Sundry Debtors')->whereIn('company_id', $companyIds)->count();
+       
         if ($role == 'Administrative') {
             return view('dashboard', compact('user'));
         } elseif ($role == 'Owner' || $role == 'Employee') {
-            return view('users-dashboard', compact('user','cashBankAmount','cashAmount','payables','chartSaleAmt','chartReceiptAmt','chartData','lastMonthsTotal','pieChartDataOverall','pieChartDataTotal'));
+            return view('users-dashboard', compact('user','cashBankAmount','cashAmount','payables','chartSaleAmt','chartReceiptAmt','chartData','lastMonthsTotal','pieChartDataOverall','pieChartDataTotal','numberOfCustomers'));
         }
         abort(403, 'Unauthorized action.');
     }

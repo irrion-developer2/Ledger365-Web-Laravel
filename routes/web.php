@@ -16,27 +16,21 @@ use App\Http\Controllers\App\SupplierController;
 
 use App\Http\Controllers\App\StockItemController;
 use App\Http\Controllers\SuperAdmin\UserController;
-use App\Http\Controllers\SuperAdmin\TallyController;
 use App\Http\Controllers\App\Reports\ReportController;
 use App\Http\Controllers\SuperAdmin\SettingController;
 use App\Http\Controllers\App\Reports\MonthlyReportController;
 use App\Http\Controllers\App\Reports\ReportDayBookController;
-use Laravel\Jetstream\Http\Controllers\CurrentTeamController;
 use App\Http\Controllers\App\Reports\ReportCashBankController;
 use App\Http\Controllers\App\Reports\ReportOptionalController;
-use Laravel\Jetstream\Http\Controllers\Inertia\TeamController;
 use App\Http\Controllers\App\Reports\ReportCancelledController;
 use App\Http\Controllers\App\Reports\ReportItemGroupController;
-use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetController;
 use App\Http\Controllers\App\Reports\ReportGroupSummaryController;
-use Laravel\Jetstream\Http\Controllers\Inertia\ApiTokenController;
 use App\Http\Controllers\App\Reports\ReportCustomerGroupController;
 use App\Http\Controllers\App\Reports\ReportGeneralLedgerController;
 use App\Http\Controllers\App\Reports\ReportLedgerSummaryController;
 use App\Http\Controllers\App\Reports\ReportPaymentRegisterController;
 use App\Http\Controllers\App\Reports\ReportReceiptRegisterController;
-use Laravel\Jetstream\Http\Controllers\Inertia\UserProfileController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetLiabilityController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetAssetStockController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetProfitLossController;
@@ -59,9 +53,6 @@ Route::middleware([
 ]
 )->group(function () {
 
-
-
-
     Route::post('/set-company-session', function (Request $request) {
         $request->validate([
             'company_ids' => 'required|array',
@@ -76,13 +67,11 @@ Route::middleware([
         return response()->json(['success' => true]);
     });
 
-
     Route::get('/get-filtered-data', [HomeController::class, 'getFilteredData']);
 
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
 
     Route::group(['middleware' => 'checkUserRoleAndStatus'], function () {
-
         
         Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
         Route::get('/companies/get-data', [CompanyController::class, 'getData'])->name('companies.get-data');

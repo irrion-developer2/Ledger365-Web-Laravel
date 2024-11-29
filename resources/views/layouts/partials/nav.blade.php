@@ -148,7 +148,7 @@
                </ul>
             </li>
 
-            @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
+            {{--  @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('analytics.*') ? 'active' : '' }}" href="{{ route('analytics.index') }}">
                   <div class="parent-icon"><i class='bx bxs-analyse'></i>
@@ -156,7 +156,7 @@
                   <div class="menu-title d-flex align-items-center">Analytics</div>
               </a>
             </li>
-            @endif
+            @endif  --}}
 
             @if(auth()->check() && auth()->user()->status == 'Active' && (auth()->user()->role == 'Owner' || auth()->user()->role == 'Employee'))
             <li class="nav-item dropdown">

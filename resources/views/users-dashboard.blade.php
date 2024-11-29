@@ -44,7 +44,7 @@
                         </div>
                         </div>
                     </div>
-                  {{-- <div class="col">
+                  {{--  <div class="col">
                     <div class="card radius-10 border-start border-0 border-4 border-success">
                        <div class="card-body">
                            <div class="d-flex align-items-center">
@@ -58,7 +58,7 @@
                            </div>
                        </div>
                     </div>
-                  </div> --}}
+                  </div>  --}}
                   <div class="col">
                     <div class="card radius-10 border-start border-0 border-4 border-warning">
                        <div class="card-body">
@@ -75,6 +75,24 @@
                        </div>
                     </div>
                   </div>
+                  
+                    <div class="col">
+                        <div class="card radius-10 border-start border-0 border-4 border-success">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <p class="mb-0 text-secondary">No. Of Customers</p>
+                                    <h4 class="my-1 text-success">{{ indian_format(abs($numberOfCustomers)) }}</h4>
+                                </div>
+
+                                    <div class="widgets-icons-2 rounded-circle bg-gradient-ohhappiness text-white ms-auto">
+                                        <a class="nav-link " href="{{ route('customers.index') }}"> <i class='bx bxs-group'></i></a>
+                                    </div>
+
+                            </div>
+                        </div>
+                        </div>
+                    </div>
                 </div><!--end row-->
 
                 @include('partials.dashboardSaleReceipt')

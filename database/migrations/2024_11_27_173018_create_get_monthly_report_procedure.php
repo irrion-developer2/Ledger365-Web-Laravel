@@ -28,12 +28,12 @@ return new class extends Migration
             
                 SET p_start_date = IFNULL(p_start_date, NULL);
                 SET p_end_date = IFNULL(p_end_date, NULL);
-                
+
                 SELECT
-                    c.company_name AS `Company_Name`,
-                    MONTHNAME(tv.voucher_date) AS `Month_Name`,
-                    YEAR(tv.voucher_date) AS `Year`,
-                    MONTH(tv.voucher_date) AS `Month`,
+                    c.company_name AS `company_name`,
+                    MONTHNAME(tv.voucher_date) AS `month_name`,
+                    YEAR(tv.voucher_date) AS `year`,
+                    MONTH(tv.voucher_date) AS `month`,
                     SUM(
                         CASE 
                             WHEN FIND_IN_SET(
@@ -43,7 +43,7 @@ return new class extends Migration
                             THEN tvh.amount 
                             ELSE 0 
                         END
-                    ) AS `Total_Amount`
+                    ) AS `total_amount`
                 FROM
                     tally_vouchers tv
                 INNER JOIN

@@ -65,9 +65,10 @@
                         <table id="monthlySales-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
+                                    <th>Company_name</th>
                                     <th>Month</th>
                                     <th>Year</th>
-                                    <th>GSTIN</th>
+                                    <th>Total Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -75,7 +76,8 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th>Total</th>
+                                    <th></th>
+                                    <th></th>
                                     <th></th>
                                     <th></th>
                                 </tr>
@@ -207,9 +209,10 @@
                 }
             },
             columns: [
-                {data: 'ledger_name', name: 'ledger_name'},
                 {data: 'company_name', name: 'company_name', render: data => data || '-'},
-                {data: 'outstanding', name: 'outstanding', className: 'text-end', render: data => data || '-'},
+                {data: 'month_name', name: 'month_name', render: data => data || '-'},
+                {data: 'year', name: 'year', render: data => data || '-'},
+                {data: 'total_amount', name: 'total_amount', className: 'text-end', render: data => data || '-'},
             ],
      
             search: {

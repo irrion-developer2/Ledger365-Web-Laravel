@@ -58,10 +58,7 @@ return new class extends Migration
                     ON tv.company_id = c.company_id
                 WHERE
                     tvt.voucher_type_name = p_voucher_type_name
-                    AND FIND_IN_SET(
-                        CAST(tv.company_id AS CHAR),
-                        company_ids
-                    ) > 0
+                    AND (tv.company_id = company_ids)
                     AND (
                         p_start_date IS NULL
                         OR p_end_date IS NULL

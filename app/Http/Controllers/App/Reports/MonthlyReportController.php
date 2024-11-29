@@ -109,7 +109,6 @@ class MonthlyReportController extends Controller
                 ]);
                 return response()->json(['error' => 'Failed to retrieve data.'], 500);
             }
-            dd($sql);
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;

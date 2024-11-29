@@ -30,40 +30,56 @@ return new class extends Migration
                 SET p_end_date = IFNULL(p_end_date, NULL);
 
                 SELECT
-                    YEAR(tv.voucher_date) AS `Year`,
-                    MONTH(tv.voucher_date) AS `Month`,
-                    SUM(
-                        CASE 
-                            WHEN FIND_IN_SET(tvh.entry_type, p_entry_types) > 0 
-                            THEN tvh.amount 
-                            ELSE 0 
-                        END
-                    ) AS `Total_Amount`
-                FROM
-                    tally_vouchers tv
-                INNER JOIN
-                    tally_voucher_types tvt 
-                    ON tv.voucher_type_id = tvt.voucher_type_id
-                INNER JOIN
-                    tally_voucher_heads tvh 
-                    ON tv.voucher_id = tvh.voucher_id
-                WHERE
-                    tvt.voucher_type_name = p_voucher_type_name
-                    AND FIND_IN_SET(tv.company_id, company_ids) > 0
-                    AND tv.voucher_date BETWEEN p_start_date AND p_end_date
-                    AND (
-                        p_entry_types IS NULL 
-                        OR p_entry_types = ''
-                        OR FIND_IN_SET(tvh.entry_type, p_entry_types) > 0
-                    )
-                    AND (tv.is_optional IS NULL OR tv.is_optional = FALSE)
-                    AND (tv.is_cancelled IS NULL OR tv.is_cancelled = FALSE)
-                GROUP BY
-                    YEAR(tv.voucher_date),
-                    MONTH(tv.voucher_date)
-                ORDER BY
-                    YEAR(tv.voucher_date),
-                    MONTH(tv.voucher_date);
+                        c.company_name AS `Company_Name`,
+                        MONTHNAME(tv.voucher_date) AS `Month_Name`,
+                        YEAR(tv.voucher_date) AS `Year`,
+                        MONTH(tv.voucher_date) AS `Month`,
+                        SUM(
+                            CASE 
+                                WHEN FIND_IN_SET(
+                                    LOWER(tvh.entry_type) COLLATE utf8mb4_unicode_ci, 
+                                    LOWER(p_entry_types) COLLATE utf8mb4_unicode_ci
+                                ) > 0 
+                                THEN tvh.amount 
+                                ELSE 0 
+                            END
+                        ) AS `Total_Amount`
+                    FROM
+                        tally_vouchers tv
+                    INNER JOIN
+                        tally_voucher_types tvt 
+                        ON tv.voucher_type_id = tvt.voucher_type_id
+                    INNER JOIN
+                        tally_voucher_heads tvh 
+                        ON tv.voucher_id = tvh.voucher_id
+                    INNER JOIN
+                        tally_companies c 
+                        ON tv.company_id = c.company_id
+                    WHERE
+                        tvt.voucher_type_name COLLATE utf8mb4_unicode_ci = p_voucher_type_name COLLATE utf8mb4_unicode_ci
+                        AND FIND_IN_SET(
+                            CAST(tv.company_id AS CHAR) COLLATE utf8mb4_unicode_ci, 
+                            company_ids COLLATE utf8mb4_unicode_ci
+                        ) > 0
+                        AND (p_start_date IS NULL OR p_end_date IS NULL OR tv.voucher_date BETWEEN p_start_date AND p_end_date)
+                        AND (
+                            p_entry_types IS NULL 
+                            OR p_entry_types = ''
+                            OR FIND_IN_SET(
+                                LOWER(tvh.entry_type) COLLATE utf8mb4_unicode_ci, 
+                                LOWER(p_entry_types) COLLATE utf8mb4_unicode_ci
+                            ) > 0
+                        )
+                        AND (tv.is_optional IS NULL OR tv.is_optional = FALSE)
+                        AND (tv.is_cancelled IS NULL OR tv.is_cancelled = FALSE)
+                    GROUP BY
+                        c.company_name,
+                        YEAR(tv.voucher_date),
+                        MONTH(tv.voucher_date)
+                    ORDER BY
+                        c.company_name,
+                        YEAR(tv.voucher_date),
+                        MONTH(tv.voucher_date);
                 END
             ");
     }

@@ -65,8 +65,8 @@
                         <table id="monthlySales-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Ledger Name</th>
-                                    <th>Company Name</th>
+                                    <th>Month</th>
+                                    <th>Year</th>
                                     <th>GSTIN</th>
                                 </tr>
                             </thead>

@@ -25,7 +25,7 @@ return new class extends Migration
                     IN p_entry_types VARCHAR(255)
             )
             BEGIN
-            
+
                 SET p_start_date = IFNULL(p_start_date, NULL);
                 SET p_end_date = IFNULL(p_end_date, NULL);
 
@@ -34,43 +34,44 @@ return new class extends Migration
                     MONTHNAME(tv.voucher_date) AS `month_name`,
                     YEAR(tv.voucher_date) AS `year`,
                     MONTH(tv.voucher_date) AS `month`,
+                    COUNT(tv.voucher_id) AS `total_vouchers`,
                     SUM(
-                        CASE 
+                        CASE
                             WHEN FIND_IN_SET(
-                                LOWER(tvh.entry_type), 
+                                LOWER(tvh.entry_type),
                                 LOWER(p_entry_types)
-                            ) > 0 
-                            THEN tvh.amount 
-                            ELSE 0 
+                            ) > 0
+                            THEN tvh.amount
+                            ELSE 0
                         END
                     ) AS `total_amount`
                 FROM
                     tally_vouchers tv
                 INNER JOIN
-                    tally_voucher_types tvt 
+                    tally_voucher_types tvt
                     ON tv.voucher_type_id = tvt.voucher_type_id
                 INNER JOIN
-                    tally_voucher_heads tvh 
+                    tally_voucher_heads tvh
                     ON tv.voucher_id = tvh.voucher_id
                 INNER JOIN
-                    tally_companies c 
+                    tally_companies c
                     ON tv.company_id = c.company_id
                 WHERE
                     tvt.voucher_type_name = p_voucher_type_name
                     AND FIND_IN_SET(
-                        CAST(tv.company_id AS CHAR), 
+                        CAST(tv.company_id AS CHAR),
                         company_ids
                     ) > 0
                     AND (
-                        p_start_date IS NULL 
-                        OR p_end_date IS NULL 
+                        p_start_date IS NULL
+                        OR p_end_date IS NULL
                         OR tv.voucher_date BETWEEN p_start_date AND p_end_date
                     )
                     AND (
-                        p_entry_types IS NULL 
+                        p_entry_types IS NULL
                         OR p_entry_types = ''
                         OR FIND_IN_SET(
-                            LOWER(tvh.entry_type), 
+                            LOWER(tvh.entry_type),
                             LOWER(p_entry_types)
                         ) > 0
                     )

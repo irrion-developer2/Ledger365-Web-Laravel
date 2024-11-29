@@ -37,8 +37,8 @@ return new class extends Migration
                     FROM
                         tally_ledger_groups lg
                     WHERE
-                        lg.ledger_group_name COLLATE utf8mb4_unicode_ci = ledger_group_name_param COLLATE utf8mb4_unicode_ci
-                        AND FIND_IN_SET(lg.company_id, companyIdsList) COLLATE utf8mb4_unicode_ci
+                        lg.ledger_group_name = ledger_group_name_param
+                        AND FIND_IN_SET(lg.company_id, companyIdsList)
 
                     UNION ALL
 
@@ -50,8 +50,8 @@ return new class extends Migration
                         tally_ledger_groups lg_child
                     INNER JOIN
                         ledger_group_hierarchy lg_parent
-                        ON lg_child.parent COLLATE utf8mb4_unicode_ci = lg_parent.ledger_group_name COLLATE utf8mb4_unicode_ci
-                        AND FIND_IN_SET(lg_child.company_id, companyIdsList) COLLATE utf8mb4_unicode_ci
+                        ON lg_child.parent = lg_parent.ledger_group_name
+                        AND FIND_IN_SET(lg_child.company_id, companyIdsList)
                 )
                 SELECT
                     l.ledger_name,

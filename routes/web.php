@@ -39,6 +39,7 @@ use Laravel\Jetstream\Http\Controllers\Inertia\UserProfileController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetLiabilityController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetAssetStockController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetProfitLossController;
+use App\Http\Controllers\SuperAdmin\SendMailController;
 
 Route::get('/home',function(){
     return view('welcome');
@@ -221,6 +222,13 @@ Route::middleware([
         Route::get('/companiesMapping/{user}', [UserController::class, 'companiesMapping'])->name('companiesMapping.show');
          // Route::resource('/settings', SettingController::class);
         // Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
+
+        Route::get('sendmail', [SendMailController::class, 'sendmail'])->name('sendmail');
+        // Route::get('/get-message/{ledger_id}', [SendMailController::class, 'getMessage']);
+        Route::get('send-email', [SendMailController::class, 'sendmailtouser'])->name('send-email');
+        Route::post('sendmail.sendAll', [SendMailController::class, 'sendmailtouser'])->name('sendmail.sendAll');
+
+        Route::get('pdf/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewPdf'])->name('view-pdf');
 
     });
 

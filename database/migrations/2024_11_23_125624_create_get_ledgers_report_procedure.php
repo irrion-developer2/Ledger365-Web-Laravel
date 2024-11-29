@@ -21,7 +21,7 @@ return new class extends Migration
                 IN company_ids TEXT,
                 IN start_date DATE,
                 IN end_date DATE,
-                IN ledger_group_name_param VARCHAR(255) 
+                IN ledger_group_name_param VARCHAR(255)
             )
             BEGIN
                 DECLARE companyIdsList TEXT;
@@ -37,8 +37,8 @@ return new class extends Migration
                     FROM
                         tally_ledger_groups lg
                     WHERE
-                        lg.ledger_group_name = ledger_group_name_param
-                        AND FIND_IN_SET(lg.company_id, companyIdsList)
+                        lg.ledger_group_name COLLATE utf8mb4_unicode_ci = ledger_group_name_param COLLATE utf8mb4_unicode_ci
+                        AND FIND_IN_SET(lg.company_id, companyIdsList) COLLATE utf8mb4_unicode_ci
 
                     UNION ALL
 
@@ -50,8 +50,8 @@ return new class extends Migration
                         tally_ledger_groups lg_child
                     INNER JOIN
                         ledger_group_hierarchy lg_parent
-                        ON lg_child.parent = lg_parent.ledger_group_name
-                        AND FIND_IN_SET(lg_child.company_id, companyIdsList)
+                        ON lg_child.parent COLLATE utf8mb4_unicode_ci = lg_parent.ledger_group_name COLLATE utf8mb4_unicode_ci
+                        AND FIND_IN_SET(lg_child.company_id, companyIdsList) COLLATE utf8mb4_unicode_ci
                 )
                 SELECT
                     l.ledger_name,
@@ -59,7 +59,7 @@ return new class extends Migration
                     c.company_name,
                     l.party_gst_in AS gstin,
                     (
-                        IFNULL(l.opening_balance, 0) 
+                        IFNULL(l.opening_balance, 0)
                         + IFNULL(ob.total_transactions_before_start_date, 0)
                     ) AS opening_balance_as_of_start_date,
                     IFNULL(tp.total_transactions_in_period, 0) AS transactions_in_period,

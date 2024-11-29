@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreign('voucher_id')->references('voucher_id')->on('tally_vouchers')->onDelete('cascade');
 
             $table->unsignedInteger('ledger_id');
-            $table->foreign('ledger_id')->references('ledger_id')->on('tally_ledgers')->onDelete('cascade');
+            $table->foreign('ledger_id')->references('ledger_id')->on('tally_ledgers');
 
             $table->boolean('is_party_ledger')->default(false);
             $table->decimal('amount', 15, 3)->default(0);

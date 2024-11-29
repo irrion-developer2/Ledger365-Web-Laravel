@@ -16,21 +16,53 @@ return new class extends Migration
     {
         $procedure = "
                 CREATE PROCEDURE DeleteMultipleCompaniesData(IN p_company_ids VARCHAR(255))
-                BEGIN
-                    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-                    BEGIN
-                        -- Rollback the transaction if any error occurs
-                        ROLLBACK;
-                        -- Signal an error message
-                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'An error occurred while deleting company data.';
-                    END;
+            BEGIN
+                START TRANSACTION;
 
-                    START TRANSACTION;
+                    -- Delete from tally_vouchers (Cascades to tally_voucher_heads, tally_voucher_items, etc.)
+                    DELETE FROM tally_vouchers
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
 
+                    -- Delete from user_company_mappings
+                    DELETE FROM user_company_mappings
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+
+                    -- Delete from tally_voucher_types
+                    DELETE FROM tally_voucher_types
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+
+                    -- Delete from tally_currencies
+                    DELETE FROM tally_currencies
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+                    
+                    -- Delete from tally_godowns
+                    DELETE FROM tally_godowns
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+
+                    -- Delete from tally_items
+                    DELETE FROM tally_items
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+
+                    -- Delete from tally_units
+                    DELETE FROM tally_units
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+
+                    -- Delete from tally_item_groups
+                    DELETE FROM tally_item_groups
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+
+                    -- Delete from tally_ledgers
+                    DELETE FROM tally_ledgers
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+
+                    -- Delete from tally_ledger_groups
+                    DELETE FROM tally_ledger_groups
+                    WHERE FIND_IN_SET(company_id, p_company_ids);
+
+                    -- Finally, delete from tally_companies
                     DELETE FROM tally_companies
                     WHERE FIND_IN_SET(company_id, p_company_ids);
 
-                    -- Commit the transaction
                     COMMIT;
                 END
             ";

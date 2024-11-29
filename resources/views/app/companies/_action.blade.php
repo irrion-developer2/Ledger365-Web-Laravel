@@ -3,7 +3,7 @@
 <button type="button" 
         name="delete" 
         class="delete btn btn-danger btn-sm" 
-        data-route="{{ route('companies.delete') }}" 
+        data-route="{{ route('usercompanies.delete') }}" 
         data-id="{{ $data->company_id }}">
     Delete
 </button>

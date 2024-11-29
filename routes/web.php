@@ -86,7 +86,7 @@ Route::middleware([
         
         Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
         Route::get('/companies/get-data', [CompanyController::class, 'getData'])->name('companies.get-data');
-        Route::post('/companies/delete', [CompanyController::class, 'deleteCompanies'])->name('companies.delete');
+        Route::post('/companies/delete', [CompanyController::class, 'deleteCompanies'])->name('usercompanies.delete');
 
         Route::get('/analytics', [AnalyticController::class, 'index'])->name('analytics.index');
 
@@ -201,6 +201,9 @@ Route::middleware([
         Route::get('/MonthlySales', [MonthlyReportController::class, 'index'])->name('reports.MonthlySales');
         Route::get('/MonthlySales/get-data', [MonthlyReportController::class, 'getData'])->name('MonthlySales.get-data');
 
+        
+        Route::get('/MonthlyPurchase', [MonthlyReportController::class, 'PurchaseIndex'])->name('reports.MonthlyPurchase');
+        Route::get('/MonthlyPurchase/get-data', [MonthlyReportController::class, 'getPurchaseData'])->name('MonthlyPurchase.get-data');
 
         Route::resource('/settings', SettingController::class);
         Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');

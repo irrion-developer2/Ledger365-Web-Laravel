@@ -80,6 +80,8 @@
                                            <hr class="border-1">  --}}
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.MonthlySales') }}">Monthly Sales</a></h5>
                                            <hr class="border-1">
+                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.MonthlyPurchase') }}">Monthly Purchase</a></h5>
+                                           <hr class="border-1">
                                            {{--  <h5 class="my-1"><a class="nav-link " href="{{ route('sales.index', ['start_date' => $startDate, 'end_date' => $endDate]) }}">Monthly Sales</a></h5>
                                            <hr class="border-1">  --}}
                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers Group</a></h5>

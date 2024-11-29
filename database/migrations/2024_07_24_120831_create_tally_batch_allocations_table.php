@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreign('voucher_item_id')->references('voucher_item_id')->on('tally_voucher_items')->onDelete('cascade');
 
             $table->unsignedInteger('godown_id');
-            $table->foreign('godown_id')->references('godown_id')->on('tally_godowns')->onDelete('cascade');
+            $table->foreign('godown_id')->references('godown_id')->on('tally_godowns');
 
             $table->string('batch_name',100)->nullable();
             $table->string('destination_godown_name',100)->nullable();

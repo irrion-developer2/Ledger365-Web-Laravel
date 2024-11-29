@@ -18,13 +18,13 @@ return new class extends Migration
             $table->string('item_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
 
             $table->unsignedInteger('company_id');
-            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+            $table->foreign('company_id')->references('company_id')->on('tally_companies');
           
             $table->unsignedInteger('item_group_id')->nullable();
-            $table->foreign('item_group_id')->references('item_group_id')->on('tally_item_groups')->onDelete('cascade');
+            $table->foreign('item_group_id')->references('item_group_id')->on('tally_item_groups');
             
             $table->unsignedInteger('unit_id')->nullable();
-            $table->foreign('unit_id')->references('unit_id')->on('tally_units')->onDelete('cascade');
+            $table->foreign('unit_id')->references('unit_id')->on('tally_units');
 
             $table->integer('alter_id')->nullable();
             $table->string('item_name',150);

@@ -1,5 +1,5 @@
 @extends("layouts.main")
-@section('title', __('Monthly Sales | PreciseCA'))
+@section('title', __('Monthly Purchase | PreciseCA'))
 
 @section("style")
     <link href="https://unpkg.com/vue2-datepicker@3.10.2/index.css" rel="stylesheet">
@@ -14,7 +14,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Monthly Sales</li>
+                            <li class="breadcrumb-item active" aria-current="page">Monthly Purchase</li>
                         </ol>
                     </nav>
                 </div>
@@ -62,7 +62,7 @@
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
-                        <table id="monthlySales-datatable" class="stripe row-border order-column" style="width:100%">
+                        <table id="monthlyPurchase-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>Company_name</th>
@@ -161,7 +161,7 @@
             },
             reloadTableData() {
                 if (this.tableInitialized) {
-                    $('#monthlySales-datatable').DataTable().ajax.reload(null, false);
+                    $('#monthlyPurchase-datatable').DataTable().ajax.reload(null, false);
                 }
             }
         },
@@ -180,7 +180,7 @@
             if (startDate && endDate) {
                 this.dateRange = [startDate, endDate];
             }
-            $('#monthlySales-datatable').on('init.dt', () => {
+            $('#monthlyPurchase-datatable').on('init.dt', () => {
                 this.tableInitialized = true;
             });
         }
@@ -188,7 +188,7 @@
 
 
     $(document).ready(function() {
-        const dataTable = $('#monthlySales-datatable').DataTable({
+        const dataTable = $('#monthlyPurchase-datatable').DataTable({
             fixedColumns: { start: 1 },
             processing: true,
             serverSide: true,
@@ -197,7 +197,7 @@
             scrollX: true,
             scrollY: 300,
             ajax: {
-                url: "{{ route('MonthlySales.get-data') }}",
+                url: "{{ route('MonthlyPurchase.get-data') }}",
                 type: 'GET',
                 data: function (d) {
                     const vueInstance = document.getElementById('vue-datepicker-app').__vue__;

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('ledger_group_guid', 100)->charset('ascii')->collation('ascii_bin')->unique();
             
             $table->unsignedInteger('company_id')->nullable();
-            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+            $table->foreign('company_id')->references('company_id')->on('tally_companies');
             
             $table->integer('alter_id');
             $table->string('ledger_group_name', 100)->nullable()->index();

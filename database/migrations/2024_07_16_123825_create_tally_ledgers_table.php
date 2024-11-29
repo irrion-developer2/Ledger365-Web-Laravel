@@ -16,18 +16,14 @@ return new class extends Migration
         Schema::create('tally_ledgers', function (Blueprint $table) {
             $table->increments('ledger_id');
             
-            // Unique GUID
             $table->string('ledger_guid', 100)->charset('ascii')->collation('ascii_bin')->unique();
 
-            // Foreign key to the company (no auto_increment here)
             $table->unsignedInteger('company_id');
-            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+            $table->foreign('company_id')->references('company_id')->on('tally_companies');
             
-            // Foreign key to the ledger group (no auto_increment here)
             $table->unsignedInteger('ledger_group_id')->nullable();
-            $table->foreign('ledger_group_id')->references('ledger_group_id')->on('tally_ledger_groups')->onDelete('cascade');
+            $table->foreign('ledger_group_id')->references('ledger_group_id')->on('tally_ledger_groups');
            
-            // Other columns
             $table->integer('alter_id')->nullable();
             $table->string('ledger_name', 100);
             $table->string('alias1', 100)->nullable();
@@ -69,10 +65,8 @@ return new class extends Migration
             $table->decimal('cash_out_flow', 15, 3)->nullable();
             $table->decimal('performance', 15, 3)->nullable();
 
-            // Composite unique constraint
             $table->unique(['company_id', 'ledger_name']);
             
-            // Timestamps
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });

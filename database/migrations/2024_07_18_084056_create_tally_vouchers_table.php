@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string('voucher_guid',100)->charset('ascii')->collation('ascii_bin')->unique();
 
             $table->unsignedInteger('company_id');
-            $table->foreign('company_id')->references('company_id')->on('tally_companies')->onDelete('cascade');
+            $table->foreign('company_id')->references('company_id')->on('tally_companies');
 
             $table->unsignedInteger('voucher_type_id');
-            $table->foreign('voucher_type_id')->references('voucher_type_id')->on('tally_voucher_types')->onDelete('cascade');
+            $table->foreign('voucher_type_id')->references('voucher_type_id')->on('tally_voucher_types');
 
             $table->integer('alter_id')->nullable();
 

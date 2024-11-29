@@ -10,10 +10,14 @@
     <a href="{{ route('view-pdf', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" 
         class="btn btn-warning btn-sm ms-2" 
         target="_blank">
-         Pdf
+         Bill
+     </a>
+    <a href="{{ route('view-receipt', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" 
+        class="btn btn-secondary btn-sm ms-2" 
+        target="_blank">
+        Receipt
      </a>
      
-    
     <a data-toggle="modal" 
         data-target="#viewModal" 
         data-ledger-name="{{ $ledger_data->ledger_name }}" 

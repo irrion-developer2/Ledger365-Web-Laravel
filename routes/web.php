@@ -229,6 +229,7 @@ Route::middleware([
         Route::post('sendmail.sendAll', [SendMailController::class, 'sendmailtouser'])->name('sendmail.sendAll');
 
         Route::get('pdf/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewPdf'])->name('view-pdf');
+        Route::get('receipt/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewReceipt'])->name('view-receipt');
 
     });
 

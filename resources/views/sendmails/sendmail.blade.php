@@ -24,10 +24,10 @@
                 <div class="row justify-content-between">
                     <div class="col-5 mb-3 d-flex">
                         <select name="company_id" id="company_id" class="form-select mx-2">
-                            <option value="1">All</option>
-                            {{-- @foreach($companys as $company)
+                        <option value="1">Select company</option>
+                            @foreach($companys as $company)
                             <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
-                            @endforeach --}}
+                            @endforeach
                         </select>
                         <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
                     </div>
@@ -134,7 +134,7 @@
                         .attr('placeholder', 'Search Order');
 
                         $('#send-mail-table_filter label').contents().filter(function () {
-                            return this.nodeType === 3;
+                            return this.nodeType === 3; 
                         }).remove();
 
                     searchInput.wrap('<div class="position-relative pt-1"></div>');

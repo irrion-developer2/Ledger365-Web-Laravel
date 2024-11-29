@@ -112,6 +112,35 @@ class SendMailController extends Controller
         return $pdf->stream('voucher.pdf');
     }
 
+    public function viewReceipt($voucher_id, $ledger_id) {
+        $curr_voucher = TallyVoucherHead::join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                                        ->where('tally_vouchers.voucher_id', $voucher_id)
+                                        ->where('tally_voucher_heads.ledger_id', $ledger_id)
+                                        ->first();
+
+        $receipt = TallyVoucher::join('tally_voucher_types','tally_vouchers.voucher_type_id','=','tally_voucher_types.voucher_type_id')
+                                ->join('tally_voucher_heads','tally_vouchers.voucher_id','=','tally_voucher_heads.voucher_id')
+                                ->join('tally_ledgers', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+                                ->join('tally_companies', 'tally_ledgers.company_id', '=', 'tally_companies.company_id')
+                                ->where('tally_voucher_heads.ledger_id', $ledger_id)
+                                ->where('tally_voucher_types.voucher_type_name',"Receipt")
+                                ->where('tally_vouchers.voucher_date','<',$curr_voucher->voucher_date)
+                                ->orderBy('tally_vouchers.voucher_date','desc')
+                                ->first();
+
+        $recipt_ledger_name = TallyLedger::join('tally_voucher_heads','tally_ledgers.ledger_id','=','tally_voucher_heads.ledger_id')
+                                    ->where('tally_voucher_heads.voucher_id',$receipt->voucher_id)
+                                    ->where('tally_voucher_heads.entry_type',"debit")
+                                    ->select('tally_ledgers.ledger_name')
+                                    ->first();
+
+        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+        $curr_balance_words = ucwords($formatter->format($receipt->amount));
+
+        $pdf = Pdf::loadView('sendmails.receipt', compact('receipt','curr_balance_words','recipt_ledger_name'));
+        return $pdf->stream('receipt.pdf');
+    }
+
     // public function sendmailtouser (Request $request) {
     //     $emailDataArray = [];
     //     $sentEmails = 0;

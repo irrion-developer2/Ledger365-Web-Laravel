@@ -29,7 +29,7 @@ return new class extends Migration
                 SET p_start_date = IFNULL(p_start_date, NULL);
                 SET p_end_date = IFNULL(p_end_date, NULL);
 
-                  SELECT
+                SELECT
                     c.company_name AS `Company_Name`,
                     MONTHNAME(tv.voucher_date) AS `Month_Name`,
                     YEAR(tv.voucher_date) AS `Year`,
@@ -37,8 +37,8 @@ return new class extends Migration
                     SUM(
                         CASE 
                             WHEN FIND_IN_SET(
-                                LOWER(tvh.entry_type) COLLATE latin1_swedish_ci, 
-                                LOWER(p_entry_types) COLLATE latin1_swedish_ci
+                                LOWER(tvh.entry_type), 
+                                LOWER(p_entry_types)
                             ) > 0 
                             THEN tvh.amount 
                             ELSE 0 
@@ -56,18 +56,22 @@ return new class extends Migration
                     tally_companies c 
                     ON tv.company_id = c.company_id
                 WHERE
-                    tvt.voucher_type_name COLLATE latin1_swedish_ci = p_voucher_type_name COLLATE latin1_swedish_ci
+                    tvt.voucher_type_name = p_voucher_type_name
                     AND FIND_IN_SET(
-                        CAST(tv.company_id AS CHAR) COLLATE latin1_swedish_ci, 
-                        company_ids COLLATE latin1_swedish_ci
+                        CAST(tv.company_id AS CHAR), 
+                        company_ids
                     ) > 0
-                    AND (p_start_date IS NULL OR p_end_date IS NULL OR tv.voucher_date BETWEEN p_start_date AND p_end_date)
+                    AND (
+                        p_start_date IS NULL 
+                        OR p_end_date IS NULL 
+                        OR tv.voucher_date BETWEEN p_start_date AND p_end_date
+                    )
                     AND (
                         p_entry_types IS NULL 
                         OR p_entry_types = ''
                         OR FIND_IN_SET(
-                            LOWER(tvh.entry_type) COLLATE latin1_swedish_ci, 
-                            LOWER(p_entry_types) COLLATE latin1_swedish_ci
+                            LOWER(tvh.entry_type), 
+                            LOWER(p_entry_types)
                         ) > 0
                     )
                     AND (tv.is_optional IS NULL OR tv.is_optional = FALSE)

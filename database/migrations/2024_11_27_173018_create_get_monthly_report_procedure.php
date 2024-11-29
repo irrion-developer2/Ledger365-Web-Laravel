@@ -28,7 +28,7 @@ return new class extends Migration
             
                 SET p_start_date = IFNULL(p_start_date, NULL);
                 SET p_end_date = IFNULL(p_end_date, NULL);
-
+                
                 SELECT
                     c.company_name AS `Company_Name`,
                     MONTHNAME(tv.voucher_date) AS `Month_Name`,
@@ -79,7 +79,8 @@ return new class extends Migration
                 GROUP BY
                     c.company_name,
                     YEAR(tv.voucher_date),
-                    MONTH(tv.voucher_date)
+                    MONTH(tv.voucher_date),
+                    MONTHNAME(tv.voucher_date)
                 ORDER BY
                     c.company_name,
                     YEAR(tv.voucher_date),

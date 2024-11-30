@@ -134,23 +134,18 @@ class SendMailController extends Controller
                                 ->where('tally_vouchers.voucher_date','<',$curr_voucher->voucher_date)
                                 ->orderBy('tally_vouchers.voucher_date','desc')
                                 ->first();
-        if($receipt) {
-            $recipt_ledger_name = TallyLedger::join('tally_voucher_heads','tally_ledgers.ledger_id','=','tally_voucher_heads.ledger_id')
-                                        ->where('tally_voucher_heads.voucher_id',$receipt->voucher_id)
-                                        ->where('tally_voucher_heads.entry_type',"debit")
-                                        ->select('tally_ledgers.ledger_name')
-                                        ->first();
 
-            $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
-            $curr_balance_words = ucwords($formatter->format($receipt->amount));
+        $recipt_ledger_name = TallyLedger::join('tally_voucher_heads','tally_ledgers.ledger_id','=','tally_voucher_heads.ledger_id')
+                                    ->where('tally_voucher_heads.voucher_id',$receipt->voucher_id)
+                                    ->where('tally_voucher_heads.entry_type',"debit")
+                                    ->select('tally_ledgers.ledger_name')
+                                    ->first();
 
-            $pdf = Pdf::loadView('sendmails.receipt', compact('receipt','curr_balance_words','recipt_ledger_name'));
-            return $pdf->stream('receipt.pdf');
-            // return view('sendmails.receipt',compact('receipt','curr_balance_words','recipt_ledger_name'));
+        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+        $curr_balance_words = ucwords($formatter->format($receipt->amount));
 
-        } else {
-            return redirect()->back()->with('error', 'There are no last receipts');
-        }
+        $pdf = Pdf::loadView('sendmails.receipt', compact('receipt','curr_balance_words','recipt_ledger_name'));
+        return $pdf->stream('receipt.pdf');
     }
 
     // public function sendmailtouser (Request $request) {
@@ -264,15 +259,19 @@ class SendMailController extends Controller
     }
 
     public function sendallmailtousers (Request $request) {
+        // $emailDataArray = [];
+        // $sentEmails = 0;
+        // $responseMessages = [];
+        
+        // $voucher_id = $request->query('voucher_id');
+        // $ledger_id = $request->query('ledger_id');
 
         $sendmaildata = $this->sendmail($request);
         dd($sendmaildata);
 
        
     }
-
-
-    // public function sendmailtouser (Request $request) {
+         // public function sendmailtouser (Request $request) {
     //     $emailDataArray = [];
     //     $sentEmails = 0;
     //     $responseMessages = [];

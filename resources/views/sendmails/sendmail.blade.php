@@ -15,12 +15,11 @@
                     </ol>
                 </nav>
             </div>
-            <button id="send-all-btn" class="btn btn-success btn-sm ms-auto" style="display: none;">Send Mail To All</button>
+            <button id="send-all-btn" class="btn btn-success btn-sm ms-auto" style="display: block;">Send Mail To All</button>
         </div>
         <!--end breadcrumb-->
 
         <div class="card">
-
             @if(session('success'))
                 <div class="alert alert-success">
                     {{ session('success') }}
@@ -32,7 +31,6 @@
                     {{ session('error') }}
                 </div>
             @endif
-
             <div class="card-body">
                 <div class="row justify-content-between">
                     <div class="col-5 mb-3 d-flex">

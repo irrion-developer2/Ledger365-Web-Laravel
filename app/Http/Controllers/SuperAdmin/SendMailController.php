@@ -84,7 +84,8 @@ class SendMailController extends Controller
                                         'tally_voucher_heads.voucher_id',
                                         'tally_vouchers.voucher_date',
                                         'tally_vouchers.voucher_number',
-                                        'tally_companies.company_name')
+                                        'tally_companies.company_name',
+                                        'tally_companies.address')
                                     ->first();
 
         $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
@@ -170,6 +171,7 @@ class SendMailController extends Controller
                                     ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
                                     ->join('tally_companies', 'tally_ledgers.company_id', '=', 'tally_companies.company_id')
                                     ->where('tally_voucher_heads.voucher_id', $voucher_id)
+                                    ->where('tally_voucher_heads.ledger_id',$ledger_id)
                                     ->select('tally_ledgers.ledger_name',
                                         'tally_ledgers.ledger_id',
                                         'tally_ledgers.email',
@@ -205,7 +207,9 @@ class SendMailController extends Controller
             "from" => ["address" => "noreply@irrion.in"],
             "to" => [
                 [
-                    "email_address" => ["address" => $ledger_data->email]
+                    "email_address" => [
+                        "address" => $ledger_data->email
+                    ]
                 ]
             ],
             "subject" => $subject,
@@ -245,12 +249,30 @@ class SendMailController extends Controller
         curl_close($curl);
 
         if ($err) {
-            echo "cURL Error #:" . $err;
-        } else {
-            echo $response;
+            Log::error('cURL Error:', [$err]);
+            return redirect()->back()->with('error', 'Failed to send email: ' . $err);
         }
+    
+        $responseDecoded = json_decode($response, true);
+    
+        if (isset($responseDecoded['data'])) {
+            return redirect()->route('sendmail')->with('success', 'Mail sent successfully.');
+        } else {
+            $errorMessage = $responseDecoded['message'] ?? 'Unknown error occurred.';
+            return redirect()->back()->with('error', 'Failed to send email: ' . $errorMessage);
+        }
+    }
 
-         // public function sendmailtouser (Request $request) {
+    public function sendallmailtousers (Request $request) {
+
+        $sendmaildata = $this->sendmail($request);
+        dd($sendmaildata);
+
+       
+    }
+
+
+    // public function sendmailtouser (Request $request) {
     //     $emailDataArray = [];
     //     $sentEmails = 0;
     //     $responseMessages = [];
@@ -603,7 +625,7 @@ class SendMailController extends Controller
         //         ]);
         //     }
         // }
-    }
+   
 
     // public function sendmail (Request $request) {
     //     $curl = curl_init();

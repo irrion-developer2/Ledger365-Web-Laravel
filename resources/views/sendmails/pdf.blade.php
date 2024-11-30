@@ -14,10 +14,12 @@
 
     .header h1 {
         font-size: 24px;
-        margin-bottom: 40px;
+        margin-bottom: 5px;
         font-weight: bold;
     }
-
+    .header h4 {
+        margin-bottom: 40px;
+    }
     .header p {
         margin: 5px 0;
         font-size: 14px;
@@ -91,6 +93,7 @@
 <div class='header'>
         <h4 style="text-decoration: underline; margin-bottom: 1px;">Bill</h4>
         <h1>{{ $ledger_data->company_name }}</h1>
+        <h4>{{ $ledger_data->address }}</h4>
         <table class='name-date'>
             <tbody>
                 <tr>

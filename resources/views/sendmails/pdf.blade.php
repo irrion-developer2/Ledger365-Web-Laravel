@@ -9,12 +9,12 @@
 
     .header {
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 1px;
     }
 
     .header h1 {
         font-size: 24px;
-        margin: 0;
+        margin-bottom: 40px;
         font-weight: bold;
     }
 
@@ -76,17 +76,37 @@
         margin-top: 30px;
         font-size: 22px;
     }
+
+    .footer_s {
+        display: flex;
+        justify-content: flex-end;
+        gap: 100px;
+        margin: 0;
+        font-size: 20px;
+    }
+
     </style>
 </head>
 <body>
 <div class='header'>
+        <h4 style="text-decoration: underline; margin-bottom: 1px;">Bill</h4>
         <h1>{{ $ledger_data->company_name }}</h1>
-        <p>Month: {{ date('F Y', strtotime($ledger_data->voucher_date)) }}</p>
         <table class='name-date'>
             <tbody>
                 <tr>
-                    <td class='name'><strong>{{ $ledger_data->ledger_name }}</strong></td>
-                    <td class='date'>{{ $ledger_data->voucher_date }}</td>
+                    <td class='name'>Bill No.: {{($ledger_data->voucher_number)}}</td>
+                    <td class='date'>Month: {{ date('F Y', strtotime($ledger_data->voucher_date)) }}</td>
+                    <td class='date'>Date: {{ $ledger_data->voucher_date }}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td class='due-date'>Due Date: {{ \Carbon\Carbon::parse($ledger_data->voucher_date)->addDays(10)->format('Y-m-d') }}</td>
+                </tr>
+                <tr>
+                    <td><strong>{{ $ledger_data->ledger_name }}</strong></td>
+                    <td></td>
+                    <td><strong>Flat No.: {{($ledger_data->alias1)}}<strong></td>
                 </tr>
             </tbody>
         </table>
@@ -130,11 +150,20 @@
         </tfoot>
     </table>
     <div class='amount-summary'>
+          <p>{{( $curr_balance_words) }}</p>
+        {{-- <p>{{ str_replace('Minus', '-', $curr_balance_words) }}</p> --}}
         <p>1. If any discrepancy Found in Bill, Kindly Advice Committee.</p>
         <p>2. Bill to be Paid by Due Date.</p>
     </div>
     <div class='footer'>
-        <p>from {{$ledger_data->company_name}}</p>
+        <p>For {{$ledger_data->company_name}}</p>
+    </div>
+    <div style="text-align: right; margin-top: 100px;">
+        <p class='footer_s'>
+            <span>Checked By</span>
+            <span>Secretary</span>
+            <span>Treasurer</span>
+        </p>
     </div>
 </body>
 

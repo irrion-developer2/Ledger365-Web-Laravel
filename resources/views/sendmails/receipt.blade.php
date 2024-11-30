@@ -6,101 +6,107 @@
     <title>Receipt</title>
 
     <style>
+         body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
         .receipt-title {
-            text-align: right;
+            text-align:center;
             font-size: 18px;
             margin: 0;
+            text-decoration:underline;
         }
 
         .org-name {
             text-align: center;
             font-size: 24px;
-            font-weight: bold;
-            margin: 10px 0;
+            margin:0;
         }
 
         .address {
             text-align: center;
             font-size: 14px;
             margin: 0;
-            color: #555;
         }
 
         .details {
-            display: flex;
-            justify-content: space-between;
-            margin: 20px 0;
-            font-size: 14px;
+            width:100%;
+            margin-top:40px;
         }
 
         .thanks-text {
-            font-size: 16px;
+            font-size: 20px;
             margin: 20px 0;
         }
 
         .amount {
             font-size: 24px;
             font-weight: bold;
-            text-align: center;
-            margin: 20px 0;
+            margin:0;
         }
 
         .note {
-            text-align: center;
-            font-size: 14px;
+            font-size: 18px;
             margin-bottom: 30px;
+            margin-top:0;
         }
 
         .footer {
-            text-align: center;
-            font-size: 14px;
+            text-align: right;
             margin-top: 30px;
+        }
+        .footer p {
+            text-transform:uppercase;
+            font-size:22px;
         }
 
         .signatures {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
+            margin: 50px 0 0 0;
         }
 
-        .signatures p {
-            margin: 0;
-            font-size: 14px;
+        .signatures span {
+            padding: 0 10px;
         }
 
         .disclaimer {
-            font-size: 12px;
+            font-size: 16px;
+            text-align:center;
+            margin:0;
         }
     </style>
 </head>
 <body>
     <div class="receipt-container">
-        <h3 class="receipt-title">Receipt</h3>
+        <p class="receipt-title">Receipt</p>
         <h1 class="org-name">{{ $receipt->company_name }}</h1>
+        <p style="text-align:center; margin:0;">{{ $receipt->address }}</p>
         
-        <div class="details">
-            <p>Receipt No.: <b>{{$receipt->voucher_number}}</b></p>
-            <p>Date: <b>{{$receipt->voucher_date}}</b></p>
-        </div>
+        <table class="details">
+            <tr>
+                <td>Receipt No.: {{$receipt->voucher_number}}</td>
+                <td>Date: {{$receipt->voucher_date}}</td>
+            </tr>
+        </table>
         
         <p class="thanks-text">
-            RECEIVED with thanks from {{ $receipt->ledger_name }} Flat No. : <b>{{ $receipt->alias1 }}</b><br>
-            the sum of Rupees <b>{{ $curr_balance_words }} Only</b> by Ch. No. : <b>NEFTXX</b><br>
-            <b>{{ $recipt_ledger_name->ledger_name }}</b> For Month {{ date('F Y', strtotime($receipt->voucher_date)) }}
+            RECEIVED with thanks from {{ $receipt->ledger_name }} Flat No. : {{ $receipt->alias1 }}<br>
+            the sum of Rupees {{ $curr_balance_words }} Only by Ch. No. : NEFTXX<br>
+            {{ $recipt_ledger_name->ledger_name }} For Month {{ date('F Y', strtotime($receipt->voucher_date)) }}
         </p>
         
         <p class="amount">Rs. <b>{{ $receipt->amount }}</b></p>
         <p class="note">Subject to Realisation of Cheque.</p>
         
         <div class="footer">
-            <p>For <b>{{ $receipt->company_name }}</b></p>
+            <p>For {{ $receipt->company_name }}</p>
             <div class="signatures">
-                <p>Checked By</p>
-                <p>Secretary</p>
-                <p>Treasurer</p>
+                <span>Checked By</span>
+                <span>Secretary</span>
+                <span>Treasurer</span>
             </div>
-            <p class="disclaimer">This is a computer-generated receipt. no signature required.</p>
         </div>
+        <p class="disclaimer">This is a computer-generated receipt. no signature required.</p>
+
     </div>
 </body>
 </html>

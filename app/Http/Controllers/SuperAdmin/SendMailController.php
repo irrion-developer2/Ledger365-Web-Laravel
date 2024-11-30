@@ -133,18 +133,23 @@ class SendMailController extends Controller
                                 ->where('tally_vouchers.voucher_date','<',$curr_voucher->voucher_date)
                                 ->orderBy('tally_vouchers.voucher_date','desc')
                                 ->first();
+        if($receipt) {
+            $recipt_ledger_name = TallyLedger::join('tally_voucher_heads','tally_ledgers.ledger_id','=','tally_voucher_heads.ledger_id')
+                                        ->where('tally_voucher_heads.voucher_id',$receipt->voucher_id)
+                                        ->where('tally_voucher_heads.entry_type',"debit")
+                                        ->select('tally_ledgers.ledger_name')
+                                        ->first();
 
-        $recipt_ledger_name = TallyLedger::join('tally_voucher_heads','tally_ledgers.ledger_id','=','tally_voucher_heads.ledger_id')
-                                    ->where('tally_voucher_heads.voucher_id',$receipt->voucher_id)
-                                    ->where('tally_voucher_heads.entry_type',"debit")
-                                    ->select('tally_ledgers.ledger_name')
-                                    ->first();
+            $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+            $curr_balance_words = ucwords($formatter->format($receipt->amount));
 
-        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
-        $curr_balance_words = ucwords($formatter->format($receipt->amount));
+            $pdf = Pdf::loadView('sendmails.receipt', compact('receipt','curr_balance_words','recipt_ledger_name'));
+            return $pdf->stream('receipt.pdf');
+            // return view('sendmails.receipt',compact('receipt','curr_balance_words','recipt_ledger_name'));
 
-        $pdf = Pdf::loadView('sendmails.receipt', compact('receipt','curr_balance_words','recipt_ledger_name'));
-        return $pdf->stream('receipt.pdf');
+        } else {
+            return redirect()->back()->with('error', 'There are no last receipts');
+        }
     }
 
     // public function sendmailtouser (Request $request) {

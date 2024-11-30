@@ -12,9 +12,9 @@
         target="_blank">
          Bill
      </a>
+     
     <a href="{{ route('view-receipt', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" 
-        class="btn btn-secondary btn-sm ms-2" 
-        target="_blank">
+        class="btn btn-secondary btn-sm ms-2">
         Receipt
      </a>
      

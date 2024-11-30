@@ -20,16 +20,29 @@
         <!--end breadcrumb-->
 
         <div class="card">
+
+            @if(session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <div class="card-body">
                 <div class="row justify-content-between">
                     <div class="col-5 mb-3 d-flex">
                         <select name="company_id" id="company_id" class="form-select mx-2">
-                        <option value="1">Select company</option>
+                        <option value="2">Select company</option>
                             @foreach($companys as $company)
                             <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
                             @endforeach
                         </select>
-                        <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
+                        <input type="date" class="form-control mx-2" id="date" name="date" value="2020-05-01">
                     </div>
                     <div class="col-4">
                         <div class="alert" role="alert" style="display: none;">

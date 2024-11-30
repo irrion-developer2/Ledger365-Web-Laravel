@@ -7,7 +7,7 @@
 
 </head>
 <body>
-    <a href="{{ route('view-pdf', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" 
+    <a href="{{ route('view-pdf', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id] ) }}" 
         class="btn btn-warning btn-sm ms-2" 
         target="_blank">
          Bill
@@ -29,7 +29,7 @@
             Message
     </a>
 
-    <a href="{{ route('send-email', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" class="btn btn-success btn-sm ms-2">
+    <a href="{{ route('send-email', ['send_voucher_id' => $ledger_data->voucher_id, 'send_ledger_id' => $ledger_data->ledger_id]) }}" class="btn btn-success btn-sm ms-2">
         Send
     </a>
 

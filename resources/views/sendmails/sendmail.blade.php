@@ -15,7 +15,7 @@
                     </ol>
                 </nav>
             </div>
-            <button id="send-all-btn" class="btn btn-success btn-sm ms-auto" style="display: block;">Send Mail To All</button>
+            <button id="send-all-btn" class="btn btn-success btn-sm ms-auto">Send Mail To All</button>
         </div>
         <!--end breadcrumb-->
 
@@ -35,12 +35,12 @@
                 <div class="row justify-content-between">
                     <div class="col-5 mb-3 d-flex">
                         <select name="company_id" id="company_id" class="form-select mx-2">
-                        <option value="2">Select company</option>
+                        <option value="1">Select company</option>
                             @foreach($companys as $company)
                             <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
                             @endforeach
                         </select>
-                        <input type="date" class="form-control mx-2" id="date" name="date" value="2020-05-01">
+                        <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
                     </div>
                     <div class="col-4">
                         <div class="alert" role="alert" style="display: none;">
@@ -87,26 +87,6 @@
 
     <script>
         $(document).ready(function() {
-            console.log("hiiii");
-            // var selectedCompanyId = '';
-            // var selectedDate = '';
-
-            // function updateDataTable() {
-            //     if (selectedCompanyId && selectedDate) {
-            //         var table = $('#select-company').DataTable();
-            //         table.ajax.url("{{ route('sendmail') }}?company_id=" + selectedCompanyId + "&date=" + selectedDate).load();
-            //         $('#send-all-btn').show();
-            //     }
-            // }
-            // $('#company_id').change(function() {
-            //     selectedCompanyId = $(this).val();
-            //     updateDataTable();
-            // });
-            // $('#date').change(function() {
-            //     selectedDate = $(this).val();
-            //     updateDataTable();
-            // });
-
             // Initialize DataTable
             var table = $('#send-mail-table').DataTable({
                 processing: true,
@@ -169,13 +149,24 @@
                 // `,
             });
             $('#company_id, #date').on('change', function() {
-                var companyId = $('#company_id').val();
-                var date = $('#date').val();
-                if (companyId && date) {
-                    $('#send-all-btn').show();
-                }
                 table.draw();
             });
+
+            $('#send-all-btn').on('click', function () { 
+                var companyId = $('#company_id').val();
+                var date = $('#date').val();
+
+                $.ajax({
+                    url: "{{ route('send-mutiple-email') }}",
+                    method: "GET", // Change to GET for fetching data
+                    data: {
+                        company_id: companyId,
+                        date: date,
+                        _token: "{{ csrf_token() }}" // Optional for GET requests
+                    }
+                });
+            });
+
         });
 
     </script>

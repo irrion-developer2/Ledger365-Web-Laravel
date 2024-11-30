@@ -34,7 +34,10 @@ class SendMailController extends Controller
                     ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
                     ->where('tally_voucher_heads.entry_type',"debit")
                     ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-                    ->where('tally_vouchers.voucher_date',request()->date)
+
+                    ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
+                    // ->where('tally_vouchers.voucher_date',request()->date)
+                    
                     ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
                     ->where('tally_voucher_types.parent',"Bill")
                     ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')
@@ -156,13 +159,13 @@ class SendMailController extends Controller
     // public function sendmailtouser (Request $request) {
    
     
-    public function sendmailtouser (Request $request) {
+    public function sendmailtouser ($send_voucher_id,$send_ledger_id) {
         // $emailDataArray = [];
         // $sentEmails = 0;
         // $responseMessages = [];
         
-        $voucher_id = $request->query('voucher_id');
-        $ledger_id = $request->query('ledger_id');
+        $voucher_id = $send_voucher_id;
+        $ledger_id = $send_ledger_id;
 
         $pdfContent = $this->viewPdf($voucher_id,$ledger_id);
         $pdf = base64_encode($pdfContent);
@@ -263,12 +266,41 @@ class SendMailController extends Controller
         }
     }
 
-    public function sendallmailtousers (Request $request) {
+    public function SendMutipleEmail (Request $request) {
 
-        $sendmaildata = $this->sendmail($request);
-        dd($sendmaildata);
+        $ledger_datas = TallyLedger::
+                    join('tally_ledger_groups','tally_ledgers.ledger_group_id','=','tally_ledger_groups.ledger_group_id')
+                    // ->where('tally_ledgers.parent','tally_ledger_groups.ledger_group_name')
+                    ->whereIn('tally_ledger_groups.parent', ['Sundry Debtors', 'Sundry Creditors'])
 
-       
+                    ->where('tally_ledgers.company_id',$request->company_id)
+                    ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+                    ->where('tally_voucher_heads.entry_type',"debit")
+                    ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+
+                    ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
+                    // ->where('tally_vouchers.voucher_date',$request->date)
+
+                    ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
+                    ->where('tally_voucher_types.parent',"Bill")
+                    ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')
+                    ->select('tally_ledgers.*',
+                            'tally_voucher_heads.amount',
+                            'tally_voucher_heads.voucher_id',
+                            'tally_vouchers.voucher_date',
+                            'tally_companies.company_name')
+                    ->orderBy('tally_ledgers.ledger_name', 'asc')
+                    ->get();
+
+        foreach($ledger_datas as $ledger_data) {
+
+            $send_voucher_id = $ledger_data->voucher_id;
+            $send_ledger_id = $ledger_data->ledger_id;
+
+            $this->sendmailtouser($send_voucher_id,$send_ledger_id);
+            $email_count++;
+        }
+        return redirect()->with('success',"{$email_count} emails have been successfully sent!");
     }
 
 

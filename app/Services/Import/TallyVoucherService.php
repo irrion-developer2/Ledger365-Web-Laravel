@@ -200,9 +200,11 @@ class TallyVoucherService
                 }
             }
 
-            return response()->json(['message' => 'Tally Voucher data saved successfully.',
-                'vouchers_processed' => $voucherCount,
+            return response()->json([
+                'message' => 'Vouchers saved',
+                'count' => $voucherCount,
             ]);
+
         } catch (\Exception $e) {
             Log::error('Error saving Tally voucher data:', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'Failed to save Tally data', 'message' => $e->getMessage()], 500);

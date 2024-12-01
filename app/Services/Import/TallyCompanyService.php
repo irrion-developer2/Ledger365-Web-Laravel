@@ -49,6 +49,9 @@ class TallyCompanyService
 
             $licenseNumber = $request->input('license_number');
 
+            $addressList = $companyData['ADDRESS.LIST']['ADDRESS'] ?? null;
+            $address = is_array($addressList) ? implode(", ", $addressList) : (is_string($addressList) ? $addressList : null);
+
             $tallyCompany = TallyCompany::updateOrCreate(
                 [
                     'company_guid' => $companyData['GUID'][''] ?? null,
@@ -59,7 +62,7 @@ class TallyCompanyService
                     'state' => $companyData['STATENAME'][''] ?? null,
                     'license_number' => $licenseNumber,
                     'starting_from' => $companyData['STARTINGFROM'][''] ?? null,
-                    'address' => isset($companyData['ADDRESS.LIST']['ADDRESS']) ? implode(", ", $companyData['ADDRESS.LIST']['ADDRESS']) : null,
+                    'address' => $address,
                     'books_from' => $companyData['BOOKSFROM'][''] ?? null,
                     'audited_upto' => $companyData['AUDITEDUPTO'][''] ?? null,
                     'email' => $companyData['EMAIL'][''] ?? null,

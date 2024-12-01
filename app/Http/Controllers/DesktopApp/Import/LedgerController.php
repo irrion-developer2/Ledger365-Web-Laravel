@@ -1036,6 +1036,12 @@ class LedgerController extends Controller
                         ->where('company_Id', $companyId)
                         ->value('voucher_type_id');
 
+                    // if vouchertypeid is null print query
+                    if (!$voucherTypeId) {
+                        Log::error('Voucher Type ID not found for voucher type: ' . $voucherType . ' and company ID: ' . $companyId);
+                    }
+
+
                     // Log::info('jsonFilePath Data:', ['jsonFilePath' => $jsonFilePath]);
 
                     $tallyVoucher = TallyVoucher::updateOrCreate(

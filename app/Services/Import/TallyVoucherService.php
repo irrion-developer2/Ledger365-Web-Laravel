@@ -129,6 +129,11 @@ class TallyVoucherService
                         ->where('company_Id', $companyId)
                         ->value('voucher_type_id');
 
+                    // if vouchertypeid is null print query
+                    if (!$voucherTypeId) {
+                        Log::error('Voucher Type ID not found for voucher type: ' . $voucherType . ' and company ID: ' . $companyId);
+                    }
+
                     $tallyVoucher = TallyVoucher::updateOrCreate([
                         'voucher_guid' => $voucherData['GUID'],
                         'company_id' => $companyId,

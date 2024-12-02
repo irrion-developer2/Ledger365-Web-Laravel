@@ -225,8 +225,8 @@ Route::middleware([
 
         Route::get('sendmail', [SendMailController::class, 'sendmail'])->name('sendmail');
         // Route::get('/get-message/{ledger_id}', [SendMailController::class, 'getMessage']);
-        Route::get('send-email', [SendMailController::class, 'sendmailtouser'])->name('send-email');
-        Route::get('sendmail.sendAll', [SendMailController::class, 'sendallmailtousers'])->name('sendmail.sendAll');
+        Route::get('send-email/{send_voucher_id}/{send_ledger_id}', [SendMailController::class, 'sendmailtouser'])->name('send-email');
+        Route::get('send-mutiple-email', [SendMailController::class, 'SendMutipleEmail'])->name('send-mutiple-email');
 
         Route::get('pdf/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewPdf'])->name('view-pdf');
         Route::get('receipt/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewReceipt'])->name('view-receipt');

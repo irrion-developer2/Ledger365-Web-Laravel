@@ -322,6 +322,8 @@ class SendMailController extends Controller
 
     public function SendMutipleEmail (Request $request) {
 
+        // test
+
         $ledger_datas = TallyLedger::
                     join('tally_ledger_groups','tally_ledgers.ledger_group_id','=','tally_ledger_groups.ledger_group_id')
                     // ->where('tally_ledgers.parent','tally_ledger_groups.ledger_group_name')

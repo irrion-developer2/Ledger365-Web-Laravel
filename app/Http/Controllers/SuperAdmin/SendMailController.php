@@ -278,8 +278,8 @@ class SendMailController extends Controller
                     ->where('tally_voucher_heads.entry_type',"debit")
                     ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
 
-                    ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
-                    // ->where('tally_vouchers.voucher_date',$request->date)
+                    // ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
+                    ->where('tally_vouchers.voucher_date',$request->date)
 
                     ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
                     ->where('tally_voucher_types.parent',"Bill")
@@ -302,7 +302,6 @@ class SendMailController extends Controller
         }
         return redirect()->with('success',"{$email_count} emails have been successfully sent!");
     }
-
 
     // public function sendmailtouser (Request $request) {
     //     $emailDataArray = [];

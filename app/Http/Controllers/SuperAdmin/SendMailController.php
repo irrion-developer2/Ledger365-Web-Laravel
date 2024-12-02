@@ -54,23 +54,63 @@ class SendMailController extends Controller
             return DataTables::of($ledger_data)
                 ->addColumn('action', function ($ledger_data) {
 
-                    $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
-                                                ->where('entry_type', "credit")
-                                                ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
-                                                ->select('tally_voucher_heads.amount')
-                                                ->sum('tally_voucher_heads.amount');
-                    $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-                                                ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-                                                ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
-                                                ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
-                                                ->sum('tally_voucher_heads.amount');
-                    $curr_balance += $ledger_data->opening_balance;
+                    // $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
+                    //                             ->where('entry_type', "credit")
+                    //                             ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+                    //                             ->select('tally_voucher_heads.amount')
+                    //                             ->sum('tally_voucher_heads.amount');
+                    // $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+                    //                             ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                    //                             ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
+                    //                             ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
+                    //                             ->sum('tally_voucher_heads.amount');
+                    // $curr_balance += $ledger_data->opening_balance;
 
-                    return view('sendmails._action', compact('ledger_data','credits','curr_balance'))->render();
+                    return view('sendmails._action', compact('ledger_data'))->render();
                 })
                 ->make(true);
         }
         return view('sendmails.sendmail', compact('companys'));
+    }
+
+    public function viewMsg($voucher_id, $ledger_id) {
+
+        $ledger_data = TallyLedger::join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+                                ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                                ->join('tally_companies', 'tally_ledgers.company_id', '=', 'tally_companies.company_id')
+                                ->where('tally_voucher_heads.voucher_id', $voucher_id)
+                                ->where('tally_ledgers.ledger_id', $ledger_id)
+                                ->select('tally_ledgers.ledger_name',
+                                    'tally_ledgers.ledger_id',
+                                    'tally_ledgers.opening_balance',
+                                    'tally_ledgers.alias1',
+                                    'tally_voucher_heads.voucher_id',
+                                    'tally_vouchers.voucher_date',
+                                    'tally_vouchers.voucher_number',
+                                    'tally_companies.company_name',
+                                    'tally_companies.address')
+                                ->first();
+
+        $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
+                                    ->where('entry_type', "credit")
+                                    ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+                                    ->select('tally_voucher_heads.amount')
+                                    ->sum('tally_voucher_heads.amount');
+
+        $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+                                    ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                                    ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
+                                    ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
+                                    ->sum('tally_voucher_heads.amount');
+        $curr_balance += $ledger_data->opening_balance;
+        return response()->json([
+            'ledger_name' => $ledger_data->ledger_name,
+            'voucher_date' => $ledger_data->voucher_date,
+            'company_name' => $ledger_data->company_name,
+            'credits' => $credits,
+            'curr_balance' => $curr_balance,
+        ]);
+        // return redirect('sendmails._action', compact('credits','curr_balance'));
     }
 
     public function viewPdf($voucher_id, $ledger_id)
@@ -266,6 +306,25 @@ class SendMailController extends Controller
         }
     }
 
+    public function sendwhatsapp ($voucher_id,$ledger_id) {
+
+        $response = $this->viewMsg($voucher_id,$ledger_id);
+        $data = json_decode($response->getContent(), true);
+
+        $voucherDate = date('F Y', strtotime($data['voucher_date']));
+        $message = " Dear Member, {$data['ledger_name']}, bill for the month of <br> $voucherDate of <b>Rs {$data['credits']} </b> has been generated on {$data['voucher_date']}. <br> Total amount to be paid: <b>Rs {$data['curr_balance']}</b> on or before the due date.";
+
+        $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-message?token=leQPxk3RaLrgKgUar2yltxsKW9pf6BTTIGTsvUsZLx2S6ezMKoU8XIDpomvgLLV1";
+        // $request = {
+        //     "from_phone_number_id": "{{fromPhoneNumberId}}",
+        //     "phone_number": "{{phoneNumber}}",
+        //     "message_body": "your message body"
+        //     }
+        // };
+        
+
+    }
+
     public function SendMutipleEmail (Request $request) {
 
         $ledger_datas = TallyLedger::
@@ -278,8 +337,8 @@ class SendMailController extends Controller
                     ->where('tally_voucher_heads.entry_type',"debit")
                     ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
 
-                    // ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
-                    ->where('tally_vouchers.voucher_date',$request->date)
+                    ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
+                    // ->where('tally_vouchers.voucher_date',$request->date)
 
                     ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
                     ->where('tally_voucher_types.parent',"Bill")

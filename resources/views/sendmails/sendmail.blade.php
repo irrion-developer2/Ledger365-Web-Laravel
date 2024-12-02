@@ -15,7 +15,7 @@
                     </ol>
                 </nav>
             </div>
-            <button id="send-all-btn" class="btn btn-success btn-sm ms-auto">Send Mail To All</button>
+            <button id="send-all-btn" class="btn btn-primary btn-sm ms-auto">Send Mail To All</button>
         </div>
         <!--end breadcrumb-->
 

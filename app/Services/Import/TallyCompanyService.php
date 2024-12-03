@@ -36,7 +36,7 @@ class TallyCompanyService
 
             $data = json_decode($jsonData, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
+                throw new \Exception('Invalid JSON format: ' . json_last_error_msg() . ' in ' . __FILE__ . ' on line ' . __LINE__);
             }
 
             if (!isset($data['BODY']['DATA']['TALLYMESSAGE']['COMPANY'])) {

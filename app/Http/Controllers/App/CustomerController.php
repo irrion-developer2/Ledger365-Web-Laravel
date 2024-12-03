@@ -94,8 +94,6 @@ class CustomerController extends Controller
 
             $sql = "CALL get_ledgers_data(:company_ids, :start_date, :end_date, :ledger_group_name)";
 
-            log::info();
-            
             Log::info("Calling Stored Procedure", [
                 'sql' => $sql,
                 'params' => [

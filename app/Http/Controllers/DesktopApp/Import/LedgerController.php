@@ -475,7 +475,12 @@ class LedgerController extends Controller
                 }
             }
 
-            return response()->json(['message' => 'Tally Master data saved successfully.', 'currencies_inserted' => $currencyCount, 'groups_inserted' => $groupCount, 'ledgers_inserted' => $ledgerCount]);
+            return response()->json([
+                'message' => 'Master Saved',
+                'currencies_inserted' => $currencyCount,
+                'groups_inserted' => $groupCount,
+                'ledgers_inserted' => $ledgerCount
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Error importing data: ' . $e->getMessage());
@@ -828,7 +833,8 @@ class LedgerController extends Controller
                 }
             }
 
-            return response()->json(['message' => 'Tally stock item data saved successfully.',
+            return response()->json([
+                'message' => 'Stock item saved',
                 'units_inserted' => $unitCount,
                 'godowns_inserted' => $godownCount,
                 'stock_groups_inserted' => $stockGroupCount,
@@ -1030,6 +1036,12 @@ class LedgerController extends Controller
                         ->where('company_Id', $companyId)
                         ->value('voucher_type_id');
 
+                    // if vouchertypeid is null print query
+                    if (!$voucherTypeId) {
+                        Log::error('Voucher Type ID not found for voucher type: ' . $voucherType . ' and company ID: ' . $companyId);
+                    }
+
+
                     // Log::info('jsonFilePath Data:', ['jsonFilePath' => $jsonFilePath]);
 
                     $tallyVoucher = TallyVoucher::updateOrCreate(
@@ -1108,7 +1120,8 @@ class LedgerController extends Controller
                 }
             }
 
-            return response()->json(['message' => 'Tally Voucher data saved successfully.',
+            return response()->json([
+                'message' => 'Vouchers saved',
                 'vouchers_processed' => $voucherCount,
             ]);
         } catch (\Exception $e) {

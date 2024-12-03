@@ -129,6 +129,11 @@ class TallyVoucherService
                         ->where('company_Id', $companyId)
                         ->value('voucher_type_id');
 
+                    // if vouchertypeid is null print query
+                    if (!$voucherTypeId) {
+                        Log::error('Voucher Type ID not found for voucher type: ' . $voucherType . ' and company ID: ' . $companyId);
+                    }
+
                     $tallyVoucher = TallyVoucher::updateOrCreate([
                         'voucher_guid' => $voucherData['GUID'],
                         'company_id' => $companyId,
@@ -200,9 +205,11 @@ class TallyVoucherService
                 }
             }
 
-            return response()->json(['message' => 'Tally Voucher data saved successfully.',
-                'vouchers_processed' => $voucherCount,
+            return response()->json([
+                'message' => 'Vouchers saved',
+                'count' => $voucherCount,
             ]);
+
         } catch (\Exception $e) {
             Log::error('Error saving Tally voucher data:', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'Failed to save Tally data', 'message' => $e->getMessage()], 500);

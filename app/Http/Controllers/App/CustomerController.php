@@ -36,6 +36,16 @@ class CustomerController extends Controller
             return DataTables::of([])->make(true);
         }
 
+        // $collationVariables = DB::select("SHOW VARIABLES LIKE 'collation%'");
+        // Log::info('Collation Variables:', ['variables' => $collationVariables]);
+
+        // $version = DB::select("SELECT VERSION() AS version");
+        // Log::info('Database Version:', ['version' => $version]);
+
+        // $currentDatabase = DB::select("SELECT DATABASE() AS database_name");
+        // Log::info('Current Database:', ['database_name' => $currentDatabase]);
+
+
         if ($request->ajax()) {
             $startTime = microtime(true);
 
@@ -84,6 +94,8 @@ class CustomerController extends Controller
 
             $sql = "CALL get_ledgers_data(:company_ids, :start_date, :end_date, :ledger_group_name)";
 
+            log::info();
+            
             Log::info("Calling Stored Procedure", [
                 'sql' => $sql,
                 'params' => [
@@ -275,14 +287,6 @@ class CustomerController extends Controller
                             'tally_voucher_heads.entry_type',
                             'tally_voucher_heads.amount',
                             'tally_voucher_types.voucher_type_name',
-                            // DB::raw("(SELECT GROUP_CONCAT(DISTINCT l2.ledger_name SEPARATOR ', ')
-                            //         FROM tally_voucher_heads vh2
-                            //         JOIN tally_ledgers l2 ON vh2.ledger_id = l2.ledger_id
-                            //         JOIN tally_ledger_groups lg2 ON l2.ledger_group_id = lg2.ledger_group_id
-                            //         WHERE vh2.voucher_id = tally_voucher_heads.voucher_id
-                            //         AND vh2.ledger_id != tally_voucher_heads.ledger_id
-                            //         AND lg2.ledger_group_name NOT IN ('Sundry Debtors', 'Sundry Creditors', 'Duties & Taxes')
-                            //         ) AS counterpart_ledger_name")
                             DB::raw("(SELECT l2.ledger_name
                                         FROM tally_voucher_heads vh2
                                         JOIN tally_ledgers l2 ON vh2.ledger_id = l2.ledger_id

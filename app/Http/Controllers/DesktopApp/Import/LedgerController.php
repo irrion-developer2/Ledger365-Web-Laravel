@@ -203,7 +203,7 @@ class LedgerController extends Controller
     {
         try {
 
-            Log::info('masterJsonImport function called');
+            // Log::info('masterJsonImport function called');
 
             $this->validateLicenseNumber($request);
 
@@ -331,10 +331,10 @@ class LedgerController extends Controller
             }
 
             // After processing all groups, update the primary_group field
-            Log::info('Updating primary_group field for all groups');
+            // Log::info('Updating primary_group field for all groups');
             foreach (array_keys($companyIds) as $companyId) {
                 $groups = TallyLedgerGroup::where('company_id', $companyId)->get();
-                Log::info($companyId . ' - Found ' . count($groups) . ' groups');
+                // Log::info($companyId . ' - Found ' . count($groups) . ' groups');
                 // Build associative array of groups by name
                 $groupsByName = [];
                 foreach ($groups as $group) {
@@ -1148,21 +1148,6 @@ class LedgerController extends Controller
                 ->where('company_id', $companyId)
                 ->value('ledger_id');
 
-            // if (!$ledgerId) {
-            //     $ledgerId = TallyLedger::where('ledger_name', str_replace(' ', '', $ledgerName))
-            //         ->where('company_id', $companyId)
-            //         ->value('ledger_id');
-            // }
-                
-            // if (!$ledgerId) {
-            //     $modifiedLedgerName = str_replace(' ', '', $ledgerName);
-            //     $ledgerId = TallyLedger::where('ledger_name', $modifiedLedgerName)
-            //         ->where('company_id', $companyId)
-            //         ->value('ledger_id');
-            
-            //         Log::info('ledger_id:', ['modifiedLedgerName' => $modifiedLedgerName],['ledger_id' => $ledger_id]);
-            // }
-
             
             if (!$ledgerId) {
                 Log::error('Ledger not found', [
@@ -1216,21 +1201,6 @@ class LedgerController extends Controller
                     ->where('company_Id', $companyId)
                     ->value('ledger_id');
 
-                // if (!$ledgerId) {
-                //     $ledgerId = TallyLedger::where('ledger_name', str_replace(' ', '', $ledgerName))
-                //         ->where('company_id', $companyId)
-                //         ->value('ledger_id');
-                // }
-
-                // if (!$ledgerId) {
-                //     $modifiedLedgerName = str_replace(' ', '', $ledgerName);
-                //     $ledgerId = TallyLedger::where('ledger_name', $modifiedLedgerName)
-                //         ->where('company_id', $companyId)
-                //         ->value('ledger_id');
-                
-                //     Log::info('ledger_id:', ['modifiedLedgerName' => $modifiedLedgerName],['ledger_id' => $ledger_id]);
-                // }
-                
 
                 if (!$ledgerId) {
                     Log::error('Ledger GUID not found in database for ledger: ' . $ledgerName);

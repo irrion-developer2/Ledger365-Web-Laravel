@@ -167,7 +167,7 @@
                     </div>
                     <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
                 </a>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu" style="width: auto">
                     @foreach($companies as $company)
                         @php
                             $isChecked = in_array($company->company_id, $selectedCompanyIds);

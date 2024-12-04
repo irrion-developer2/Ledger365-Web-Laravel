@@ -150,15 +150,12 @@ class SendMailController extends Controller
                                     ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
                                     ->sum('tally_voucher_heads.amount');
         $curr_balance += $ledger_data->opening_balance;
-        // Function to convert number to words
-        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
-        $curr_balance_words = ucwords($formatter->format($curr_balance));
 
         if (!$ledger_data) {
             abort(404, 'Voucher not found');
         }
         // return view('sendmails.pdf', compact('ledger_data','credits'));
-        $pdf = Pdf::loadView('sendmails.pdf', compact('ledger_data', 'credits','curr_balance','prev_balance','curr_balance_words'));
+        $pdf = Pdf::loadView('sendmails.pdf', compact('ledger_data', 'credits','curr_balance','prev_balance'));
         return $pdf->stream('voucher.pdf');
     }
 
@@ -277,27 +274,32 @@ class SendMailController extends Controller
             }
             $pdf = base64_encode($pdfContent);
 
-            $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
-                                    ->where('entry_type', "credit")
-                                    ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
-                                    ->select('tally_voucher_heads.amount')
-                                    ->sum('tally_voucher_heads.amount');
+            // $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
+            //                         ->where('entry_type', "credit")
+            //                         ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+            //                         ->select('tally_voucher_heads.amount')
+            //                         ->sum('tally_voucher_heads.amount');
 
-            $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-                                        ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-                                        ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
-                                        ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
-                                        ->sum('tally_voucher_heads.amount');
-            $curr_balance += $ledger_data->opening_balance;
+            // $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+            //                             ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+            //                             ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
+            //                             ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
+            //                             ->sum('tally_voucher_heads.amount');
+            // $curr_balance += $ledger_data->opening_balance;
 
-            $format_date = date('F Y', strtotime($ledger_data->voucher_date));
+            $responsem = $this->viewMsg($send_voucher_id,$send_ledger_id);
+            $data = json_decode($responsem->getContent(), true);
+
+            $formatDate = date('F Y', strtotime($data['voucher_date']));
             $message = "
-                Dear Member, {$ledger_data->ledger_name}, bill for the month of <br>
-                $format_date of <b>Rs $credits</b> has been generated on {$ledger_data->voucher_date}. <br>
-                Total amount to be paid <b>Rs $curr_balance</b> on or before the due date. <br>
-                {$ledger_data->company_name}
+                Dear Member, {$data['ledger_name']}, bill for the month of <br>
+                $formatDate of <b>Rs {$data['credits']}</b> has been generated on {$data['voucher_date']}. <br>
+                Total amount to be paid <b>Rs {$data['curr_balance']}</b> on or before the due date. <br>
+                {$data['company_name']}
             ";
-            $subject = "Bill for the month of $format_date";
+
+            log::info($message);
+            $subject = "Bill for the month of $formatDate";
     
             $postData = [
                 "from" => ["address" => "noreply@irrion.in"],

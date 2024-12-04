@@ -20,7 +20,7 @@
         .org-name {
             text-align: center;
             font-size: 24px;
-            margin:0;
+            margin-bottom:2PX;
         }
 
         .address {
@@ -31,16 +31,16 @@
 
         .details {
             width:100%;
-            margin-top:40px;
+            margin-top: 50px;
         }
 
         .thanks-text {
-            font-size: 20px;
+            font-size: 18px;
             margin: 20px 0;
         }
 
         .amount {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             margin:0;
         }
@@ -57,7 +57,7 @@
         }
         .footer p {
             text-transform:uppercase;
-            font-size:22px;
+            font-size:20px;
         }
 
         .signatures {
@@ -66,12 +66,13 @@
 
         .signatures span {
             padding: 0 10px;
+            font-size: 20px;
         }
 
         .disclaimer {
             font-size: 16px;
             text-align:center;
-            margin:0;
+            margin:2px;
         }
     </style>
 </head>
@@ -84,14 +85,14 @@
         <table class="details">
             <tr>
                 <td>Receipt No.: {{$receipt->voucher_number}}</td>
-                <td>Date: {{$receipt->voucher_date}}</td>
+                <td style="text-align: right;">Date: {{date('d-m-Y', strtotime($receipt->voucher_date))}}</td>
             </tr>
         </table>
         
         <p class="thanks-text">
             RECEIVED with thanks from {{ $receipt->ledger_name }} Flat No. : {{ $receipt->alias1 }}<br>
             the sum of Rupees {{ $curr_balance_words }} Only by Ch. No. : NEFTXX<br>
-            {{ $recipt_ledger_name->ledger_name }} For Month {{ date('F Y', strtotime($receipt->voucher_date)) }}
+            {{ $recipt_ledger_name->ledger_name }} For Month {{ date('F y', strtotime($receipt->voucher_date)) }}
         </p>
         
         <p class="amount">Rs. <b>{{ $receipt->amount }}</b></p>

@@ -14,7 +14,7 @@
 
     .header h1 {
         font-size: 24px;
-        margin-bottom: 5px;
+        margin-bottom: 0px;
         font-weight: bold;
     }
     .header h4 {
@@ -26,6 +26,7 @@
     }
 
     .name-date {
+        margin-top: 50px;
         width: 100%;
     }
 
@@ -60,8 +61,8 @@
     }
 
     .amount-summary {
-        margin-top: 20px;
-        font-size: 14px;
+        margin-top: 10px;
+        font-size: 18px;
         font-weight: normal;
     }
 
@@ -75,15 +76,15 @@
 
     .footer p {
         text-transform: uppercase;
-        margin-top: 30px;
-        font-size: 22px;
+        margin-top: 55px;
+        font-size: 20px;
     }
 
     .footer_s {
-        display: flex;
-        justify-content: flex-end;
-        gap: 100px;
-        margin: 0;
+        margin: 50px 0 0 0;
+    }
+    .footer_s span{
+        padding: 0 10px;
         font-size: 20px;
     }
 
@@ -91,25 +92,25 @@
 </head>
 <body>
 <div class='header'>
-        <h4 style="text-decoration: underline; margin-bottom: 1px;">Bill</h4>
-        <h1>{{ $ledger_data->company_name }}</h1>
-        <h4>{{ $ledger_data->address }}</h4>
+        <span style="text-decoration: underline; margin-bottom: 1px;">Bill</span>
+        <h1 style="margin-bottom: 2px;">{{ $ledger_data->company_name }}</h1>
+        <span>{{ $ledger_data->address }}</span>
         <table class='name-date'>
             <tbody>
                 <tr>
                     <td class='name'>Bill No.: {{($ledger_data->voucher_number)}}</td>
                     <td class='date'>Month: {{ date('F Y', strtotime($ledger_data->voucher_date)) }}</td>
-                    <td class='date'>Date: {{ $ledger_data->voucher_date }}</td>
+                    <td class='date'>Date: {{ date('d-m-Y', strtotime($ledger_data->voucher_date)) }}</td>
                 </tr>
                 <tr>
-                    <td></td>
-                    <td></td>
-                    <td class='due-date'>Due Date: {{ \Carbon\Carbon::parse($ledger_data->voucher_date)->addDays(10)->format('Y-m-d') }}</td>
+                    <td class='name'></td>
+                    <td class='date'></td>
+                    <td class='date'>Due Date: {{ \Carbon\Carbon::parse($ledger_data->voucher_date)->addDays(10)->format('d-m-Y') }}</td>
                 </tr>
                 <tr>
-                    <td><strong>{{ $ledger_data->ledger_name }}</strong></td>
-                    <td></td>
-                    <td><strong>Flat No.: {{($ledger_data->alias1)}}<strong></td>
+                    <td class='name'><strong>{{ $ledger_data->ledger_name }}</strong></td>
+                    <td class='date'></td>
+                    <td class='date'><strong>Flat No.: {{($ledger_data->alias1)}}<strong></td>
                 </tr>
             </tbody>
         </table>
@@ -143,7 +144,7 @@
                 <td>{{ $totalAmount }}</td>
             </tr>
             <tr>
-                <td>Previous Dues</td>
+                <td>Previous Dues:</td>
                 <td>{{ $prev_balance }}</td>
             </tr>
             <tr>
@@ -153,18 +154,22 @@
         </tfoot>
     </table>
     <div class='amount-summary'>
-          <p>{{( $curr_balance_words) }}</p>
-        {{-- <p>{{ str_replace('Minus', '-', $curr_balance_words) }}</p> --}}
-        <p>1. If any discrepancy Found in Bill, Kindly Advice Committee.</p>
-        <p>2. Bill to be Paid by Due Date.</p>
+        <?php 
+            $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+            // $sign = ($curr_balance < 0) ? 'Negative ' : '';
+            $curr_balance_words = ucwords($formatter->format(abs($curr_balance)));
+        ?>
+        <span>Rs {{( $curr_balance_words) }}</span><br>
+        <span>1. If any discrepancy Found in Bill, Kindly Advice Committee.</span><br>
+        <span>2. Bill to be Paid by Due Date.</span>
     </div>
     <div class='footer'>
         <p>For {{$ledger_data->company_name}}</p>
     </div>
-    <div style="text-align: right; margin-top: 100px;">
+    <div style="text-align: right; margin-top: 50px;">
         <p class='footer_s'>
-            <span>Checked By</span>
-            <span>Secretary</span>
+            <span>Checked By &nbsp;&nbsp;</span>
+            <span>Secretary &nbsp;&nbsp;</span>
             <span>Treasurer</span>
         </p>
     </div>

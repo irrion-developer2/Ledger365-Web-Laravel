@@ -20,17 +20,18 @@
         <!--end breadcrumb-->
 
         <div class="card">
-            @if(session('success'))
-                <div class="alert alert-success">
-                    {{ session('success') }}
-                </div>
-            @endif
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
 
-            @if(session('error'))
-                <div class="alert alert-danger">
-                    {{ session('error') }}
-                </div>
-            @endif
+        @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
+
             <div class="card-body">
                 <div class="row justify-content-between">
                     <div class="col-5 mb-3 d-flex">
@@ -84,6 +85,13 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 @include('layouts.includes.datatable-js')
+
+
+    <script>
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
 
     <script>
         $(document).ready(function() {
@@ -152,9 +160,11 @@
                 table.draw();
             });
 
-            $('#send-all-btn').on('click', function () { 
+            $('#send-all-btn').on('click', function () {
                 var companyId = $('#company_id').val();
                 var date = $('#date').val();
+
+                console.log(companyId,date);
 
                 $.ajax({
                     url: "{{ route('send-mutiple-email') }}",
@@ -166,7 +176,6 @@
                     }
                 });
             });
-
         });
 
     </script>

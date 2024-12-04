@@ -191,116 +191,6 @@ class SendMailController extends Controller
         return $pdf->stream('receipt.pdf');
     }
 
-    // public function sendmailtouser (Request $request) {
-   
-    
-    public function sendmailtouser ($send_voucher_id,$send_ledger_id) {
-        // $emailDataArray = [];
-        // $sentEmails = 0;
-        // $responseMessages = [];
-        
-        $voucher_id = $send_voucher_id;
-        $ledger_id = $send_ledger_id;
-
-        $pdfContent = $this->viewPdf($voucher_id,$ledger_id);
-        $pdf = base64_encode($pdfContent);
-
-        $ledger_data = TallyLedger::join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
-                                    ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
-                                    ->join('tally_companies', 'tally_ledgers.company_id', '=', 'tally_companies.company_id')
-                                    ->where('tally_voucher_heads.voucher_id', $voucher_id)
-                                    ->where('tally_voucher_heads.ledger_id',$ledger_id)
-                                    ->select('tally_ledgers.ledger_name',
-                                        'tally_ledgers.ledger_id',
-                                        'tally_ledgers.email',
-                                        'tally_ledgers.opening_balance',
-                                        'tally_voucher_heads.voucher_id',
-                                        'tally_vouchers.voucher_date',
-                                        'tally_companies.company_name')
-                                    ->first();
-        $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
-                                    ->where('entry_type', "credit")
-                                    ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
-                                    ->select('tally_voucher_heads.amount')
-                                    ->sum('tally_voucher_heads.amount');
-
-        $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-                                    ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-                                    ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
-                                    ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
-                                    ->sum('tally_voucher_heads.amount');
-
-        $curr_balance += $ledger_data->opening_balance;
-
-        $format_date = date('F Y', strtotime($ledger_data->voucher_date));
-        $message = "
-            Dear Member, {$ledger_data->ledger_name}, bill for the month of <br>
-            $format_date of <b>Rs $credits</b> has been generated on {$ledger_data->voucher_date}. <br>
-            Total amount to be paid <b>Rs $curr_balance</b> on or before the due date. <br>
-            {$ledger_data->company_name}
-        ";
-        $subject = "bill for the month of $format_date";
-
-        $postData = [
-            "from" => ["address" => "noreply@irrion.in"],
-            "to" => [
-                [
-                    "email_address" => [
-                        "address" => $ledger_data->email
-                    ]
-                ]
-            ],
-            "subject" => $subject,
-            "htmlbody" => $message,
-            "attachments" => [
-                [
-                    "name" => "voucher.pdf",
-                    "content" => $pdf,
-                    "mime_type" => "application/pdf"
-                ]
-            ]
-        ];
-        $jsonPostData = json_encode($postData);
-
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://api.zeptomail.com/v1.1/email",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => $jsonPostData,
-                    CURLOPT_HTTPHEADER => array(
-                        "accept: application/json",
-                        "authorization: Zoho-enczapikey wSsVR60lqUSiXacsmzSuI+04mllSVgnxFU17iQH063CtGvDH8Mc4lRDIU1OgSaceFzVgE2cXp78tnk8FhGFY3osvylgGWiiF9mqRe1U4J3x17qnvhDzNXG1ekBaLLIsAzwpikmJlF88n+g==",
-                        "cache-control: no-cache",
-                        "content-type: application/json",
-                    ),
-                ));
-
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
-
-        curl_close($curl);
-
-        if ($err) {
-            Log::error('cURL Error:', [$err]);
-            return redirect()->back()->with('error', 'Failed to send email: ' . $err);
-        }
-    
-        $responseDecoded = json_decode($response, true);
-    
-        if (isset($responseDecoded['data'])) {
-            return redirect()->route('sendmail')->with('success', 'Mail sent successfully.');
-        } else {
-            $errorMessage = $responseDecoded['message'] ?? 'Unknown error occurred.';
-            return redirect()->back()->with('error', 'Failed to send email: ' . $errorMessage);
-        }
-    }
-
     public function sendwhatsapp ($voucher_id,$ledger_id) {
 
         $response = $this->viewMsg($voucher_id,$ledger_id);
@@ -308,489 +198,160 @@ class SendMailController extends Controller
 
         $voucherDate = date('F Y', strtotime($data['voucher_date']));
         $message = " Dear Member, {$data['ledger_name']}, bill for the month of <br> $voucherDate of <b>Rs {$data['credits']} </b> has been generated on {$data['voucher_date']}. <br> Total amount to be paid: <b>Rs {$data['curr_balance']}</b> on or before the due date.";
+        log::info($message);
 
-        $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-message?token=leQPxk3RaLrgKgUar2yltxsKW9pf6BTTIGTsvUsZLx2S6ezMKoU8XIDpomvgLLV1";
-        // $request = {
-        //     "from_phone_number_id": "{{fromPhoneNumberId}}",
-        //     "phone_number": "{{phoneNumber}}",
-        //     "message_body": "your message body"
-        //     }
-        // };
-        
+        $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-message";
+        $token = "leQPxk3RaLrgKgUar2yltxsKW9pf6BTTIGTsvUsZLx2S6ezMKoU8XIDpomvgLLV1";
+
+        $request = [
+            "from_phone_number_id" => "278340815355079",
+            "phone_number" => "7990614523",
+            "message_body" => $message
+        ];
+        $response = Http::withToken($token)
+                        ->withoutVerifying()
+                        ->post($api_url,$request);
+
+        if ($response->successful()) {
+            return redirect('sendmail')->with('success', "whatsapp message sent successfully.");
+        } else {
+            return redirect('sendmail')->with('error', "Failed to send whatsapp message");
+        }                        
 
     }
 
-    public function SendMutipleEmail (Request $request) {
+    public function sendMails(Request $request, $send_voucher_id = null, $send_ledger_id = null) {
 
-        // test
-
-        $ledger_datas = TallyLedger::
-                    join('tally_ledger_groups','tally_ledgers.ledger_group_id','=','tally_ledger_groups.ledger_group_id')
-                    // ->where('tally_ledgers.parent','tally_ledger_groups.ledger_group_name')
-                    ->whereIn('tally_ledger_groups.parent', ['Sundry Debtors', 'Sundry Creditors'])
-
-                    ->where('tally_ledgers.company_id',$request->company_id)
-                    ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
-                    ->where('tally_voucher_heads.entry_type',"debit")
-                    ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-
-                    ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
-                    // ->where('tally_vouchers.voucher_date',$request->date)
-
-                    ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
-                    ->where('tally_voucher_types.parent',"Bill")
-                    ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')
-                    ->select('tally_ledgers.*',
-                            'tally_voucher_heads.amount',
-                            'tally_voucher_heads.voucher_id',
-                            'tally_vouchers.voucher_date',
-                            'tally_companies.company_name')
-                    ->orderBy('tally_ledgers.ledger_name', 'asc')
-                    ->get();
-
-        foreach($ledger_datas as $ledger_data) {
-
-            $send_voucher_id = $ledger_data->voucher_id;
-            $send_ledger_id = $ledger_data->ledger_id;
-
-            $this->sendmailtouser($send_voucher_id,$send_ledger_id);
-            $email_count++;
+        if ($send_ledger_id && $send_voucher_id) {
+            $ledger_datas = TallyLedger::join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+                ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
+                ->join('tally_companies', 'tally_ledgers.company_id', '=', 'tally_companies.company_id')
+                ->where('tally_voucher_heads.voucher_id', $send_voucher_id)
+                ->where('tally_voucher_heads.ledger_id', $send_ledger_id)
+                ->select(
+                    'tally_ledgers.*',
+                    'tally_voucher_heads.amount',
+                    'tally_voucher_heads.voucher_id',
+                    'tally_vouchers.voucher_date',
+                    'tally_companies.company_name'
+                )
+                ->get();
+        } else {
+            $ledger_datas = TallyLedger::join('tally_ledger_groups', 'tally_ledgers.ledger_group_id', '=', 'tally_ledger_groups.ledger_group_id')
+                ->whereIn('tally_ledger_groups.parent', ['Sundry Debtors', 'Sundry Creditors'])
+                ->where('tally_ledgers.company_id', $request->company_id)
+                ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+                ->where('tally_voucher_heads.entry_type', "debit")
+                ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+                ->whereIn('tally_ledgers.ledger_id', ['2', '3'])
+                // ->where('tally_vouchers.voucher_date',$request->date)
+                ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
+                ->where('tally_voucher_types.parent', "Bill")
+                ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')
+                ->select(
+                    'tally_ledgers.*',
+                    'tally_voucher_heads.amount',
+                    'tally_voucher_heads.voucher_id',
+                    'tally_vouchers.voucher_date',
+                    'tally_companies.company_name'
+                )
+                ->orderBy('tally_ledgers.ledger_name', 'asc')
+                ->get();
         }
-        return redirect()->with('success',"{$email_count} emails have been successfully sent!");
-    }
-
-    // public function sendmailtouser (Request $request) {
-    //     $emailDataArray = [];
-    //     $sentEmails = 0;
-    //     $responseMessages = [];
-
-    //     $htmlContent = "
-    //         <html>
-    //             <head>
-    //                 <style>
-    //                     body {
-    //                         font-family: Arial, sans-serif;
-    //                         margin: 20px;
-    //                     }
-    //                     .header {
-    //                         text-align: center;
-    //                         margin-bottom: 20px;
-    //                     }
-    //                     .header h1 {
-    //                         font-size: 24px;
-    //                         margin: 0;
-    //                         font-weight: bold;
-    //                     }
-    //                     .header p {
-    //                         margin: 5px 0;
-    //                         font-size: 14px;
-    //                     }
-    //                     .name-date{
-    //                         width: 100%;
-    //                     }
-    //                     .name{
-    //                         text-align: left;
-    //                     }
-    //                     .date{
-    //                         text-align: right;
-    //                     }
-    //                     .amount-table {
-    //                         width: 100%;
-    //                         border-collapse: collapse;
-    //                         margin-top: 20px;
-    //                     }
-    //                     .amount-table thead, .amount-table tfoot {
-    //                         border-top: 1px solid #000;
-    //                         border-bottom: 1px solid #000;
-    //                     }
-    //                     .amount-table tr td:first-child, .amount-table tr th:first-child {
-    //                         text-align: left;
-    //                     }
-    //                     .amount-table tr td:last-child, .amount-table tr th:last-child {
-    //                         text-align: right;
-    //                     }
-    //                     .amount-summary {
-    //                         margin-top: 20px;
-    //                         font-size: 14px;
-    //                         font-weight: normal;
-    //                     }
-    //                     .amount-summary p{
-    //                         margin-bottom: 0;
-    //                     }
-    //                     .footer {
-    //                         text-align: right;
-    //                     }
-    //                     .footer p{
-    //                         text-transform: uppercase;
-    //                         margin-top: 30px;
-    //                         font-size: 22px;
-    //                     }
-    //                 </style>
-    //             </head>
-    //             <body>
-    //                 <div class='header'>
-    //                     <h1>{companyName}</h1>
-    //                     <p>Month : {formattedDate}</p>
-    //                     <table class='name-date'>
-    //                         <tbody>
-    //                             <tr>
-    //                                 <td class='name'><strong>{ledgerName}</strong></td>
-    //                                 <td class='date'>{voucherDate}</td>
-    //                             </tr>
-    //                         </tbody>
-    //                     </table>
-    //                 </div>
-    //                 <table class='amount-table'>
-    //                     <thead>
-    //                         <tr>
-    //                             <th>Particular</th>
-    //                             <th>Amount</th>
-    //                         </tr>
-    //                     </thead>
-    //                     <tbody>
-    //                         <tr>
-    //                             <td>Cont. Service Charges</td>
-    //                             <td></td>
-    //                         </tr>
-    //                         <tr>
-    //                             <td>Additional Water Charges</td>
-    //                             <td></td>
-    //                         </tr>
-    //                         <tr>
-    //                             <td>Cont. Sinking Fund</td>
-    //                             <td></td>
-    //                         </tr>
-    //                         <tr>
-    //                             <td>Cont. Bldg. Rep. Fund</td>
-    //                             <td></td>
-    //                         </tr>
-    //                     </tbody>
-    //                     <tfoot>
-    //                         <tr>
-    //                             <td>Total:</td>
-    //                             <td>{amount}</td>
-    //                         </tr>
-    //                         <tr>
-    //                             <td>Previous Dues</td>
-    //                             <td>{previousAmount}</td>
-    //                         </tr>
-    //                         <tr>
-    //                             <td>Grand Total:</td>
-    //                             <td>{totalAmount}</td>
-    //                         </tr>
-    //                     </tfoot>
-    //                 </table>
-    //                 <div class='amount-summary'>
-    //                     <p>1. If any discrepancy Found in Bill, Kindly Advice Committee.</p>
-    //                     <p>2. Bill to be Paid by Due Date.</p>
-    //                 </div>
-    //                 <div class='footer'>
-    //                     <p>from {companyName}</p>
-    //                 </div>
-    //             </body>
-    //         </html>
-    //     ";
-
-    //     if($request->input('company_id') && $request->input('date')) {
-    //         $ledger_datas = TallyLedger::where('tally_ledgers.company_id',$request->input('company_id'))
-    //                                 ->whereIn('tally_ledgers.ledger_group_id', [26, 27])
-    //                                 ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
-    //                                 ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-    //                                 ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')
-    //                                 ->where('tally_vouchers.voucher_date',$request->input('date'))
-    //                                 ->select('tally_ledgers.*','tally_voucher_heads.amount','tally_vouchers.voucher_date','tally_companies.company_name')
-    //                                 ->orderBy('tally_vouchers.voucher_date', 'asc')
-    //                                 ->get();
-    //         foreach($ledger_datas as $ledger_data) {
-    //             $email = $ledger_data->email;
-
-    //             $previous_amount = TallyLedger::where('tally_ledgers.ledger_id',$ledger_data->ledger_id)
-    //                                 ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
-    //                                 ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
-    //                                 ->where('tally_vouchers.voucher_date','<',$ledger_data->voucher_date)
-    //                                 ->sum('tally_voucher_heads.amount');
-
-    //             $total_amount = TallyLedger::where('tally_ledgers.ledger_id',$ledger_data->ledger_id)
-    //                                 ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
-    //                                 ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
-    //                                 ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
-    //                                 ->sum('tally_voucher_heads.amount');
-
-    //             $formattedDate = Carbon::parse($ledger_data->voucher_date)->format('F Y');
-    //             $subject = 'bill for the month of'.$formattedDate;
-
-    //             $content = 'Dear Member, ' . $ledger_data->ledger_name . ', bill for the month of ' . $formattedDate . ' of <b>Rs ' . $ledger_data->amount . '</b> has been generated on ' . $ledger_data->voucher_date . ' with previous due of <b>Rs ' . $previous_amount . '</b>. Total amount to be paid <b>Rs ' . $total_amount . '</b> on or before the due date. ' . $ledger_data->company_name;
-
-    //             $htmlFinalContent = str_replace(
-    //                 ['{subject}', '{formattedDate}', '{voucherDate}', '{ledgerName}', '{amount}', '{previousAmount}', '{totalAmount}', '{companyName}'],
-    //                 [$subject, $formattedDate, $ledger_data->voucher_date, $ledger_data->ledger_name, $ledger_data->amount, $previous_amount, $total_amount, $ledger_data->company_name],
-    //                 $htmlContent
-    //             );
-                
-    //             $pdf = Pdf::loadHTML($htmlFinalContent);
-    //             $pdf_data = base64_encode($pdf->output());
-
-    //             $emailDataArray[] = [
-    //                 "email" => $email,
-    //                 "subject" => $subject,
-    //                 "content" => $content,
-    //                 "pdf" => $pdf_data,
-    //             ];
-    //         }
-    //     } else {
-
-    //         $htmlFinalContent = str_replace(
-    //             ['{subject}', '{formattedDate}', '{voucherDate}', '{ledgerName}', '{amount}', '{previousAmount}', '{totalAmount}', '{companyName}'],
-    //             [
-    //                 $request->input('subject'),
-    //                 $request->input('formattedDate'),
-    //                 $request->input('voucherDate'),
-    //                 $request->input('ledgerName'),
-    //                 $request->input('amount'),
-    //                 $request->input('previous_amount'),
-    //                 $request->input('total_amount'),
-    //                 $request->input('companyName'),
-    //             ],
-    //             $htmlContent
-    //         );
-                
-    //         $pdf = Pdf::loadHTML($htmlFinalContent);
-    //         $pdf_data = base64_encode($pdf->output());
-
-    //         $emailDataArray[] = [
-    //             "email" => $request->input('email'),
-    //             "subject" => $request->input('subject'),
-    //             "content" => $request->input('content'),
-    //             "pdf" => $pdf_data,
-    //         ];
-    //     }
-
-    //     foreach ($emailDataArray as $emailData) {            
-    //         $curl = curl_init();
-    //         $payload = json_encode([
-    //             "from" => [
-    //                 "address" => "noreply@irrion.in"
-    //             ],
-    //             "to" => [
-    //                 ["email_address" => ["address" => $emailData['email']]]
-    //             ],
-    //             "bounce_address" => "noreply@bounce-zem.irrion.in",
-    //             "subject" => $emailData['subject'],
-    //             "htmlbody" => $emailData['content'],
-    //             "attachments" => [[
-    //                 "name" => $emailData['subject'] . ".pdf",
-    //                 "content" => $emailData['pdf'],
-    //                 "mime_type" => "application/pdf"
-    //             ]]
-    //         ]);
     
-    //         curl_setopt_array($curl, [
-    //             CURLOPT_URL => "https://api.zeptomail.com/v1.1/email",
-    //             CURLOPT_RETURNTRANSFER => true,
-    //             CURLOPT_ENCODING => "",
-    //             CURLOPT_MAXREDIRS => 10,
-    //             CURLOPT_TIMEOUT => 30,
-    //             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    //             CURLOPT_CUSTOMREQUEST => "POST",
-    //             CURLOPT_POSTFIELDS => $payload,
-    //             CURLOPT_HTTPHEADER => [
-    //                 "accept: application/json",
-    //                 "authorization: Zoho-enczapikey wSsVR60lqUSiXacsmzSuI+04mllSVgnxFU17iQH063CtGvDH8Mc4lRDIU1OgSaceFzVgE2cXp78tnk8FhGFY3osvylgGWiiF9mqRe1U4J3x17qnvhDzNXG1ekBaLLIsAzwpikmJlF88n+g==",
-    //                 "cache-control: no-cache",
-    //                 "content-type: application/json",
-    //             ],
-    //         ]);
-    
-    //         $response = curl_exec($curl);
-    //         $err = curl_error($curl);
-    
-    //         curl_close($curl);
-    
-    //         if ($err) {
-    //             $responseMessages[] = "Error sending to " . $emailData['email'] . ": cURL Error #: $err";
-    //         } else {
-    //             $response_data = json_decode($response, true);
-    //             if (isset($response_data['data'])) {
-    //                 $sentEmails++;
-    //                 $responseMessages[] = $emailData['email'];
-    //             }
-    //         }
-    //         // if ($err) {
-    //         //     return response()->json([
-    //         //         'status' => 'error',
-    //         //         'message' => "cURL Error #: $err"
-    //         //     ]);
-    //         // } else {
-    //         //     $response_data = json_decode($response, true);
-    //         //     if (!isset($response_data['data'])) {
-    //         //         return response()->json([
-    //         //             'status' => 'error',
-    //         //             'message' => 'Failed to send some emails.',
-    //         //         ]);
-    //         //     }
-    //         // }
-    //     }
-    //     if($sentEmails == 0) {
-    //         return response()->json([
-    //             'status' => 'error',
-    //             'message' => "failed to send mail",
-    //         ]);
-    //     } else {
-    //         return response()->json([
-    //             'status' => 'success',
-    //             'message' => "Email successfully sent to " . implode(', ', $responseMessages),
-    //         ]);
-    //     }
-        
-    //     // return response()->json([
-    //     //     'status' => 'success',
-    //     //     'message' => 'Email(s) sent successfully!',
-    //     // ]);
-    // }
+        if (!$ledger_datas || $ledger_datas->isEmpty()) {
+            return redirect()->back()->with('error', 'No ledger data available to send emails.');
+        }
 
-        // if($request->input('company_id') && $request->input('date')) {
-        //     foreach ($emailDataArray as $emailData) {            
-        //         $curl = curl_init();
-        //         $payload = json_encode([
-        //             "from" => [
-        //                 "address" => "noreply@irrion.in"
-        //             ],
-        //             "to" => [
-        //                 ["email_address" => ["address" => $emailData['email']]]
-        //             ],
-        //             "bounce_address" => "noreply@bounce-zem.irrion.in",
-        //             "subject" => $emailData['subject'],
-        //             "htmlbody" => $emailData['content'],
-        //             "attachments" => [[
-        //                 "name" => $emailData['subject'] . ".pdf",
-        //                 "content" => $emailData['pdf'],
-        //                 "mime_type" => "application/pdf"
-        //             ]]
-        //         ]);
-        
-        //         curl_setopt_array($curl, [
-        //             CURLOPT_URL => "https://api.zeptomail.com/v1.1/email",
-        //             CURLOPT_RETURNTRANSFER => true,
-        //             CURLOPT_ENCODING => "",
-        //             CURLOPT_MAXREDIRS => 10,
-        //             CURLOPT_TIMEOUT => 30,
-        //             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        //             CURLOPT_CUSTOMREQUEST => "POST",
-        //             CURLOPT_POSTFIELDS => $payload,
-        //             CURLOPT_HTTPHEADER => [
-        //                 "accept: application/json",
-        //                 "authorization: Zoho-enczapikey wSsVR60lqUSiXacsmzSuI+04mllSVgnxFU17iQH063CtGvDH8Mc4lRDIU1OgSaceFzVgE2cXp78tnk8FhGFY3osvylgGWiiF9mqRe1U4J3x17qnvhDzNXG1ekBaLLIsAzwpikmJlF88n+g==",
-        //                 "cache-control: no-cache",
-        //                 "content-type: application/json",
-        //             ],
-        //         ]);
-        
-        //         $response = curl_exec($curl);
-        //         $err = curl_error($curl);
-        
-        //         curl_close($curl);
-        
-        //         if ($err) {
-        //             $responseMessages[] = "Error sending to " . $emailData['email'] . ": cURL Error #: $err";
-        //         } else {
-        //             $response_data = json_decode($response, true);
-        //             if (isset($response_data['data'])) {
-        //                 $sentEmails++;
-        //                 $responseMessages[] = $emailData['email'];
-        //             }
-        //         }
-        //     }
-        //     if($sentEmails == 0) {
-        //         return response()->json([
-        //             'status' => 'error',
-        //             'message' => "failed to send mail",
-        //         ]);
-        //     } else {
-        //         return response()->json([
-        //             'status' => 'success',
-        //             'message' => "Email successfully sent to " . implode(', ', $responseMessages),
-        //         ]);
-        //     }
+        $email_count = 0;
+        foreach ($ledger_datas as $ledger_data) {
+            if (empty($ledger_data->email)) {
+                Log::warning("Skipping ledger ID {$ledger_data->ledger_id} due to missing email.");
+                continue;
+            }
+
+            $pdfContent = $this->viewPdf($ledger_data->voucher_id, $ledger_data->ledger_id);
+            if (!$pdfContent) {
+                Log::error("Failed to generate PDF for voucher ID {$ledger_data->voucher_id} and ledger ID {$ledger_data->ledger_id}.");
+                continue;
+            }
+            $pdf = base64_encode($pdfContent);
+
+            $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
+                                    ->where('entry_type', "credit")
+                                    ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
+                                    ->select('tally_voucher_heads.amount')
+                                    ->sum('tally_voucher_heads.amount');
+
+            $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+                                        ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
+                                        ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
+                                        ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
+                                        ->sum('tally_voucher_heads.amount');
+            $curr_balance += $ledger_data->opening_balance;
+
+            $format_date = date('F Y', strtotime($ledger_data->voucher_date));
+            $message = "
+                Dear Member, {$ledger_data->ledger_name}, bill for the month of <br>
+                $format_date of <b>Rs $credits</b> has been generated on {$ledger_data->voucher_date}. <br>
+                Total amount to be paid <b>Rs $curr_balance</b> on or before the due date. <br>
+                {$ledger_data->company_name}
+            ";
+            $subject = "Bill for the month of $format_date";
+    
+            $postData = [
+                "from" => ["address" => "noreply@irrion.in"],
+                "to" => [["email_address" => ["address" => $ledger_data->email]]],
+                "subject" => $subject,
+                "htmlbody" => $message,
+                "attachments" => [["name" => "voucher.pdf", "content" => $pdf, "mime_type" => "application/pdf"]]
+            ];
+    
+            $jsonPostData = json_encode($postData);
+            $curl = curl_init();
+    
+            curl_setopt_array($curl, [
+                CURLOPT_URL => "https://api.zeptomail.com/v1.1/email",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => $jsonPostData,
+                CURLOPT_HTTPHEADER => [
+                    "accept: application/json",
+                    "authorization: Zoho-enczapikey wSsVR60lqUSiXacsmzSuI+04mllSVgnxFU17iQH063CtGvDH8Mc4lRDIU1OgSaceFzVgE2cXp78tnk8FhGFY3osvylgGWiiF9mqRe1U4J3x17qnvhDzNXG1ekBaLLIsAzwpikmJlF88n+g==",
+                    "content-type: application/json",
+                ],
+            ]);
+    
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+            curl_close($curl);
+    
+            if ($err) {
+                Log::error("cURL Error for ledger ID {$ledger_data->ledger_id}: $err");
+                continue; // Skip incrementing email_count for failed requests
+            }
+    
+            $responseDecoded = json_decode($response, true);
+            // if (!isset($responseDecoded['data'])) {
+            //     $errorMessage = $responseDecoded['message'] ?? 'Unknown error occurred.';
+            //     Log::error("ZeptoMail API Error for ledger ID {$ledger_data->ledger_id}: " . $errorMessage);
+            //     continue; // Skip incrementing email_count for failed responses
+            // }
+            if (isset($responseDecoded['data'])) {
+                $email_count++;
+            }
+            Log::info("Successfully sent email for ledger ID {$ledger_data->ledger_id}. Emails sent count: $email_count");
+        }
+    
+        Log::info("Total successfully sent emails: $email_count");
+        return redirect()->back()->with('success', "Total successfully sent emails: $email_count");
+    
+        // if ($email_count > 0) {
+        //     $message = "{$email_count} emails have been successfully sent!";
+        //     return redirect()->back()->with('success', $message);
+        // } else {
+        //     return redirect()->back()->with('error', 'No emails were sent due to errors.');
         // }
-   
-
-    // public function sendmail (Request $request) {
-    //     $curl = curl_init();
-        
-    //     $mail_content = MailContent::first();
-    //     $attachment = $mail_content->attachment;
-    //     $filePaths = explode(",", $attachment);
-
-    //     $attachments = [];
-    //     foreach ($filePaths as $filePath) {
-    //         $fileData = base64_encode(file_get_contents($filePath));
-    //         $fileName = basename($filePath);
-    
-    //         $attachments[] = [
-    //             "name" => $fileName,
-    //             "mime_type" => "application/pdf",
-    //             "content" => $fileData
-    //         ];
-    //     }
-        
-    //     $users = User::all('email');
-    //     foreach($users as $user) {
-    //         $emailData = json_encode([
-    //             "from" => [
-    //                 "address" => $mail_content->email
-    //             ],
-    //             "to" => [
-    //                 ["email_address" => ["address" => $user->email]]
-    //             ],
-    //             "bounce_address" => "noreply@bounce-zem.irrion.in",
-    //             "subject" => "Test Email with Multiple PDF Attachments",
-    //             "htmlbody" => "<div><b>$mail_content->message</b></div>",
-    //             "attachments" => $attachments
-    //         ]);
-            
-    //         curl_setopt_array($curl, array(
-    //             CURLOPT_URL => "https://api.zeptomail.com/v1.1/email",
-    //             CURLOPT_RETURNTRANSFER => true,
-    //             CURLOPT_ENCODING => "",
-    //             CURLOPT_MAXREDIRS => 10,
-    //             CURLOPT_TIMEOUT => 30,
-    //             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    //             CURLOPT_CUSTOMREQUEST => "POST",
-    //             CURLOPT_POSTFIELDS => $emailData,
-    //             CURLOPT_HTTPHEADER => array(
-    //                 "accept: application/json",
-    //                 "authorization: Zoho-enczapikey wSsVR60lqUSiXacsmzSuI+04mllSVgnxFU17iQH063CtGvDH8Mc4lRDIU1OgSaceFzVgE2cXp78tnk8FhGFY3osvylgGWiiF9mqRe1U4J3x17qnvhDzNXG1ekBaLLIsAzwpikmJlF88n+g==",
-    //                 "cache-control: no-cache",
-    //                 "content-type: application/json",
-    //             ),
-    //         ));
-            
-    //         $err = curl_error($curl);
-    //         $response = curl_exec($curl);
-            
-    //         $responseData = json_decode($response, true);
-    //         $mail_log = json_decode($emailData);
-            
-    //         $data = SendMail::create([
-    //             'recipient_email' => $user->email,
-    //             'sender_email' => $mail_log->from->address,
-    //             'subject' => $mail_log->subject,
-    //             'content' => $mail_log->htmlbody,
-    //             'send_status' => $responseData['message'],
-    //             'note' => $err ? $err : $response,
-    //             'error_message' => $err,
-    //             'has_attachment' => $attachment,
-    //         ]);
-    //         $allMailData[] = $data;
-    //     }
-    //     curl_close($curl);
-
-    //     if ($err) {
-    //         return response()->json(['error' => "cURL Error #: $err"], 500);
-    //     } else {
-    //         // return response()->json($responseData);
-    //         return response()->json($allMailData);
-    //     }
-    // }
+    }
 
 }

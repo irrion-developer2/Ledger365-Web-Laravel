@@ -34,4 +34,4 @@ Command to check collation of database:
 * git fetch origin
 * git merge origin/main
 * git add .
-* git commit
+* git commit - m "Commit message"

@@ -8,12 +8,13 @@
 </head>
 <body>
 
-    <a href="#" 
-        data-voucher-id="{{ $ledger_data->voucher_id }}" 
-        data-ledger-id="{{ $ledger_data->ledger_id }}" 
+    <a data-target="#viewModal"
+        data-voucher-id="{{ $ledger_data->voucher_id }}"
+        data-ledger-id="{{ $ledger_data->ledger_id }}"
         class="btn btn-info btn-sm view-btn ms-2">
         Message
     </a>
+
     <div class="modal fade" id="viewModal" tabindex="-1" role="dialog" aria-labelledby="viewModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -48,6 +49,7 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
     <script>
         $(document).on('click', '.view-btn', function() {
             $('#viewModal').modal('show');
@@ -68,8 +70,7 @@
         //     `);
         // });
 
-        $(document).on('click', '.view-btn', function (e) {
-            e.preventDefault();
+        $(document).on('click', '.view-btn', function () {
             const voucherId = $(this).data('voucher-id');
             const ledgerId = $(this).data('ledger-id');
             const url = `/msg/${voucherId}/${ledgerId}`;
@@ -78,14 +79,11 @@
                 url: url,
                 method: 'GET',
                 success: function (response) {
-                    const voucherDate = new Date(response.voucher_date).toLocaleString('default', { month: 'long', year: 'numeric' });
-                    const messageContent = `
+                    $('#viewModal .modal-body').html(`
                         <p>
-                            Dear Member, ${response.ledger_name}, bill for the month of <br> ${voucherDate} of <b>Rs ${response.credits}</b> has been generated on ${response.voucher_date}. <br> Total amount to be paid: <b>Rs ${response.curr_balance}</b> on or before the due date.
+                            Dear Member, ${response.ledger_name}, bill for the month of <br> ${new Date(response.voucher_date).toLocaleString('default', { month: 'long', year: 'numeric' })} of <b>Rs ${response.credits}</b> has been generated on ${response.voucher_date}. <br> Total amount to be paid: <b>Rs ${response.curr_balance}</b> on or before the due date.
                         </p>
-                    `;
-                    $('#viewModal .modal-body').html(messageContent);
-                    $('#viewModal').modal('show');
+                    `);
                 },
                 error: function () {
                     alert('Failed to fetch data. Please try again.');

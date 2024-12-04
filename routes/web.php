@@ -224,9 +224,11 @@ Route::middleware([
         // Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
 
         Route::get('sendmail', [SendMailController::class, 'sendmail'])->name('sendmail');
-        Route::get('send-email/{send_voucher_id}/{send_ledger_id}', [SendMailController::class, 'sendmailtouser'])->name('send-email');
+        
         Route::get('send-whatsapp/{voucher_id}/{ledger_id}', [SendMailController::class, 'sendwhatsapp'])->name('send-whatsapp');
-        Route::get('send-mutiple-email', [SendMailController::class, 'SendMutipleEmail'])->name('send-mutiple-email');
+
+        Route::get('send-email/{send_voucher_id}/{send_ledger_id}', [SendMailController::class, 'sendMails'])->name('send-email');
+        Route::get('send-mutiple-email', [SendMailController::class, 'sendMails'])->name('send-mutiple-email');
 
         Route::get('pdf/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewPdf'])->name('view-pdf');
         Route::get('msg/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewMsg'])->name('view-msg');

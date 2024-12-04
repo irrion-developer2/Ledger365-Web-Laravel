@@ -12,7 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Yajra\DataTables\Facades\DataTables;
 use Barryvdh\DomPDF\Facade;
 
-
+use App\Models\EmailLog;
 use App\Models\TallyCompany;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
@@ -272,22 +272,20 @@ class SendMailController extends Controller
                 Log::error("Failed to generate PDF for voucher ID {$ledger_data->voucher_id} and ledger ID {$ledger_data->ledger_id}.");
                 continue;
             }
+             // Save PDF to project folder
+            $folderPath = storage_path('app/public/vouchers'); // Define folder path
+            if (!file_exists($folderPath)) {
+                mkdir($folderPath, 0777, true); 
+            }
+            $fileName = "voucher_{$ledger_data->voucher_id}_{$ledger_data->ledger_id}.pdf";
+            $filePath = $folderPath . '/' . $fileName;
+
+            file_put_contents($filePath, $pdfContent); 
+            log::info($fileName);
+            log::info($filePath);
             $pdf = base64_encode($pdfContent);
 
-            // $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
-            //                         ->where('entry_type', "credit")
-            //                         ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
-            //                         ->select('tally_voucher_heads.amount')
-            //                         ->sum('tally_voucher_heads.amount');
-
-            // $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-            //                             ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-            //                             ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
-            //                             ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
-            //                             ->sum('tally_voucher_heads.amount');
-            // $curr_balance += $ledger_data->opening_balance;
-
-            $responsem = $this->viewMsg($send_voucher_id,$send_ledger_id);
+            $responsem = $this->viewMsg($ledger_data->voucher_id,$ledger_data->ledger_id);
             $data = json_decode($responsem->getContent(), true);
 
             $formatDate = date('F Y', strtotime($data['voucher_date']));
@@ -298,7 +296,7 @@ class SendMailController extends Controller
                 {$data['company_name']}
             ";
 
-            log::info($message);
+            // log::info($message);
             $subject = "Bill for the month of $formatDate";
     
             $postData = [
@@ -330,7 +328,7 @@ class SendMailController extends Controller
     
             if ($err) {
                 Log::error("cURL Error for ledger ID {$ledger_data->ledger_id}: $err");
-                continue; // Skip incrementing email_count for failed requests
+                continue; 
             }
     
             $responseDecoded = json_decode($response, true);
@@ -354,6 +352,7 @@ class SendMailController extends Controller
         // } else {
         //     return redirect()->back()->with('error', 'No emails were sent due to errors.');
         // }
+
     }
 
 }

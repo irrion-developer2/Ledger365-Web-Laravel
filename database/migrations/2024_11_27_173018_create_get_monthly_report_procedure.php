@@ -31,6 +31,7 @@ return new class extends Migration
 
                 SELECT
                     c.company_name AS `company_name`,
+                    c.company_id,
                     MONTHNAME(tv.voucher_date) AS `month_name`,
                     YEAR(tv.voucher_date) AS `year`,
                     MONTH(tv.voucher_date) AS `month`,
@@ -76,6 +77,7 @@ return new class extends Migration
                     AND (tv.is_cancelled IS NULL OR tv.is_cancelled = FALSE)
                 GROUP BY
                     c.company_name,
+                    c.company_id,
                     YEAR(tv.voucher_date),
                     MONTH(tv.voucher_date),
                     MONTHNAME(tv.voucher_date)

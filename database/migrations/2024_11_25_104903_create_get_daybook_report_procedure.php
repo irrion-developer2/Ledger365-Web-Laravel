@@ -64,7 +64,6 @@ return new class extends Migration
                     v.is_optional = p_is_optional
                     AND v.is_cancelled = p_is_cancelled
                     AND FIND_IN_SET(l.company_id, p_company_ids)
-                    AND vh.is_party_ledger = 1
                     AND (p_start_date IS NULL OR v.voucher_date >= p_start_date)
                     AND (p_end_date IS NULL OR v.voucher_date <= p_end_date)
                     AND (

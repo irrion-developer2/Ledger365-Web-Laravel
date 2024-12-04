@@ -32,66 +32,86 @@ class StockItemController extends Controller
         return View ('app.stock-items.index');
     }
 
+    // public function getData(Request $request)
+    // {
+    //     $companyIds = $this->reportService->companyData();
+
+    //     if ($request->ajax()) {
+    //         $startTime = microtime(true);
+      
+
+    //         $stockItems = TallyItem::whereIn('company_id', $companyIds)
+    //             ->select('item_id', 'item_guid', 'item_name', 'alias1', 'parent', 'category','opening_balance', 'opening_value', 'company_id');
+
+
+    //         Log::info("stockItems Query");        
+    //         Log::info($this->reportService->getFinalQuery($stockItems));
+
+    //         $endTime1 = microtime(true);
+    //         $executionTime1 = $endTime1 - $startTime;
+
+    //         Log::info('Total first db request execution time for StockItemController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
+
+    //         $dataTable = DataTables::of($stockItems)
+    //             ->addIndexColumn()
+    //             ->make(true);
+
+    //             $endTime = microtime(true);
+    //             $executionTime = $endTime - $startTime;
+
+    //             Log::info('Total end execution time for StockItemController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
+
+    //             return $dataTable;
+    //     }
+    // }
+
     public function getData(Request $request)
     {
         $companyIds = $this->reportService->companyData();
 
+        if (empty($companyIds)) {
+            return DataTables::of([])->make(true);
+        }
+
         if ($request->ajax()) {
             $startTime = microtime(true);
-      
 
-            $stockItems = TallyItem::whereIn('company_id', $companyIds)
-                ->select('item_id', 'item_guid', 'item_name', 'alias1', 'parent', 'category','opening_balance', 'opening_value', 'company_id');
+            $companyIdsList = implode(',', $companyIds);
 
+            $sql = "CALL get_stock_item_procedure(?)";
 
-            Log::info("stockItems Query");        
-            Log::info($this->reportService->getFinalQuery($stockItems));
+            Log::info("Calling Stored Procedure", [
+                'sql' => $sql,
+                'params' => [
+                    'company_ids' => $companyIdsList
+                ]
+            ]);
+
+            try {
+                $stockItems = DB::select($sql, [
+                    $companyIdsList
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error executing stored procedure get_stock_item_procedure:', ['error' => $e->getMessage()]);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
+            }
 
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
-
             Log::info('Total first db request execution time for StockItemController.getDATA:', ['time_taken' => $executionTime1 . ' seconds']);
 
             $dataTable = DataTables::of($stockItems)
                 ->addIndexColumn()
-                // ->addColumn('stockonhand_opening_balance', function ($entry) {
-                //     $openingBalance = $entry->opening_balance;
-
-                //     $stockItemVoucherSaleBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
-                //     ->whereHas('tallyVoucher', function ($query) {
-                //         $query->where('voucher_type', 'Sales');
-                //     })->sum('billed_qty');
-        
-                //     $stockItemVoucherPurchaseBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
-                //         ->whereHas('tallyVoucher', function ($query) {
-                //             $query->where('voucher_type', 'Purchase');
-                //         })->sum('billed_qty');
-                //     $stockItemVoucherCreditNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
-                //         ->whereHas('tallyVoucher', function ($query) {
-                //             $query->where('voucher_type', 'Credit Note');
-                //         })->sum('billed_qty');
-            
-                //     $stockItemVoucherDebitNoteBalance = TallyVoucherItem::where('stock_item_guid', $entry->guid)
-                //         ->whereHas('tallyVoucher', function ($query) {
-                //             $query->where('voucher_type', 'Debit Note');
-                //         })->sum('billed_qty');
-
-                //     $stockItemVoucherBalance = ($stockItemVoucherSaleBalance - $stockItemVoucherCreditNoteBalance) - ($stockItemVoucherPurchaseBalance - $stockItemVoucherDebitNoteBalance);
-
-
-                //     $stockOnHandBalance = $openingBalance - $stockItemVoucherBalance;
-
-                //     return $stockOnHandBalance;
-                // })
                 ->make(true);
 
-                $endTime = microtime(true);
-                $executionTime = $endTime - $startTime;
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for StockItemController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
 
-                Log::info('Total end execution time for StockItemController.getDATA:', ['time_taken' => $executionTime . ' seconds']);
-
-                return $dataTable;
+            return $dataTable;
         }
+
+        return response()->json(['message' => 'Invalid request.'], 400);
     }
 
 

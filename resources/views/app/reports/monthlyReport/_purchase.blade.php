@@ -67,7 +67,6 @@
                                 <tr>
                                     <th>Company_name</th>
                                     <th>Month</th>
-                                    <th>Year</th>
                                     <th>Total Amount</th>
                                 </tr>
                             </thead>
@@ -76,7 +75,6 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -210,8 +208,19 @@
             },
             columns: [
                 {data: 'company_name', name: 'company_name', render: data => data || '-'},
-                {data: 'month_name', name: 'month_name', render: data => data || '-'},
-                {data: 'year', name: 'year', render: data => data || '-'},
+                {
+                    data: null,
+                    name: 'month_year',
+                    render: function (data, type, row) {
+                        const month = row.month_name || '-';
+                        const year = row.year || '-';
+                        if (month !== '-' && year !== '-') {
+                            const url = `/purchase-month/${row.company_id}/${year}/${row.month}`;
+                            return `<a href="${url}">${month} ${year}</a>`;
+                        }
+                        return `${month} ${year}`;
+                    }
+                },
                 {data: 'total_amount', name: 'total_amount', className: 'text-end', render: data => data || '-'},
             ],
      

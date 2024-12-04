@@ -132,6 +132,120 @@ class MonthlyReportController extends Controller
         return response()->json(['message' => 'Invalid request.'], 400);
     }
 
+    public function showMonthlySaleDetail($company_id, $year, $month)
+    {
+        if (!is_numeric($company_id) || !checkdate($month, 1, $year)) {
+            return redirect()->back()->with('error', 'Invalid parameters provided.');
+        }
+    
+        $startDate = sprintf('%04d-%02d-01', $year, $month);
+        $endDate = date("Y-m-t", strtotime($startDate));
+    
+        $voucherTypeName = 'Sales';
+        $entryType = 'credit';
+    
+        $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
+        $entryType = ($entryType && strtolower($entryType) !== 'null' && trim($entryType) !== '') ? $entryType : null;
+    
+        $sql = "CALL get_MonthlyDetailReport_data(?, ?, ?, ?, ?)";
+    
+        Log::info("Calling Stored Procedure get_MonthlyDetailReport_data for detailed view", [
+            'sql' => $sql,
+            'params' => [
+                'p_voucher_type_name' => $voucherTypeName,
+                'company_ids' => $company_id,
+                'p_start_date' => $startDate,
+                'p_end_date' => $endDate,
+                'p_entry_types' => $entryType,
+            ]
+        ]);
+    
+        try {
+            $monthlyDetail = DB::select($sql, [ 
+                $voucherTypeName,
+                $company_id,
+                $startDate,
+                $endDate,
+                $entryType,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error executing stored procedure get_MonthlyDetailReport_data for detailed view:', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'Failed to retrieve detailed data.');
+        }
+
+        $company = DB::table('tally_companies')->where('company_id', $company_id)->first();
+    
+        return view('app.reports.monthlyReport._monthly_details', [
+            'monthlyDetail' => $monthlyDetail,
+            'company' => $company,
+            'year' => $year,
+            'month' => $month,
+            'voucherTypeName' => $voucherTypeName,
+        ]);
+    }
+    
+    public function showMonthlyPurchaseDetail($company_id, $year, $month)
+    {
+        if (!is_numeric($company_id) || !checkdate($month, 1, $year)) {
+            return redirect()->back()->with('error', 'Invalid parameters provided.');
+        }
+    
+        $startDate = sprintf('%04d-%02d-01', $year, $month);
+        $endDate = date("Y-m-t", strtotime($startDate));
+    
+        $voucherTypeName = 'Purchase';
+        $entryType = 'debit';
+    
+        $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
+        $entryType = ($entryType && strtolower($entryType) !== 'null' && trim($entryType) !== '') ? $entryType : null;
+    
+        $sql = "CALL get_MonthlyDetailReport_data(?, ?, ?, ?, ?)";
+    
+        Log::info("Calling Stored Procedure get_MonthlyDetailReport_data for detailed view", [
+            'sql' => $sql,
+            'params' => [
+                'p_voucher_type_name' => $voucherTypeName,
+                'company_ids' => $company_id,
+                'p_start_date' => $startDate,
+                'p_end_date' => $endDate,
+                'p_entry_types' => $entryType,
+            ]
+        ]);
+    
+        try {
+            $monthlyDetail = DB::select($sql, [ 
+                $voucherTypeName,
+                $company_id,
+                $startDate,
+                $endDate,
+                $entryType,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error executing stored procedure get_MonthlyDetailReport_data for detailed view:', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'Failed to retrieve detailed data.');
+        }
+
+        $company = DB::table('tally_companies')->where('company_id', $company_id)->first();
+    
+        return view('app.reports.monthlyReport._monthly_details', [
+            'monthlyDetail' => $monthlyDetail,
+            'company' => $company,
+            'year' => $year,
+            'month' => $month,
+            'voucherTypeName' => $voucherTypeName,
+        ]);
+    }
+
     public function PurchaseIndex()
     {
         return view ('app.reports.monthlyReport._purchase');

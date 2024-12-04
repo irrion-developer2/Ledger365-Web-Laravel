@@ -1328,18 +1328,10 @@ class LedgerController extends Controller
                 'hsn_item_source' => $inventoryEntry['HSNITEMSOURCE'] ?? null,
                 'gst_rate_infer_applicability' => $inventoryEntry['GSTRATEINFERAPPLICABILITY'] ?? null,
                 'gst_hsn_infer_applicability' => $inventoryEntry['GSTHSNINFERAPPLICABILITY'] ?? null,
-                'rate' => isset($data['RATE'])
-                    ? (is_numeric($cleanedRate = preg_replace('/[^0-9.-]/', '', $data['RATE']))
-                        ? (float)$cleanedRate
-                        : 0)
-                    : 0,
+                'rate' => $rate,
                 'billed_qty' => $billed_qty ?? 0,
                 'actual_qty' => $actual_qty ?? 0,
-                'amount' => isset($data['AMOUNT'])
-                    ? (is_numeric($cleanedAmount = preg_replace('/[^0-9.-]/', '', $data['AMOUNT']))
-                        ? (float)$cleanedAmount
-                        : 0)
-                    : 0,
+                'amount' => $inventoryEntry['AMOUNT'] ?? 0,
                 'discount' => $inventoryEntry['DISCOUNT'] ?? 0,
                 'igst_rate' => $igstRate,
                 'gst_hsn_name' => $inventoryEntry['GSTHSNNAME'] ?? null,

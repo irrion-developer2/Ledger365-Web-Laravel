@@ -28,3 +28,10 @@ Command to check collation of database:
 * SHOW VARIABLES LIKE 'collation%';
 * SET collation_server = 'utf8mb4_unicode_ci';
 * SELECT VERSION();
+
+**Commands to pull and merge changes from main branch**
+* git checkout ledger-365
+* git fetch origin
+* git merge origin/main
+* git add .
+* git commit

@@ -197,13 +197,38 @@ class SendMailController extends Controller
         $message = " Dear Member, {$data['ledger_name']}, bill for the month of <br> $voucherDate of <b>Rs {$data['credits']} </b> has been generated on {$data['voucher_date']}. <br> Total amount to be paid: <b>Rs {$data['curr_balance']}</b> on or before the due date.";
         log::info($message);
 
-        $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-message";
+        // Generate the PDF content
+        $pdfContent = $this->viewPdf($voucher_id, $ledger_id);
+        $uploadPath = public_path('uploads');
+        $fileName = "voucher_{$voucher_id}_{$ledger_id}.pdf";
+        if (!file_exists($uploadPath)) {
+            mkdir($uploadPath, 0755, true);
+        }
+        file_put_contents($uploadPath . '/' . $fileName, $pdfContent);
+        $fileUrl = url('uploads/' . $fileName);
+        Log::info($fileUrl);
+
+        $phone_num = TallyLedger::where('ledger_id',$ledger_id)->first('phone_number');
+        log::info($phone_num->phone_number);
+
+        // $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-message";
+        $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-template-message";
         $token = "leQPxk3RaLrgKgUar2yltxsKW9pf6BTTIGTsvUsZLx2S6ezMKoU8XIDpomvgLLV1";
 
+        // $request = [
+        //     "from_phone_number_id" => "278340815355079",
+        //     "phone_number" => $phone_num->phone_number,
+        //     "message_body" => $message
+        // ];
         $request = [
             "from_phone_number_id" => "278340815355079",
-            "phone_number" => "7990614523",
-            "message_body" => $message
+            "phone_number" => $phone_num->phone_number,
+            "template_name" => "ledger365demo",
+            "template_language" => "en",
+            "header_document" => "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+            "header_document_name" => $fileName,
+            "field_1" => $data['curr_balance'],
+            "message_body" => $message,
         ];
         $response = Http::withToken($token)
                         ->withoutVerifying()

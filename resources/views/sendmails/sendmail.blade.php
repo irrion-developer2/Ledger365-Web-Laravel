@@ -59,6 +59,7 @@
                                 <th>{{ __('Name') }}</th>
                                 <th>{{ __('Voucher ID') }}</th>
                                 <th>{{ __('Email') }}</th>
+                                <th>{{ __('Phone Num') }}</th>
                                 <th>{{ __('Amount') }}</th>
                                 <th>{{ __('Voucher Date') }}</th>
                                 <th>{{ __('Company Name') }}</th>
@@ -111,6 +112,7 @@
                     { data: 'ledger_name', name: 'ledger_name' },
                     { data: 'voucher_id', name: 'voucher_id' },
                     { data: 'email', name: 'email' },
+                    { data: 'phone_number', name: 'phone_number' },
                     { data: 'amount', name: 'amount' },
                     { data: 'voucher_date', name: 'voucher_date' },
                     { data: 'company_name', name: 'company_name' },

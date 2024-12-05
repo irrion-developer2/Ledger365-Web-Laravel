@@ -273,16 +273,14 @@ class SendMailController extends Controller
                 continue;
             }
              // Save PDF to project folder
-            $folderPath = storage_path('app/public/vouchers'); // Define folder path
-            if (!file_exists($folderPath)) {
-                mkdir($folderPath, 0777, true); 
+             $uploadpath = public_path('uploads');
+             if (!file_exists($uploadpath)) {
+                mkdir($uploadpath, 0777, true); 
             }
-            $fileName = "voucher_{$ledger_data->voucher_id}_{$ledger_data->ledger_id}.pdf";
-            $filePath = $folderPath . '/' . $fileName;
+             $fileName = "voucher_{$ledger_data->voucher_id}_{$ledger_data->ledger_id}.pdf"; 
+             file_put_contents($uploadpath .'/'. $fileName,$pdfContent); 
+             $file_url= url('uploads/' . $fileName);
 
-            file_put_contents($filePath, $pdfContent); 
-            log::info($fileName);
-            log::info($filePath);
             $pdf = base64_encode($pdfContent);
 
             $responsem = $this->viewMsg($ledger_data->voucher_id,$ledger_data->ledger_id);
@@ -339,6 +337,14 @@ class SendMailController extends Controller
             // }
             if (isset($responseDecoded['data'])) {
                 $email_count++;
+                EmailLog::create([
+                    'company_id' => $ledger_data->company_id,
+                    'ledger_id' => $ledger_data->ledger_id,
+                    'email' => $ledger_data->email,
+                    'message' => $message,
+                    'pdf_path' => $file_url,
+                    'json_response' => json_encode($response),
+                ]);
             }
             Log::info("Successfully sent email for ledger ID {$ledger_data->ledger_id}. Emails sent count: $email_count");
         }

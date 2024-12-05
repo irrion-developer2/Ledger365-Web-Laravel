@@ -128,9 +128,9 @@
                 },
                 { data: 'voucher_type_name', name: 'voucher_type_name', className: 'text-center' },
                 { data: 'voucher_number', name: 'voucher_number', className: 'text-center',
-                    render: function(data, type, row) {
+                    {{--  render: function(data, type, row) {
                         return '<a href="{{ url('reports/VoucherItem') }}/' + row.voucher_id + '">' + data + '</a>';
-                    }
+                    }  --}}
                 },
                 { data: 'debit', name: 'debit', className: 'text-end' },
                 { data: 'credit', name: 'credit', className: 'text-end' },

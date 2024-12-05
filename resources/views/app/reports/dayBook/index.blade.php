@@ -234,7 +234,12 @@
             },
             columns: [
                 {data: 'voucher_date', name: 'voucher_date'},
-                {data: 'ledger_name', name: 'ledger_name'},
+                {data: 'ledger_name', name: 'ledger_name',  
+                    render: function(data, type, row) {
+                    let url = '{{ route("customers.show", ":guid") }}';
+                    url = url.replace(':guid', row.ledger_guid);
+                    return `<a href="${url}" style="color: #337ab7;">${data}</a>`;
+                }},
                 {data: 'company_name', name: 'company_name'},
                 {data: 'voucher_type_name', name: 'voucher_type_name'},
                 {data: 'voucher_number', name: 'voucher_number'},

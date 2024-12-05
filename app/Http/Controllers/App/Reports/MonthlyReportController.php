@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\App\Reports;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Services\ReportService;
 use Illuminate\Support\Facades\DB;
@@ -118,6 +119,9 @@ class MonthlyReportController extends Controller
 
             $dataTable = DataTables::of($monthlyReport)
                 ->addIndexColumn()
+                ->addColumn('total_amount', function ($data) {
+                    return indian_format($data->total_amount);
+                })
                 ->make(true);
 
             $endTime = microtime(true);
@@ -130,120 +134,6 @@ class MonthlyReportController extends Controller
         }
 
         return response()->json(['message' => 'Invalid request.'], 400);
-    }
-
-    public function showMonthlySaleDetail($company_id, $year, $month)
-    {
-        if (!is_numeric($company_id) || !checkdate($month, 1, $year)) {
-            return redirect()->back()->with('error', 'Invalid parameters provided.');
-        }
-    
-        $startDate = sprintf('%04d-%02d-01', $year, $month);
-        $endDate = date("Y-m-t", strtotime($startDate));
-    
-        $voucherTypeName = 'Sales';
-        $entryType = 'credit';
-    
-        $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
-        $entryType = ($entryType && strtolower($entryType) !== 'null' && trim($entryType) !== '') ? $entryType : null;
-    
-        $sql = "CALL get_MonthlyDetailReport_data(?, ?, ?, ?, ?)";
-    
-        Log::info("Calling Stored Procedure get_MonthlyDetailReport_data for detailed view", [
-            'sql' => $sql,
-            'params' => [
-                'p_voucher_type_name' => $voucherTypeName,
-                'company_ids' => $company_id,
-                'p_start_date' => $startDate,
-                'p_end_date' => $endDate,
-                'p_entry_types' => $entryType,
-            ]
-        ]);
-    
-        try {
-            $monthlyDetail = DB::select($sql, [ 
-                $voucherTypeName,
-                $company_id,
-                $startDate,
-                $endDate,
-                $entryType,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error executing stored procedure get_MonthlyDetailReport_data for detailed view:', [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return redirect()->back()->with('error', 'Failed to retrieve detailed data.');
-        }
-
-        $company = DB::table('tally_companies')->where('company_id', $company_id)->first();
-    
-        return view('app.reports.monthlyReport._monthly_details', [
-            'monthlyDetail' => $monthlyDetail,
-            'company' => $company,
-            'year' => $year,
-            'month' => $month,
-            'voucherTypeName' => $voucherTypeName,
-        ]);
-    }
-    
-    public function showMonthlyPurchaseDetail($company_id, $year, $month)
-    {
-        if (!is_numeric($company_id) || !checkdate($month, 1, $year)) {
-            return redirect()->back()->with('error', 'Invalid parameters provided.');
-        }
-    
-        $startDate = sprintf('%04d-%02d-01', $year, $month);
-        $endDate = date("Y-m-t", strtotime($startDate));
-    
-        $voucherTypeName = 'Purchase';
-        $entryType = 'debit';
-    
-        $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
-        $entryType = ($entryType && strtolower($entryType) !== 'null' && trim($entryType) !== '') ? $entryType : null;
-    
-        $sql = "CALL get_MonthlyDetailReport_data(?, ?, ?, ?, ?)";
-    
-        Log::info("Calling Stored Procedure get_MonthlyDetailReport_data for detailed view", [
-            'sql' => $sql,
-            'params' => [
-                'p_voucher_type_name' => $voucherTypeName,
-                'company_ids' => $company_id,
-                'p_start_date' => $startDate,
-                'p_end_date' => $endDate,
-                'p_entry_types' => $entryType,
-            ]
-        ]);
-    
-        try {
-            $monthlyDetail = DB::select($sql, [ 
-                $voucherTypeName,
-                $company_id,
-                $startDate,
-                $endDate,
-                $entryType,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error executing stored procedure get_MonthlyDetailReport_data for detailed view:', [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return redirect()->back()->with('error', 'Failed to retrieve detailed data.');
-        }
-
-        $company = DB::table('tally_companies')->where('company_id', $company_id)->first();
-    
-        return view('app.reports.monthlyReport._monthly_details', [
-            'monthlyDetail' => $monthlyDetail,
-            'company' => $company,
-            'year' => $year,
-            'month' => $month,
-            'voucherTypeName' => $voucherTypeName,
-        ]);
     }
 
     public function PurchaseIndex()
@@ -346,11 +236,157 @@ class MonthlyReportController extends Controller
 
             $dataTable = DataTables::of($monthlyReport)
                 ->addIndexColumn()
+                ->addColumn('total_amount', function ($data) {
+                    return indian_format($data->total_amount);
+                })
                 ->make(true);
 
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
             Log::info('Total end execution time for MonthlyReportController.getPurchaseData:', [
+                'time_taken' => $executionTime . ' seconds'
+            ]);
+
+            return $dataTable;
+        }
+
+        return response()->json(['message' => 'Invalid request.'], 400);
+    }
+
+    public function showMonthlyDetail(Request $request)
+    {
+        $voucherTypeName = $request->input('voucher_type_name');
+        $month = $request->input('month');
+        $year = $request->input('year');
+
+        if (!$voucherTypeName || !$month || !$year) {
+            return redirect()->back()->with('error', 'Invalid parameters provided.');
+        }
+
+        return view('app.reports.monthlyReport._monthly_details', [
+            'year' => $year,
+            'month' => $month,
+            'voucherTypeName' => $voucherTypeName,
+        ]);
+    }
+
+    public function getDataMonthlyDetail(Request $request)
+    {
+        $companyIds = $this->reportService->companyData();
+
+        if (empty($companyIds)) {
+            return DataTables::of([])->make(true);
+        }
+
+        if ($request->ajax()) {
+            $startTime = microtime(true);
+
+            $isCancelled = $request->get('is_cancelled', 0);
+            $isOptional = $request->get('is_optional', 0);
+            $voucherTypeName = $request->get('voucher_type_name');
+            $month = $request->get('month');
+            $year = $request->get('year');
+            
+            $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
+
+            $startDate = null;
+            $endDate = null;
+    
+            if (is_numeric($month)) {
+                $month = (int)$month;
+            } else {
+                try {
+                    $month = Carbon::createFromFormat('F', ucfirst(strtolower($month)))->month;
+                } catch (\Exception $e) {
+                    Log::error('Invalid month name provided:', [
+                        'month' => $month,
+                        'error' => $e->getMessage(),
+                    ]);
+                    return response()->json(['error' => 'Invalid month provided.'], 400);
+                }
+            }
+    
+            if (is_numeric($year)) {
+                $year = (int)$year;
+            } else {
+                $year = (int)trim($year);
+            }
+    
+            if (!$month || !$year || !checkdate($month, 1, $year)) {
+                Log::error('Invalid month or year provided:', [
+                    'month' => $month,
+                    'year' => $year,
+                ]);
+                return response()->json(['error' => 'Invalid month or year provided.'], 400);
+            }
+    
+            try {
+                $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
+                $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+            } catch (\Exception $e) {
+                Log::error('Error creating dates from month and year:', [
+                    'month' => $month,
+                    'year' => $year,
+                    'error' => $e->getMessage(),
+                ]);
+                return response()->json(['error' => 'Failed to process the provided month and year.'], 500);
+            }
+
+            $companyIdsList = implode(',', $companyIds);
+
+            $sql = "CALL get_daybook_data(?, ?, ?, ?, ?, ?)";
+
+
+            Log::info("Calling Stored Procedure get_daybook_data", [
+                'sql' => $sql,
+                'params' => [
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'is_cancelled' => $isCancelled,
+                    'is_optional' => $isOptional,
+                    'voucher_type_name' => $voucherTypeName,
+                ]
+            ]);
+
+            try {
+                $dayBook = DB::select($sql, [ 
+                    $companyIdsList,
+                    $startDate,
+                    $endDate,
+                    $isCancelled,
+                    $isOptional,
+                    $voucherTypeName,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error executing stored procedure get_daybook_data:', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
+            }
+
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first DB request execution time for MonthlyReportController.getDataMonthlyDetail:', [
+                'time_taken' => $executionTime1 . ' seconds'
+            ]);
+
+            $dataTable = DataTables::of($dayBook)
+                ->addIndexColumn()
+                ->addColumn('credit', function ($data) {
+                    return indian_format(abs($data->total_credit));
+                })
+                ->addColumn('debit', function ($data) {
+                    return indian_format(abs($data->total_debit));
+                })
+                ->make(true);
+
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for MonthlyReportController.getDataMonthlyDetail:', [
                 'time_taken' => $executionTime . ' seconds'
             ]);
 

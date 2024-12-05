@@ -32,6 +32,7 @@ return new class extends Migration
                 SELECT
                     c.company_name AS `company_name`,
                     c.company_id,
+                    tvt.voucher_type_name,
                     MONTHNAME(tv.voucher_date) AS `month_name`,
                     YEAR(tv.voucher_date) AS `year`,
                     MONTH(tv.voucher_date) AS `month`,
@@ -78,6 +79,7 @@ return new class extends Migration
                 GROUP BY
                     c.company_name,
                     c.company_id,
+                    tvt.voucher_type_name,
                     YEAR(tv.voucher_date),
                     MONTH(tv.voucher_date),
                     MONTHNAME(tv.voucher_date)

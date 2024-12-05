@@ -214,11 +214,11 @@
                     render: function (data, type, row) {
                         const month = row.month_name || '-';
                         const year = row.year || '-';
-                        if (month !== '-' && year !== '-') {
-                            const url = `/purchase-month/${row.company_id}/${year}/${row.month}`;
-                            return `<a href="${url}">${month} ${year}</a>`;
-                        }
-                        return `${month} ${year}`;
+                        const voucherTypeName = row.voucher_type_name || ''; 
+                        
+                        const url = "{{ route('MonthlyDetails.index') }}" + "?voucher_type_name=" + encodeURIComponent(voucherTypeName) + "&month=" + encodeURIComponent(month) + "&year=" + encodeURIComponent(year);
+
+                        return `<a href="${url}">${month} ${year}</a>`;
                     }
                 },
                 {data: 'total_amount', name: 'total_amount', className: 'text-end', render: data => data || '-'},

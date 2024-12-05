@@ -35,6 +35,7 @@ return new class extends Migration
                 SELECT
                     v.voucher_date,
                     COALESCE(pl.ledger_name, al.ledger_name) AS `ledger_name`,
+                    COALESCE(pl.ledger_guid, al.ledger_guid) AS `ledger_guid`,
                     c.company_name,
                     vt.voucher_type_name,
                     v.voucher_number,
@@ -57,7 +58,8 @@ return new class extends Migration
                             vh.voucher_id,
                             MIN(l.ledger_name) AS ledger_name,
                             MIN(vh.amount) AS amount,
-                            MIN(vh.entry_type) AS entry_type
+                            MIN(vh.entry_type) AS entry_type,    
+                            MIN(l.ledger_guid) AS ledger_guid
                         FROM
                             tally_voucher_heads vh
                         JOIN
@@ -73,7 +75,8 @@ return new class extends Migration
                             vh.voucher_id,
                             MIN(l.ledger_name) AS ledger_name,
                             MIN(vh.amount) AS amount,
-                            MIN(vh.entry_type) AS entry_type
+                            MIN(vh.entry_type) AS entry_type,
+                            MIN(l.ledger_guid) AS ledger_guid
                         FROM
                             tally_voucher_heads vh
                         JOIN

@@ -237,6 +237,21 @@
                 {data: 'debit', name: 'debit', className: 'text-end'},
                 {data: 'credit', name: 'credit', className: 'text-end'},
             ],
+            {{--  footerCallback: function (row, data, start, end, display) {
+                var api = this.api();
+                var DebitToTotal = 5;
+                var CreditToTotal = 6;
+
+                var Debittotal = api.column(DebitToTotal).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
+                var Credittotal = api.column(CreditToTotal).data().reduce(function (a, b) {
+                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
+                }, 0);
+
+                $(api.column(DebitToTotal).footer()).html(jsIndianFormat(Math.abs(Debittotal), 2));
+                $(api.column(CreditToTotal).footer()).html(jsIndianFormat(Math.abs(Credittotal), 2));
+            },  --}}
      
             search: {
                 orthogonal: { search: 'plain' }

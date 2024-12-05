@@ -189,7 +189,6 @@ Route::middleware([
 
         Route::get('/MonthlySales', [MonthlyReportController::class, 'index'])->name('reports.MonthlySales');
         Route::get('/MonthlySales/get-data', [MonthlyReportController::class, 'getData'])->name('MonthlySales.get-data');
-        Route::get('/sales-month/{company_id}/{year}/{month}', [MonthlyReportController::class, 'showMonthlySaleDetail'])->name('MonthlySales.showDetail');
         
         
         Route::get('/MonthlyDetails', [MonthlyReportController::class, 'showMonthlyDetail'])->name('MonthlyDetails.index');
@@ -197,7 +196,6 @@ Route::middleware([
 
         Route::get('/MonthlyPurchase', [MonthlyReportController::class, 'PurchaseIndex'])->name('reports.MonthlyPurchase');
         Route::get('/MonthlyPurchase/get-data', [MonthlyReportController::class, 'getPurchaseData'])->name('MonthlyPurchase.get-data');
-        Route::get('/purchase-month/{company_id}/{year}/{month}', [MonthlyReportController::class, 'showMonthlyPurchaseDetail'])->name('MonthlyPurchase.showDetail');
         
         Route::resource('/settings', SettingController::class);
         Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');

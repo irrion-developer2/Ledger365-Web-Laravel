@@ -189,6 +189,13 @@
             </li>
             @endif
             
+            @if(auth()->check() && auth()->user()->status == 'Active' && auth()->user()->role == 'Administrative')
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('sendmail') ? 'active' : '' }}" href="{{ route('sendmail') }}">
+                    <div class="menu-title d-flex align-items-center">Send Emails</div>
+                </a>
+            </li>
+            @endif
             
          </ul>
        </div>

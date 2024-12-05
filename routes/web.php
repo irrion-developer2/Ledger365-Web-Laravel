@@ -16,6 +16,7 @@ use App\Http\Controllers\App\SupplierController;
 
 use App\Http\Controllers\App\StockItemController;
 use App\Http\Controllers\SuperAdmin\UserController;
+use App\Http\Controllers\SuperAdmin\SendMailController;
 use App\Http\Controllers\App\Reports\ReportController;
 use App\Http\Controllers\SuperAdmin\SettingController;
 use App\Http\Controllers\App\Reports\MonthlyReportController;
@@ -218,6 +219,17 @@ Route::middleware([
         
         Route::get('/companiesMapping/{users}/data', [UserController::class, 'companiesMappingGetData'])->name('companiesMapping.data');
         Route::post('users/{user}/company-mapping/update', [UserController::class, 'updateCompanyMapping'])->name('companiesMapping.update');
+
+        Route::get('sendmail', [SendMailController::class, 'sendmail'])->name('sendmail');
+        
+        Route::get('send-whatsapp/{voucher_id}/{ledger_id}', [SendMailController::class, 'sendwhatsapp'])->name('send-whatsapp');
+
+        Route::get('send-email/{send_voucher_id}/{send_ledger_id}', [SendMailController::class, 'sendMails'])->name('send-email');
+        Route::get('send-mutiple-email', [SendMailController::class, 'sendMails'])->name('send-mutiple-email');
+
+        Route::get('pdf/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewPdf'])->name('view-pdf');
+        Route::get('msg/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewMsg'])->name('view-msg');
+        Route::get('receipt/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewReceipt'])->name('view-receipt');
     });
 
     //  JET STREAM

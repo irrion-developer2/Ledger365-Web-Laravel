@@ -1,10 +1,13 @@
 <?php
 
-use App\Http\Controllers\DesktopApp\Import\CompanyImportController;
-use App\Http\Controllers\DesktopApp\Import\LedgerController;
-use App\Http\Controllers\SuperAdmin\TallyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DesktopApp\Import\StockItemImportController;
+use App\Http\Controllers\DesktopApp\Import\LedgerController;
+use App\Http\Controllers\DesktopApp\Import\VoucherTypeImportController;
+use App\Http\Controllers\DesktopApp\Import\MasterImportController;
+use App\Http\Controllers\DesktopApp\Import\CompanyImportController;
+use App\Http\Controllers\DesktopApp\Import\VoucherImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,12 +28,12 @@ Route::post('/companies', [CompanyImportController::class, 'import'])->name('com
 
 Route::post('/license_check', [LedgerController::class, 'licenseCheckJsonImport'])->name('license.import');
 
-Route::post('/master', [LedgerController::class, 'masterJsonImport'])->name('master.import');
+Route::post('/master', [MasterImportController::class, 'import'])->name('master.import');
 
-Route::post('/stock_item', [LedgerController::class, 'stockItemJsonImport'])->name('stockItem.import');
+Route::post('/stock_item', [StockItemImportController::class, 'import'])->name('stockItem.import');
 
-Route::post('/voucher_types', [LedgerController::class, 'voucherTypeJsonImport'])->name('voucherType.import');
+Route::post('/voucher_types', [VoucherTypeImportController::class, 'import'])->name('voucherType.import');
 
-Route::post('/vouchers', [LedgerController::class, 'voucherJsonImport'])->name('voucher.import');
+Route::post('/vouchers', [VoucherImportController::class, 'import'])->name('voucher.import');
 
 Route::post('/reports', [LedgerController::class, 'reportJsonImport'])->name('report.import');

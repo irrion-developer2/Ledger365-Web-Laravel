@@ -203,6 +203,7 @@
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
+            order: [[2, 'asc']],
             ajax: {
                 url: "{{ route('sales.get-data') }}",
                 type: 'GET',

@@ -37,7 +37,7 @@ class SendMailController extends Controller
 
                     ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
                     // ->where('tally_vouchers.voucher_date',request()->date)
-                    
+
                     ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
                     ->where('tally_voucher_types.parent',"Bill")
                     ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')
@@ -199,13 +199,13 @@ class SendMailController extends Controller
 
         // Generate the PDF content
         $pdfContent = $this->viewPdf($voucher_id, $ledger_id);
-        $uploadPath = public_path('uploads');
+        $uploadPath = public_path('uploads/whatsapp');
         $fileName = "voucher_{$voucher_id}_{$ledger_id}.pdf";
         if (!file_exists($uploadPath)) {
             mkdir($uploadPath, 0755, true);
         }
         file_put_contents($uploadPath . '/' . $fileName, $pdfContent);
-        $fileUrl = url('uploads/' . $fileName);
+        $fileUrl = url('uploads/whatsapp' . $fileName);
         Log::info($fileUrl);
 
         $phone_num = TallyLedger::where('ledger_id',$ledger_id)->first('phone_number');
@@ -225,7 +225,7 @@ class SendMailController extends Controller
             "phone_number" => $phone_num->phone_number,
             "template_name" => "ledger365demo",
             "template_language" => "en",
-            "header_document" => "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+            "header_document" => $fileUrl,
             "header_document_name" => $fileName,
             "field_1" => $data['curr_balance'],
             "message_body" => $message,

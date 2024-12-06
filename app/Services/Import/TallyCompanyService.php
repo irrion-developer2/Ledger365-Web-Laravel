@@ -53,12 +53,17 @@ class TallyCompanyService
             $address = is_array($addressList) ? implode(", ", $addressList) : (is_string($addressList) ? $addressList : null);
 
             $email = $companyData['EMAIL'] ?? null;
-            // if array log it
+
             if (is_array($email)) {
                 Log::info('Email is an array', ['email' => $email]);
+                // Extract the value with the empty string key
+                $email = $email[""] ?? null;
+                Log::info('Extracted email value', ['email' => $email]);
             }
             if (is_string($email) && strlen($email) > 255) {
                 $email = substr($email, 0, 255);
+            } else {
+                $email = "";
             }
 
 

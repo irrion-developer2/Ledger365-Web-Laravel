@@ -13,7 +13,7 @@ class WhatsLog extends Model
     protected $fillable = [
         'company_id', 
         'ledger_id', 
-        'phone_number', 
+        'phone_number',
         'message', 
         'pdf_path', 
         'json_response', 

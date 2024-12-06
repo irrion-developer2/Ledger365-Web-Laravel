@@ -15,7 +15,7 @@
                     </ol>
                 </nav>
             </div>
-            <button id="send-all-btn" class="btn btn-primary btn-sm ms-auto">Send Mail To All</button>
+            <button id="send-all-btn" class="btn btn-primary btn-sm ms-auto" style="display:none;">Send Mail To All</button>
         </div>
         <!--end breadcrumb-->
 
@@ -36,12 +36,12 @@
                 <div class="row justify-content-between">
                     <div class="col-5 mb-3 d-flex">
                         <select name="company_id" id="company_id" class="form-select mx-2">
-                        <option value="1">Select company</option>
+                        <option>Select company</option>
                             @foreach($companys as $company)
                             <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
                             @endforeach
                         </select>
-                        <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
+                        <input type="date" class="form-control mx-2" id="date" name="date">
                     </div>
                     <div class="col-4">
                         <div class="alert" role="alert" style="display: none;">
@@ -52,12 +52,24 @@
 
                 <!-- DataTable -->
                 <div class="table-responsive">
+                    <table id="companys" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Company Name') }}</th>
+                                <th>{{ __('Email') }}</th>
+                                <th>{{ __('Bill') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-responsive" style="display:none;">
                     <table id="send-mail-table" class="table table-striped table-bordered" style="width:100%">
                         <thead>
                             <tr>
                                 <th>#</th>
                                 <th>{{ __('Name') }}</th>
-                                {{-- <th>{{ __('Voucher ID') }}</th> --}}
                                 <th>{{ __('Email') }}</th>
                                 <th>{{ __('Phone Num') }}</th>
                                 <th>{{ __('Amount') }}</th>
@@ -96,71 +108,71 @@
 
     <script>
         $(document).ready(function() {
-            // Initialize DataTable
-            var table = $('#send-mail-table').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: "{{ route('sendmail') }}",
-                    data: function (d) {
-                        d.company_id = $('#company_id').val();
-                        d.date = $('#date').val();
-                    }
+            var table1 = $('#companys').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ route('sendmail') }}",
+                data: function (d) {
+                    d.load_companys = true;
+                    d.company_id = $('#company_id').val();
+                    d.date = $('#date').val();
+                }
+            },
+            columns: [
+                { data: 'company_name', name: 'company_name' },
+                { data: 'email', name: 'email' },
+                { data: 'bill', name: 'bill' },
+            ],
+            order: [[1, 'asc']],
+            language: {
+                paginate: {
+                    next: '<i class="ti ti-chevron-right"></i> next',
+                    previous: '<i class="ti ti-chevron-left"></i> Prev',
                 },
-                columns: [
-                    { data: 'ledger_id', name: 'ledger_id' },
-                    { data: 'ledger_name', name: 'ledger_name' },
-                    //{ data: 'voucher_id', name: 'voucher_id' },
-                    { data: 'email', name: 'email' },
-                    { data: 'phone_number', name: 'phone_number' },
-                    { data: 'amount', name: 'amount' },
-                    { data: 'voucher_date', name: 'voucher_date' },
-                    { data: 'company_name', name: 'company_name' },
-                    { data: 'action', name: 'action', orderable: false, searchable: false },
-                ],
-                order: [[3, 'asc']],
-                language: {
-                    paginate: {
-                        next: '<i class="ti ti-chevron-right"></i> next',
-                        previous: '<i class="ti ti-chevron-left"></i> Prev',
-                    },
-                    lengthMenu: "{{ __('Show _MENU_ entries') }}",
-                    searchPlaceholder: "{{ __('Search...') }}",
+                lengthMenu: "{{ __('Show _MENU_ entries') }}",
+                searchPlaceholder: "{{ __('Search...') }}",
+            }
+        });
+
+        // Second DataTable (send-mail-table)
+        var table2 = $('#send-mail-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ route('sendmail') }}",
+                data: function (d) {
+                    d.company_id = $('#company_id').val();
+                    d.date = $('#date').val();
+                }
+            },
+            columns: [
+                { data: 'ledger_id', name: 'ledger_id' },
+                { data: 'ledger_name', name: 'ledger_name' },
+                { data: 'email', name: 'email' },
+                { data: 'phone_number', name: 'phone_number' },
+                { data: 'amount', name: 'amount' },
+                { data: 'voucher_date', name: 'voucher_date' },
+                { data: 'company_name', name: 'company_name' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
+            ],
+            order: [[1, 'asc']],
+            language: {
+                paginate: {
+                    next: '<i class="ti ti-chevron-right"></i> next',
+                    previous: '<i class="ti ti-chevron-left"></i> Prev',
                 },
-                initComplete: function () {
-                    var searchInput = $('#send-mail-table_filter input[type="search"]');
-                    searchInput
-                        .removeClass('form-control form-control-sm')
-                        .addClass('form-control ps-5 radius-30')
-                        .attr('placeholder', 'Search Order');
+                lengthMenu: "{{ __('Show _MENU_ entries') }}",
+                searchPlaceholder: "{{ __('Search...') }}",
+            }
+        });
 
-                        $('#send-mail-table_filter label').contents().filter(function () {
-                            return this.nodeType === 3; 
-                        }).remove();
+        // Trigger refresh for both tables when filters change
+        $('#company_id, #date').on('change', function () {
+            table1.draw();
+            table2.draw();
+        });
 
-                    searchInput.wrap('<div class="position-relative pt-1"></div>');
-                    searchInput.parent().append('<span class="position-absolute top-50 product-show translate-middle-y"><i class="bx bx-search"></i></span>');
-
-                    var select = $('.dataTables_length select')
-                        .removeClass('custom-select custom-select-sm form-control form-control-sm')
-                        .addClass('form-select form-select-sm');
-                },
-                // dom: `
-                //     <'dataTable-top row'
-                //         <'dataTable-dropdown page-dropdown col-lg-3 col-sm-12'l>
-                //         <'dataTable-botton table-btn col-lg-6 col-sm-12'B>
-                //         <'dataTable-search tb-search col-lg-3 col-sm-12'f>
-                //     >
-                //     <'dataTable-container'<'col-sm-12'tr>>
-                //     <'dataTable-bottom row'
-                //         <'col-sm-5'i>
-                //         <'col-sm-7'p>
-                //     >
-                // `,
-            });
-            $('#company_id, #date').on('change', function() {
-                table.draw();
-            });
 
             $('#send-all-btn').on('click', function () {
                 var companyId = $('#company_id').val();

@@ -60,6 +60,7 @@ class TallyCompanyService
                 $email = $email[""] ?? null;
                 Log::info('Extracted email value', ['email' => $email]);
             }
+
             if (is_string($email) && strlen($email) > 255) {
                 $email = substr($email, 0, 255);
             } else {

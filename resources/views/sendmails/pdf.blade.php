@@ -87,6 +87,14 @@
         padding: 0 10px;
         font-size: 20px;
     }
+    .disclaimer {
+            font-size: 18px;
+            text-align: center;
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            margin: 0;
+        }
 
     </style>
 </head>
@@ -130,7 +138,8 @@
             @foreach ($credits as $credit)
             <tr>
                 <td>{{$credit->ledger_name}}</td>
-                <td>{{$credit->amount}}</td>
+                {{-- <td>{{$credit->amount}}</td> --}}
+                <td>{{ number_format($credit->amount, 2, '.', ',') }}</td>
                 @php
                 $totalAmount += $credit->amount;
                 @endphp
@@ -140,16 +149,16 @@
         </tbody>
         <tfoot>
             <tr>
-                <td>Total:</td>
-                <td>{{ $totalAmount }}</td>
+                <td style="text-align: right;">Total:</td>
+                <td>{{ number_format($totalAmount, 2, '.', ',') }}</td>
             </tr>
             <tr>
-                <td>Previous Dues:</td>
-                <td>{{ $prev_balance }}</td>
+                <td style="text-align: right;">Previous Dues:</td>
+                <td>{{ number_format($prev_balance, 2, '.', ',') }}</td>
             </tr>
             <tr>
-                <td>Grand Total:</td>
-                <td>{{ $curr_balance }}</td>
+                <td style="text-align: right;">Grand Total:</td>
+                <td>{{ number_format($curr_balance, 2, '.', ',') }}</td>
             </tr>
         </tfoot>
     </table>
@@ -173,6 +182,7 @@
             <span>Treasurer</span>
         </p>
     </div>
+    <p class="disclaimer">This is a computer-generated receipt. no signature required.</p>
 </body>
 
 </html>

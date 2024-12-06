@@ -70,9 +70,12 @@
         }
 
         .disclaimer {
-            font-size: 16px;
-            text-align:center;
-            margin:2px;
+            font-size: 18px;
+            text-align: center;
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            margin: 0;
         }
     </style>
 </head>
@@ -95,7 +98,7 @@
             {{ $recipt_ledger_name->ledger_name }} For Month {{ date('F y', strtotime($receipt->voucher_date)) }}
         </p>
         
-        <p class="amount">Rs. <b>{{ $receipt->amount }}</b></p>
+        <p class="amount">Rs. <b>{{ number_format($receipt->amount, 2, '.', ',') }}</b></p>
         <p class="note">Subject to Realisation of Cheque.</p>
         
         <div class="footer">
@@ -107,7 +110,6 @@
             </div>
         </div>
         <p class="disclaimer">This is a computer-generated receipt. no signature required.</p>
-
     </div>
 </body>
 </html>

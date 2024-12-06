@@ -17,6 +17,7 @@ use App\Http\Controllers\App\SupplierController;
 use App\Http\Controllers\App\StockItemController;
 use App\Http\Controllers\SuperAdmin\UserController;
 use App\Http\Controllers\SuperAdmin\SendMailController;
+use App\Http\Controllers\SuperAdmin\BlockEmailController;
 use App\Http\Controllers\App\Reports\ReportController;
 use App\Http\Controllers\SuperAdmin\SettingController;
 use App\Http\Controllers\App\Reports\MonthlyReportController;
@@ -230,6 +231,9 @@ Route::middleware([
         Route::get('pdf/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewPdf'])->name('view-pdf');
         Route::get('msg/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewMsg'])->name('view-msg');
         Route::get('receipt/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewReceipt'])->name('view-receipt');
+
+        Route::get('/block-email', [BlockEmailController::class, 'index'])->name('block-email.index');
+        Route::post('/block-email', [BlockEmailController::class, 'store'])->name('block-email.store');
     });
 
     //  JET STREAM

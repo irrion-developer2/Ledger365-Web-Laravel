@@ -99,7 +99,7 @@
             <tbody>
                 <tr>
                     <td class='name'>Bill No.: {{($ledger_data->voucher_number)}}</td>
-                    <td class='date'>Month: {{ date('F Y', strtotime($ledger_data->voucher_date)) }}</td>
+                    <td class='date'>Month: {{ date('F - Y', strtotime($ledger_data->voucher_date)) }}</td>
                     <td class='date'>Date: {{ date('d-m-Y', strtotime($ledger_data->voucher_date)) }}</td>
                 </tr>
                 <tr>

@@ -13,6 +13,7 @@ use Yajra\DataTables\Facades\DataTables;
 use Barryvdh\DomPDF\Facade;
 
 use App\Models\EmailLog;
+use App\Models\WhatsLog;
 use App\Models\TallyCompany;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
@@ -208,7 +209,7 @@ class SendMailController extends Controller
         $fileUrl = url('uploads/whatsapp' . $fileName);
         Log::info($fileUrl);
 
-        $phone_num = TallyLedger::where('ledger_id',$ledger_id)->first('phone_number');
+        $ledger = TallyLedger::where('ledger_id',$ledger_id)->first();
         log::info($phone_num->phone_number);
 
         // $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-message";
@@ -222,7 +223,7 @@ class SendMailController extends Controller
         // ];
         $request = [
             "from_phone_number_id" => "278340815355079",
-            "phone_number" => $phone_num->phone_number,
+            "phone_number" => $ledger->phone_number,
             "template_name" => "ledger365demo",
             "template_language" => "en",
             "header_document" => $fileUrl,
@@ -235,6 +236,16 @@ class SendMailController extends Controller
                         ->post($api_url,$request);
 
         if ($response->successful()) {
+
+            WhatsLog::create([
+                'company_id' => $ledger->company_id,
+                'ledger_id' => $ledger_id,
+                'phone_number' => $ledger->phone_number,
+                'message' => $message,
+                'pdf_path' => $fileUrl,
+                'json_response' => $response,
+            ]);
+
             return redirect('sendmail')->with('success', "whatsapp message sent successfully.");
         } else {
             return redirect('sendmail')->with('error', "Failed to send whatsapp message");

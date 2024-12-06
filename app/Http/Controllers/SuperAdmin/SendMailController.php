@@ -309,13 +309,13 @@ class SendMailController extends Controller
                 continue;
             }
              // Save PDF to project folder
-             $uploadpath = public_path('uploads');
+             $uploadpath = public_path('uploads/Emails');
              if (!file_exists($uploadpath)) {
                 mkdir($uploadpath, 0777, true); 
             }
              $fileName = "voucher_{$ledger_data->voucher_id}_{$ledger_data->ledger_id}.pdf"; 
              file_put_contents($uploadpath .'/'. $fileName,$pdfContent); 
-             $file_url= url('uploads/' . $fileName);
+             $file_url= url('uploads/Emails/' . $fileName);
 
             $pdf = base64_encode($pdfContent);
 

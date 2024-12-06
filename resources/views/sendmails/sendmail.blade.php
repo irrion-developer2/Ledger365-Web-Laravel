@@ -57,7 +57,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>{{ __('Name') }}</th>
-                                <th>{{ __('Voucher ID') }}</th>
+                                {{-- <th>{{ __('Voucher ID') }}</th> --}}
                                 <th>{{ __('Email') }}</th>
                                 <th>{{ __('Phone Num') }}</th>
                                 <th>{{ __('Amount') }}</th>
@@ -110,7 +110,7 @@
                 columns: [
                     { data: 'ledger_id', name: 'ledger_id' },
                     { data: 'ledger_name', name: 'ledger_name' },
-                    { data: 'voucher_id', name: 'voucher_id' },
+                    //{ data: 'voucher_id', name: 'voucher_id' },
                     { data: 'email', name: 'email' },
                     { data: 'phone_number', name: 'phone_number' },
                     { data: 'amount', name: 'amount' },

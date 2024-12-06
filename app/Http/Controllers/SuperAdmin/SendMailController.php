@@ -13,6 +13,7 @@ use Yajra\DataTables\Facades\DataTables;
 use Barryvdh\DomPDF\Facade;
 
 use App\Models\EmailLog;
+use App\Models\WhatsLog;
 use App\Models\TallyCompany;
 use App\Models\TallyLedger;
 use App\Models\TallyVoucherHead;
@@ -24,48 +25,65 @@ class SendMailController extends Controller
         $companys = TallyCompany::get();
 
         if ($request->ajax()) {
-            if(request()->company_id && request()->date) {
-                $ledger_data = TallyLedger::
-                    join('tally_ledger_groups','tally_ledgers.ledger_group_id','=','tally_ledger_groups.ledger_group_id')
-                    // ->where('tally_ledgers.parent','tally_ledger_groups.ledger_group_name')
-                    ->whereIn('tally_ledger_groups.parent', ['Sundry Debtors', 'Sundry Creditors'])
-
-                    ->where('tally_ledgers.company_id',request()->company_id)
-                    ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
-                    ->where('tally_voucher_heads.entry_type',"debit")
-                    ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-
-                    ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
-                    // ->where('tally_vouchers.voucher_date',request()->date)
-                    
-                    ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
-                    ->where('tally_voucher_types.parent',"Bill")
-                    ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')
-                    ->select('tally_ledgers.*',
-                            'tally_voucher_heads.amount',
-                            'tally_voucher_heads.voucher_id',
-                            'tally_vouchers.voucher_date',
-                            'tally_companies.company_name')
-                    ->orderBy('tally_ledgers.ledger_name', 'asc');
+            if ($request->has('load_companys')) {
+                if(request()->date) {
+                    $companys = TallyCompany::select('company_name','company_id');
+                } else {
+                    $companys = TallyCompany::whereRaw('1 = 0');
+                }
+                    return DataTables::of($companys)
+                    ->addColumn('email', function ($company) {
+                        $email = TallyLedger::join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+                                            ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+                                            ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=','tally_vouchers.voucher_type_id')
+                                            ->where('tally_voucher_types.parent',"Bill")
+                                            ->where('tally_vouchers.voucher_date',request()->date)
+                                            ->where('tally_vouchers.company_id', $company->company_id)
+                                            ->whereNotNull('tally_ledgers.email')
+                                            ->where('tally_ledgers.email', '!=', '')
+                                            ->count();
+                        return $email;
+                    })
+                    ->addColumn('bill', function ($company) {
+                        $bill = TallyVoucher::join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
+                                        ->where('tally_voucher_types.parent',"Bill")
+                                        ->where('tally_vouchers.voucher_date',request()->date)
+                                        ->where('tally_vouchers.company_id', $company->company_id)
+                                        ->count();
+                        return $bill;
+                    })
+                    ->make(true);
             } else {
-                $ledger_data = TallyLedger::join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
-                    ->whereRaw('1 = 0');
+                if(request()->company_id && request()->date) {
+                    $ledger_data = TallyLedger::
+                        join('tally_ledger_groups','tally_ledgers.ledger_group_id','=','tally_ledger_groups.ledger_group_id')
+                        // ->where('tally_ledgers.parent','tally_ledger_groups.ledger_group_name')
+                        ->whereIn('tally_ledger_groups.parent', ['Sundry Debtors', 'Sundry Creditors'])
+
+                        ->where('tally_ledgers.company_id',request()->company_id)
+                        ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+                        ->where('tally_voucher_heads.entry_type',"debit")
+                        ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
+
+                        // ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
+                        ->where('tally_vouchers.voucher_date',request()->date)
+
+                        ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
+                        ->where('tally_voucher_types.parent',"Bill")
+                        ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')
+                        ->select('tally_ledgers.*',
+                                'tally_voucher_heads.amount',
+                                'tally_voucher_heads.voucher_id',
+                                'tally_vouchers.voucher_date',
+                                'tally_companies.company_name')
+                        ->orderBy('tally_ledgers.ledger_name', 'asc');
+                } else {
+                    $ledger_data = TallyLedger::join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
+                        ->whereRaw('1 = 0');
+                }
             }
             return DataTables::of($ledger_data)
                 ->addColumn('action', function ($ledger_data) {
-
-                    // $credits = TallyVoucherHead::where('voucher_id', $ledger_data->voucher_id)
-                    //                             ->where('entry_type', "credit")
-                    //                             ->join('tally_ledgers', 'tally_voucher_heads.ledger_id', '=', 'tally_ledgers.ledger_id')
-                    //                             ->select('tally_voucher_heads.amount')
-                    //                             ->sum('tally_voucher_heads.amount');
-                    // $curr_balance = TallyVoucher::join('tally_voucher_heads', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-                    //                             ->join('tally_voucher_types', 'tally_vouchers.voucher_type_id', '=', 'tally_voucher_types.voucher_type_id')
-                    //                             ->where('tally_vouchers.voucher_date','<=',$ledger_data->voucher_date)
-                    //                             ->where('tally_voucher_heads.ledger_id',$ledger_data->ledger_id)
-                    //                             ->sum('tally_voucher_heads.amount');
-                    // $curr_balance += $ledger_data->opening_balance;
-
                     return view('sendmails._action', compact('ledger_data'))->render();
                 })
                 ->make(true);
@@ -199,17 +217,16 @@ class SendMailController extends Controller
 
         // Generate the PDF content
         $pdfContent = $this->viewPdf($voucher_id, $ledger_id);
-        $uploadPath = public_path('uploads');
+        $uploadPath = public_path('uploads/whatsapp');
         $fileName = "voucher_{$voucher_id}_{$ledger_id}.pdf";
         if (!file_exists($uploadPath)) {
             mkdir($uploadPath, 0755, true);
         }
         file_put_contents($uploadPath . '/' . $fileName, $pdfContent);
-        $fileUrl = url('uploads/' . $fileName);
+        $fileUrl = url('uploads/whatsapp/' . $fileName);
         Log::info($fileUrl);
 
-        $phone_num = TallyLedger::where('ledger_id',$ledger_id)->first('phone_number');
-        log::info($phone_num->phone_number);
+        $ledger = TallyLedger::where('ledger_id',$ledger_id)->first();
 
         // $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-message";
         $api_url = "https://wtconnects.com/api/2c90a3ce-87b6-48fc-a662-1f6d1afdb6ac/contact/send-template-message";
@@ -222,10 +239,10 @@ class SendMailController extends Controller
         // ];
         $request = [
             "from_phone_number_id" => "278340815355079",
-            "phone_number" => $phone_num->phone_number,
+            "phone_number" => $ledger->phone_number,
             "template_name" => "ledger365demo",
             "template_language" => "en",
-            "header_document" => "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+            "header_document" => $fileUrl,
             "header_document_name" => $fileName,
             "field_1" => $data['curr_balance'],
             "message_body" => $message,
@@ -235,6 +252,16 @@ class SendMailController extends Controller
                         ->post($api_url,$request);
 
         if ($response->successful()) {
+
+            WhatsLog::create([
+                'company_id' => $ledger->company_id,
+                'ledger_id' => $ledger_id,
+                'phone_number' => $ledger->phone_number,
+                'message' => $message,
+                'pdf_path' => $fileUrl,
+                'json_response' => $response,
+            ]);
+
             return redirect('sendmail')->with('success', "whatsapp message sent successfully.");
         } else {
             return redirect('sendmail')->with('error', "Failed to send whatsapp message");
@@ -265,8 +292,10 @@ class SendMailController extends Controller
                 ->join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
                 ->where('tally_voucher_heads.entry_type', "debit")
                 ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
-                ->whereIn('tally_ledgers.ledger_id', ['2', '3'])
-                // ->where('tally_vouchers.voucher_date',$request->date)
+
+                // ->whereIn('tally_ledgers.ledger_id', ['2', '3'])
+                ->where('tally_vouchers.voucher_date',$request->date)
+                
                 ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
                 ->where('tally_voucher_types.parent', "Bill")
                 ->join('tally_companies', 'tally_vouchers.company_id', '=', 'tally_companies.company_id')

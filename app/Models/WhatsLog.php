@@ -9,11 +9,11 @@ class WhatsLog extends Model
 {
     use HasFactory;
     protected $table = 'whatsapp_logs';
-    protected $primaryKey = 'whatsapp_id ';
+    protected $primaryKey = 'whatsapp_id';
     protected $fillable = [
         'company_id', 
         'ledger_id', 
-        'phone_number', 
+        'phone_number',
         'message', 
         'pdf_path', 
         'json_response', 

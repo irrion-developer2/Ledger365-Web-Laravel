@@ -75,7 +75,7 @@
                                     <th>Invoice Date</th>
                                     <th>Invoice Number</th>
                                     <th>Invoice Amount</th>
-                                    <th>Place Of Supply</th>
+                                    {{--  <th>Place Of Supply</th>  --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -238,9 +238,6 @@
                     // }
                 },
                 {data: 'debit', name: 'debit', className: 'text-end', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'place_of_supply', name: 'place_of_supply', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
             ],

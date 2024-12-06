@@ -286,7 +286,7 @@
                         var lastRowRunningBalance = parseAmount(data[data.length - 1]?.running_balance || '0');
 
                         $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                        $('#openingBalance').text(jsIndianFormat(OeningB));
+                        $('#openingBalance').text(jsIndianFormat(firstRowRunningBalance));
                         $('#outstanding').text(jsIndianFormat(lastRowRunningBalance));
                         $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
                     }

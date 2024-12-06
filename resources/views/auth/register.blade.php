@@ -49,7 +49,7 @@
                                                         {{-- <option value="Employee">Staff Member</option> --}}
                                                     </select>
                                                 </div>
-                                                <div class="col-12">
+                                                {{--  <div class="col-12">
                                                     <label for="inputChoosePassword" class="form-label">Password</label>
                                                     <div class="input-group" id="show_hide_password">
                                                         <input type="password" name="password" required class="form-control border-end-0" id="inputChoosePassword" value="******" placeholder="Enter Password"> <a href="javascript:;" class="input-group-text bg-transparent"><i class='bx bx-hide'></i></a>
@@ -60,7 +60,7 @@
                                                     <div class="input-group" id="show_hide_password">
                                                         <input type="password"  name="password_confirmation" required class="form-control border-end-0" id="inputChoosePassword" value="******" placeholder="Enter Password"> <a href="javascript:;" class="input-group-text bg-transparent"><i class='bx bx-hide'></i></a>
                                                     </div>
-                                                </div>
+                                                </div>  --}}
                                                 <div class="col-12">
                                                     <div class="d-grid">
                                                         <button type="submit" class="btn btn-primary">Sign up</button>

@@ -254,10 +254,10 @@ class CustomerController extends Controller
                                 ->whereIn('company_id', $companyIds)
                                 ->firstOrFail();
 
-        return view('app.customers._customers-view', compact('ledger'));
+        return view('app.customers._custom-view', compact('ledger'));
     }
 
-    public function getVoucherEntries($customer, Request $request)
+    public function getVoucherItemEntries($customer, Request $request)
     {
         $startTime = microtime(true);
         \DB::enableQueryLog();
@@ -414,5 +414,132 @@ class CustomerController extends Controller
         return $dataTableResponse;
     }
 
+
+    public function getVoucherEntries($customer, Request $request)
+    {
+        $companyIds = $this->reportService->companyData();
+
+        if (empty($companyIds)) {
+            return DataTables::of([])->make(true);
+        }
+
+        if ($request->ajax()) {
+            $startTime = microtime(true);
+
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+            $customDateRange = $request->get('custom_date_range');
+            $ledger = TallyLedger::where('ledger_guid', $customer)
+                    ->whereIn('company_id', $companyIds)
+                    ->firstOrFail();
+        
+            $ledgerId = $ledger->ledger_id;
+
+            $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
+            $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
+    
+
+            if ($customDateRange) {
+                switch ($customDateRange) {
+                    case 'this_month':
+                        $startDate = now()->startOfMonth()->toDateString();
+                        $endDate = now()->endOfMonth()->toDateString();
+                        break;
+                    case 'last_month':
+                        $startDate = now()->subMonth()->startOfMonth()->toDateString();
+                        $endDate = now()->subMonth()->endOfMonth()->toDateString();
+                        break;
+                    case 'this_quarter':
+                        $startDate = now()->firstOfQuarter()->toDateString();
+                        $endDate = now()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'prev_quarter':
+                        $startDate = now()->subQuarter()->firstOfQuarter()->toDateString();
+                        $endDate = now()->subQuarter()->lastOfQuarter()->toDateString();
+                        break;
+                    case 'this_year':
+                        $startDate = now()->startOfYear()->toDateString();
+                        $endDate = now()->endOfYear()->toDateString();
+                        break;
+                    case 'prev_year':
+                        $startDate = now()->subYear()->startOfYear()->toDateString();
+                        $endDate = now()->subYear()->endOfYear()->toDateString();
+                        break;
+                    case 'all':
+                        break;
+                }
+            }
+
+            $companyIdsList = implode(',', $companyIds);
+
+            $sql = "CALL get_ledgerView_data(?, ?, ?, ?)";
+
+            Log::info("Calling Stored Procedure", [
+                'sql' => $sql,
+                'params' => [
+                    'p_ledgerId' => $ledgerId,
+                    'p_company_ids' => $companyIdsList,
+                    'p_start_date' => $startDate,
+                    'p_end_date' => $endDate,
+                ]
+            ]);
+
+            try {
+                $customers = DB::select($sql, [
+                    $ledgerId,
+                    $companyIdsList,         
+                    $startDate,          
+                    $endDate,  
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error executing stored procedure get_ledgerView_data:', ['error' => $e->getMessage()]);
+                return response()->json(['error' => 'Failed to retrieve data.'], 500);
+            }
+
+
+            $customersCollection = collect($customers);
+
+            $firstVoucherDate = $customersCollection->min('voucher_date');
+            $lastVoucherDate = $customersCollection->max('voucher_date');
+
+            $endTime1 = microtime(true);
+            $executionTime1 = $endTime1 - $startTime;
+            Log::info('Total first db request execution time for CustomerController.ledgergetData:', ['time_taken' => $executionTime1 . ' seconds']);
+
+            $dataTable = DataTables::of($customers)
+                ->addIndexColumn()
+                ->addColumn('credit', function ($entry) {
+                    return indian_format(abs($entry->credit_amount));
+                })
+                ->addColumn('debit', function ($entry) {
+                    return indian_format(abs($entry->debit_amount));
+                })
+                ->addColumn('running_balance', function ($entry) {
+                    return $entry->running_balance !== null ? indian_format($entry->running_balance) : "0.00";
+                })
+                ->addColumn('voucher_type_name', function ($entry) {
+                    return $entry->voucher_type_name;
+                })
+                ->addColumn('voucher_date', function ($entry) {
+                    return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');
+                })
+                ->addColumn('ledger_name', function ($entry) {
+                    return $entry->counterpart_ledger_name;
+                })
+                ->with([
+                    'first_voucher_date' => $firstVoucherDate,
+                    'last_voucher_date' => $lastVoucherDate,
+                    // 'total_invoices' => $totalInvoices
+                ])
+                            // ->toJson();
+                ->make(true);
+
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Total end execution time for CustomerController.ledgergetData:', ['time_taken' => $executionTime . ' seconds']);
+
+            return $dataTable;
+        }
+    }
 
 }

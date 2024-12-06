@@ -67,6 +67,7 @@
                                 <tr>
                                     <th>Company_name</th>
                                     <th>Month</th>
+                                    <th>Total Vouchers</th>
                                     <th>Total Amount</th>
                                 </tr>
                             </thead>
@@ -75,6 +76,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
+                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -221,6 +223,7 @@
                         return `<a href="${url}">${month} ${year}</a>`;
                     }
                 },
+                {data: 'total_vouchers', name: 'total_vouchers', className: 'text-end', render: data => data || '-'},
                 {data: 'total_amount', name: 'total_amount', className: 'text-end', render: data => data || '-'},
             ],
      

@@ -39,10 +39,8 @@ class MonthlyReportController extends Controller
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
             $voucherTypeName = 'Sales';
-            $entryType = 'credit';
 
             $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
-            $entryType = ($entryType && strtolower($entryType) !== 'null' && trim($entryType) !== '') ? $entryType : null;
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
 
@@ -79,17 +77,16 @@ class MonthlyReportController extends Controller
 
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "CALL get_MonthlyReport_data(?, ?, ?, ?, ?)";
+            $sql = "CALL get_MonthlyReport_data(?, ?, ?, ?)";
 
 
             Log::info("Calling Stored Procedure get_MonthlyReport_data", [
                 'sql' => $sql,
                 'params' => [
-                    'p_voucher_type_name' => $voucherTypeName,
+                    'p_voucher_type_names' => $voucherTypeName,
                     'company_ids' => $companyIdsList,
                     'p_start_date' => $startDate,
                     'p_end_date' => $endDate,
-                    'p_entry_types' => $entryType,
                 ]
             ]);
 
@@ -99,7 +96,6 @@ class MonthlyReportController extends Controller
                     $companyIdsList,
                     $startDate,
                     $endDate,
-                    $entryType,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Error executing stored procedure get_MonthlyReport_data:', [
@@ -156,10 +152,8 @@ class MonthlyReportController extends Controller
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
             $voucherTypeName = 'Purchase';
-            $entryType = 'debit';
 
             $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
-            $entryType = ($entryType && strtolower($entryType) !== 'null' && trim($entryType) !== '') ? $entryType : null;
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
 
@@ -196,17 +190,16 @@ class MonthlyReportController extends Controller
 
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "CALL get_MonthlyReport_data(?, ?, ?, ?, ?)";
+            $sql = "CALL get_MonthlyReport_data(?, ?, ?, ?)";
 
 
             Log::info("Calling Stored Procedure get_MonthlyReport_data", [
                 'sql' => $sql,
                 'params' => [
-                    'p_voucher_type_name' => $voucherTypeName,
+                    'p_voucher_type_names' => $voucherTypeName,
                     'company_ids' => $companyIdsList,
                     'p_start_date' => $startDate,
                     'p_end_date' => $endDate,
-                    'p_entry_types' => $entryType,
                 ]
             ]);
 
@@ -216,7 +209,6 @@ class MonthlyReportController extends Controller
                     $companyIdsList,
                     $startDate,
                     $endDate,
-                    $entryType,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Error executing stored procedure get_MonthlyReport_data:', [

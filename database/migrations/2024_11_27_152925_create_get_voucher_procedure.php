@@ -55,7 +55,9 @@ return new class extends Migration
                         AND FIND_IN_SET(tv.company_id, p_company_ids)
                         AND tvh.is_party_ledger = 1
                         AND (p_start_date IS NULL OR tv.voucher_date >= p_start_date)
-                        AND (p_end_date IS NULL OR tv.voucher_date <= p_end_date);
+                        AND (p_end_date IS NULL OR tv.voucher_date <= p_end_date)
+                    ORDER BY 
+                        tv.voucher_date;
                 END
             ");
     }

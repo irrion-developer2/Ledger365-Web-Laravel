@@ -499,6 +499,7 @@ class CustomerController extends Controller
 
             $customersCollection = collect($customers);
 
+            $totalInvoices = $customersCollection->count();
             $firstVoucherDate = $customersCollection->min('voucher_date');
             $lastVoucherDate = $customersCollection->max('voucher_date');
 
@@ -529,7 +530,7 @@ class CustomerController extends Controller
                 ->with([
                     'first_voucher_date' => $firstVoucherDate,
                     'last_voucher_date' => $lastVoucherDate,
-                    // 'total_invoices' => $totalInvoices
+                    'total_invoices' => $totalInvoices
                 ])
                             // ->toJson();
                 ->make(true);

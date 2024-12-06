@@ -277,16 +277,18 @@
                         $('#totalCredit').text(jsIndianFormat(totalCredit));
 
                         var firstRowRunningBalance = parseAmount(data[0]?.running_balance || '0');
-                        var firstRowAmount = data.length > 0 && data[0].amount
-                            ? parseAmount(data[0].amount)
+                        console.log(firstRowRunningBalance);
+                        var firstRowAmount = data.length > 0 && data[0].net_amount
+                            ? parseAmount(data[0].net_amount)
                             : 0;
-                            
-                        var OeningB = firstRowRunningBalance - firstRowAmount;
+                        console.log(firstRowAmount);
+
+                        var OeningB = firstRowRunningBalance + firstRowAmount;
 
                         var lastRowRunningBalance = parseAmount(data[data.length - 1]?.running_balance || '0');
 
                         $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                        $('#openingBalance').text(jsIndianFormat(firstRowRunningBalance));
+                        $('#openingBalance').text(jsIndianFormat(OeningB));
                         $('#outstanding').text(jsIndianFormat(lastRowRunningBalance));
                         $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
                     }

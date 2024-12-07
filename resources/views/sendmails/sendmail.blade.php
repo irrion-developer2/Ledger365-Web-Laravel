@@ -58,7 +58,6 @@
                                 <th>{{ __('Company Name') }}</th>
                                 <th>{{ __('Email') }}</th>
                                 <th>{{ __('Bill') }}</th>
-                                <th>{{ __('Action') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -124,7 +123,6 @@
                 { data: 'company_name', name: 'company_name' },
                 { data: 'email', name: 'email' },
                 { data: 'bill', name: 'bill' },
-                { data: 'action', name: 'action', orderable: false, searchable: false },
             ],
             order: [[1, 'asc']],
             language: {

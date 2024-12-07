@@ -201,6 +201,9 @@ Route::middleware([
         Route::post('/settings/license', [SettingController::class, 'saveLicense'])->name('settings.license.save');
 
 
+        Route::get('/BalanceAssetSheet/ledger-details', [ReportBalanceSheetController::class, 'LedgerDetails'])->name('get-ledger-details');
+        Route::get('/BalanceAssetSheet/get-data', [ReportBalanceSheetController::class, 'getLedgerDetails'])->name('ledger.get-data');
+
         Route::resource('employees', EmployeeController::class);
         Route::get('/employees/employees/get-data', [EmployeeController::class, 'getData'])->name('employees.get-data');
         Route::get('/employees/employees/add', [EmployeeController::class, 'add'])->name('employees.add');

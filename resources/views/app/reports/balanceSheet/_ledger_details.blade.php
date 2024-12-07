@@ -14,7 +14,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Balance Sheet</li>
+                            <li class="breadcrumb-item active" aria-current="page">Balance Sheet Ledger Details</li>
                         </ol>
                     </nav>
                 </div>
@@ -25,6 +25,11 @@
                     <!-- Vue App for Date Picker -->
                     <div id="vue-datepicker-app">
                         <div class="d-lg-flex align-items-center gap-2">
+                                 
+                            <div class="col-lg-6">
+                                <h5>Details for {{ $ledgerGroupHierarchy }}</h5>
+                            </div>
+
                             <div class="col-lg-3">
                                 <form id="dateRangeForm">
                                     <div class="input-group">
@@ -62,13 +67,13 @@
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
-                        <table id="balance-sheet-datatable" class="stripe row-border order-column" style="width:100%">
+                        <table id="balance-sheet-ledger-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Ledger Group</th>
+                                    <th>Ledger Name</th>
                                     <th>Opening Balance</th>
-                                    <th>Total Debit</th>
-                                    <th>Total Credit</th>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
                                     <th>Closing Balance</th>
                                 </tr>
                             </thead>
@@ -163,7 +168,7 @@
             },
             reloadTableData() {
                 if (this.tableInitialized) {
-                    $('#balance-sheet-datatable').DataTable().ajax.reload(null, false);
+                    $('#balance-sheet-ledger-datatable').DataTable().ajax.reload(null, false);
                 }
             }
         },
@@ -182,7 +187,7 @@
             if (startDate && endDate) {
                 this.dateRange = [startDate, endDate];
             }
-            $('#balance-sheet-datatable').on('init.dt', () => {
+            $('#balance-sheet-ledger-datatable').on('init.dt', () => {
                 this.tableInitialized = true;
             });
         }
@@ -190,7 +195,7 @@
 
 
     $(document).ready(function() {
-        const dataTable = $('#balance-sheet-datatable').DataTable({
+        const dataTable = $('#balance-sheet-ledger-datatable').DataTable({
             fixedColumns: { start: 1 },
             processing: true,
             serverSide: true,
@@ -199,9 +204,10 @@
             scrollX: true,
             scrollY: 300,
             ajax: {
-                url: "{{ route('BalanceSheet.get-data') }}",
+                url: "{{ route('ledger.get-data') }}",
                 type: 'GET',
                 data: function (d) {
+                    d.ledger_group_hierarchy = "{{ $ledgerGroupHierarchy }}";
                     const vueInstance = document.getElementById('vue-datepicker-app').__vue__;
                     if (vueInstance.dateRange.length === 2) {
                         d.start_date = vueInstance.dateRange[0];
@@ -211,18 +217,7 @@
                 }
             },
             columns: [
-                {{--  {data: 'hierarchy', name: 'hierarchy', render: data => data || '-'},  --}}
-                {
-                    data: 'hierarchy',
-                    name: 'hierarchy',
-                    render: function (data, type, row) {
-                        const ledgerGroupHierarchy = row.hierarchy || ''; 
-                        
-                        const url = "{{ route('get-ledger-details') }}" + "?ledger_group_hierarchy=" + encodeURIComponent(ledgerGroupHierarchy);
-                
-                        return `<a href="${url}">${ledgerGroupHierarchy}</a>`;
-                    }
-                },                
+                {data: 'name', name: 'name', render: data => data || '-'},             
                 {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: data => data || '-'},
                 {data: 'total_debit', name: 'total_debit', className: 'text-end', render: data => data || '-'},
                 {data: 'total_credit', name: 'total_credit', className: 'text-end', render: data => data || '-'},

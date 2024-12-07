@@ -56,29 +56,73 @@ return new class extends Migration
                     SET v_pre_balance = 0;
                 END IF;
 
-                -- Common Table Expression for Target Ledger Groups
+                -- Common Table Expressions
                 WITH RECURSIVE target_groups AS (
+                    -- Get all ledger groups under 'Sales Account', 'Purchase Account', 'Bank Account'
                     SELECT
                         lg.ledger_group_id,
                         lg.ledger_group_name,
                         lg.parent
-                    FROM
-                        tally_ledger_groups lg
-                    WHERE
-                        lg.ledger_group_name NOT IN ('Sundry Debtors', 'Sundry Creditors', 'Duties & Taxes')
+                    FROM tally_ledger_groups lg
+                    WHERE lg.ledger_group_name IN ('Sales Account', 'Purchase Account', 'Bank Account')
 
                     UNION ALL
 
+                    -- Recursively get child groups
                     SELECT
                         lgc.ledger_group_id,
                         lgc.ledger_group_name,
                         lgc.parent
-                    FROM
-                        tally_ledger_groups lgc
-                            INNER JOIN target_groups tg ON lgc.parent = tg.ledger_group_name
+                    FROM tally_ledger_groups lgc
+                    INNER JOIN target_groups tg ON lgc.parent = tg.ledger_group_name
                 ),
-
-                -- Subquery to Group Vouchers by voucher_id
+                counterpart_ledgers AS (
+                    -- Get counterpart ledgers for each voucher without second recursion
+                    SELECT
+                        vh.voucher_id,
+                        l.ledger_id,
+                        l.ledger_name,
+                        CASE
+                            WHEN l.ledger_group_id IN (SELECT ledger_group_id FROM target_groups) THEN 1
+                            ELSE 0
+                        END AS is_target_group
+                    FROM
+                        tally_voucher_heads vh
+                    INNER JOIN tally_ledgers l ON vh.ledger_id = l.ledger_id
+                    WHERE
+                        vh.voucher_id IN (
+                            SELECT vh2.voucher_id
+                            FROM tally_voucher_heads vh2
+                            WHERE vh2.ledger_id = p_ledgerId
+                        )
+                        AND vh.ledger_id != p_ledgerId  -- Exclude the party ledger
+                        AND (
+                            (SELECT is_optional FROM tally_vouchers WHERE voucher_id = vh.voucher_id) IS NULL
+                            OR (SELECT is_optional FROM tally_vouchers WHERE voucher_id = vh.voucher_id) = FALSE
+                        )
+                ),
+                preferred_counterpart_ledgers AS (
+                    SELECT
+                        voucher_id,
+                        GROUP_CONCAT(DISTINCT ledger_name SEPARATOR ', ') AS ledger_names
+                    FROM
+                        counterpart_ledgers
+                    WHERE
+                        is_target_group = 1
+                    GROUP BY
+                        voucher_id
+                ),
+                other_counterpart_ledgers AS (
+                    SELECT
+                        voucher_id,
+                        GROUP_CONCAT(DISTINCT ledger_name SEPARATOR ', ') AS ledger_names
+                    FROM
+                        counterpart_ledgers
+                    WHERE
+                        is_target_group = 0
+                    GROUP BY
+                        voucher_id
+                ),
                 grouped_vouchers AS (
                     SELECT
                         v.voucher_date,
@@ -87,21 +131,13 @@ return new class extends Migration
                         COALESCE(vt.voucher_type_name, 'Unknown') AS voucher_type_name,
                         MAX(vh.entry_type) AS entry_type,
                         SUM(vh.amount) AS total_amount,
-                        (
-                            SELECT l2.ledger_name
-                            FROM tally_voucher_heads vh2
-                                JOIN tally_ledgers l2 ON vh2.ledger_id = l2.ledger_id
-                                JOIN tally_ledger_groups lg2 ON l2.ledger_group_id = lg2.ledger_group_id
-                            WHERE vh2.voucher_id = v.voucher_id
-                                AND vh2.ledger_id != p_ledgerId
-                                AND lg2.ledger_group_name NOT IN ('Sundry Debtors', 'Sundry Creditors', 'Duties & Taxes')      
-                            ORDER BY l2.ledger_name DESC
-                            LIMIT 1
-                        ) AS counterpart_ledger_name
+                        COALESCE(pcl.ledger_names, ocl.ledger_names) AS counterpart_ledger_name
                     FROM
                         tally_voucher_heads vh
-                            INNER JOIN tally_vouchers v ON vh.voucher_id = v.voucher_id
-                            LEFT JOIN tally_voucher_types vt ON v.voucher_type_id = vt.voucher_type_id
+                    INNER JOIN tally_vouchers v ON vh.voucher_id = v.voucher_id
+                    LEFT JOIN tally_voucher_types vt ON v.voucher_type_id = vt.voucher_type_id
+                    LEFT JOIN preferred_counterpart_ledgers pcl ON vh.voucher_id = pcl.voucher_id
+                    LEFT JOIN other_counterpart_ledgers ocl ON vh.voucher_id = ocl.voucher_id AND pcl.voucher_id IS NULL
                     WHERE
                         vh.ledger_id = p_ledgerId
                         AND FIND_IN_SET(v.company_id, p_company_ids) > 0
@@ -117,7 +153,9 @@ return new class extends Migration
                         v.voucher_id,
                         v.voucher_date,
                         v.voucher_number,
-                        vt.voucher_type_name
+                        vt.voucher_type_name,
+                        pcl.ledger_names,
+                        ocl.ledger_names
                 )
 
                 -- Final Select with Running Balance Calculation

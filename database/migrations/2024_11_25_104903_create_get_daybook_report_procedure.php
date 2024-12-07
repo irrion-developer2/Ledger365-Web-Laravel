@@ -33,6 +33,7 @@ return new class extends Migration
                    
 
                 SELECT
+                    v.voucher_id,
                     v.voucher_date,
                     COALESCE(pl.ledger_name, al.ledger_name) AS `ledger_name`,
                     COALESCE(pl.ledger_guid, al.ledger_guid) AS `ledger_guid`,

@@ -196,6 +196,14 @@
                 </a>
             </li>
             @endif
+
+            @if(auth()->check() && auth()->user()->status == 'Active' && auth()->user()->role == 'Administrative')
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('block-email.index') ? 'active' : '' }}" href="{{ route('block-email.index') }}">
+                    <div class="menu-title d-flex align-items-center">Block Emails</div>
+                </a>
+            </li>
+            @endif
             
          </ul>
        </div>

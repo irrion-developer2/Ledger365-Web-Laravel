@@ -52,6 +52,10 @@ class SendMailController extends Controller
                                         ->count();
                         return $bill;
                     })
+                    ->addColumn('action', function ($company) {
+                        $date = request()->date;
+                        return view('sendmails.countaction', compact('company','date'))->render();
+                    })
                     ->make(true);
             } else {
                 if(request()->company_id && request()->date) {

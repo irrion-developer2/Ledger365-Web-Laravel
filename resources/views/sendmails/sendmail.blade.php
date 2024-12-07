@@ -41,7 +41,7 @@
                             <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
                             @endforeach
                         </select>
-                        <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
+                        <input type="date" class="form-control mx-2" id="date" name="date">
                     </div>
                     <div class="col-4">
                         <div class="alert" role="alert" style="display: none;">

@@ -37,7 +37,8 @@ class SendMailController extends Controller
                                             ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
                                             ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=','tally_vouchers.voucher_type_id')
                                             ->where('tally_voucher_types.parent',"Bill")
-                                            ->where('tally_vouchers.voucher_date',request()->date)
+                                            ->whereIn('tally_ledgers.ledger_id', ['2', '3'])
+                                            // ->where('tally_vouchers.voucher_date',request()->date)
                                             ->where('tally_vouchers.company_id', $company->company_id)
                                             ->whereNotNull('tally_ledgers.email')
                                             ->where('tally_ledgers.email', '!=', '')
@@ -54,7 +55,20 @@ class SendMailController extends Controller
                     })
                     ->addColumn('action', function ($company) {
                         $date = request()->date;
-                        return view('sendmails.countaction', compact('company','date'))->render();
+                        $company_id = $company->company_id;
+                        return '
+                        <button class="btn btn-primary btn-sm ms-auto count-mutliple-mail" 
+                                data-company-id="'.$company_id.'" 
+                                data-date="'.$date.'">
+                            Send Mail To All
+                        </button>
+                        <button class="btn btn-primary btn-sm ms-auto view-details" 
+                                data-company-id="'.$company_id.'" 
+                                data-date="'.$date.'">
+                            View
+                        </button>
+                    ';
+                        // return view('sendmails.countaction', compact('company_id','date'))->render();
                     })
                     ->make(true);
             } else {
@@ -69,8 +83,8 @@ class SendMailController extends Controller
                         ->where('tally_voucher_heads.entry_type',"debit")
                         ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
 
-                        // ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
-                        ->where('tally_vouchers.voucher_date',request()->date)
+                        ->whereIn('tally_ledgers.ledger_id', ['2', '3']) // Adjusted condition
+                        // ->where('tally_vouchers.voucher_date',request()->date)
 
                         ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
                         ->where('tally_voucher_types.parent',"Bill")
@@ -275,6 +289,7 @@ class SendMailController extends Controller
 
     public function sendMails(Request $request, $send_voucher_id = null, $send_ledger_id = null) {
 
+        log::info($request);
         if ($send_ledger_id && $send_voucher_id) {
             $ledger_datas = TallyLedger::join('tally_voucher_heads', 'tally_ledgers.ledger_id', '=', 'tally_voucher_heads.ledger_id')
                 ->join('tally_vouchers', 'tally_voucher_heads.voucher_id', '=', 'tally_vouchers.voucher_id')
@@ -297,8 +312,8 @@ class SendMailController extends Controller
                 ->where('tally_voucher_heads.entry_type', "debit")
                 ->join('tally_vouchers', 'tally_vouchers.voucher_id', '=', 'tally_voucher_heads.voucher_id')
 
-                // ->whereIn('tally_ledgers.ledger_id', ['2', '3'])
-                ->where('tally_vouchers.voucher_date',$request->date)
+                ->whereIn('tally_ledgers.ledger_id', ['2', '3'])
+                // ->where('tally_vouchers.voucher_date',$request->date)
                 
                 ->join('tally_voucher_types', 'tally_voucher_types.voucher_type_id', '=', 'tally_vouchers.voucher_type_id')
                 ->where('tally_voucher_types.parent', "Bill")
@@ -387,6 +402,8 @@ class SendMailController extends Controller
                 continue; 
             }
     
+            log::info($response);
+
             $responseDecoded = json_decode($response, true);
             // if (!isset($responseDecoded['data'])) {
             //     $errorMessage = $responseDecoded['message'] ?? 'Unknown error occurred.';

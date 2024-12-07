@@ -51,7 +51,7 @@
                 </div>
 
                 <!-- DataTable -->
-                <div class="table-responsive">
+                <div id="companys-wrapper" class="table-responsive">
                     <table id="companys" class="table table-striped table-bordered" style="width:100%">
                         <thead>
                             <tr>
@@ -64,7 +64,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="table-responsive" style="display:none;">
+                <div id="send-mail-wrapper" class="table-responsive" style="display:none;">
                     <table id="send-mail-table" class="table table-striped table-bordered" style="width:100%">
                         <thead>
                             <tr>
@@ -190,6 +190,35 @@
                     }
                 });
             });
+        });
+
+        $(document).off('click', '.count-mutliple-mail').on('click', '.count-mutliple-mail', function () {
+            var companyId = $(this).data('company-id');
+            var date = $(this).data('date');
+
+            console.log('Company ID:', companyId, 'Date:', date);
+
+            $.ajax({
+                url: "{{ route('count-mutliple-mail') }}",
+                method: "GET",
+                data: {
+                    company_id: companyId,
+                    date: date,
+                    _token: "{{ csrf_token() }}"
+                }
+            });
+        });
+
+        $(document).on('click', '.view-details', function () {
+            let companyId = $(this).data('company-id');
+            let date = $(this).data('date');
+
+
+            // Hide the first table
+            $('#companys-wrapper').hide();
+
+            // Show the second table
+            $('#send-mail-wrapper').show();
         });
 
     </script>

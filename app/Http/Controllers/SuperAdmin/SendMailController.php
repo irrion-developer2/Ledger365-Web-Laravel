@@ -210,18 +210,21 @@ class SendMailController extends Controller
                                 ->where('tally_vouchers.voucher_date','<',$curr_voucher->voucher_date)
                                 ->orderBy('tally_vouchers.voucher_date','desc')
                                 ->first();
+        if($receipt) {
+            $recipt_ledger_name = TallyLedger::join('tally_voucher_heads','tally_ledgers.ledger_id','=','tally_voucher_heads.ledger_id')
+                                        ->where('tally_voucher_heads.voucher_id',$receipt->voucher_id)
+                                        ->where('tally_voucher_heads.entry_type',"debit")
+                                        ->select('tally_ledgers.ledger_name')
+                                        ->first();
 
-        $recipt_ledger_name = TallyLedger::join('tally_voucher_heads','tally_ledgers.ledger_id','=','tally_voucher_heads.ledger_id')
-                                    ->where('tally_voucher_heads.voucher_id',$receipt->voucher_id)
-                                    ->where('tally_voucher_heads.entry_type',"debit")
-                                    ->select('tally_ledgers.ledger_name')
-                                    ->first();
+            $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+            $curr_balance_words = ucwords($formatter->format($receipt->amount));
 
-        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
-        $curr_balance_words = ucwords($formatter->format($receipt->amount));
-
-        $pdf = Pdf::loadView('sendmails.receipt', compact('receipt','curr_balance_words','recipt_ledger_name'));
-        return $pdf->stream('receipt.pdf');
+            $pdf = Pdf::loadView('sendmails.receipt', compact('receipt','curr_balance_words','recipt_ledger_name'));
+            return $pdf->stream('receipt.pdf');
+        } else {
+            return redirect()->back()->with('error', 'There are no last receipts');
+        }
     }
 
     public function sendwhatsapp ($voucher_id,$ledger_id) {
@@ -327,6 +330,7 @@ class SendMailController extends Controller
                 )
                 ->orderBy('tally_ledgers.ledger_name', 'asc')
                 ->get();
+                count($ledger_datas);
         }
     
         if (!$ledger_datas || $ledger_datas->isEmpty()) {
@@ -334,95 +338,95 @@ class SendMailController extends Controller
         }
 
         $email_count = 0;
-        // foreach ($ledger_datas as $ledger_data) {
-        //     if (empty($ledger_data->email)) {
-        //         Log::warning("Skipping ledger ID {$ledger_data->ledger_id} due to missing email.");
-        //         continue;
-        //     }
+        foreach ($ledger_datas as $ledger_data) {
+            if (empty($ledger_data->email)) {
+                Log::warning("Skipping ledger ID {$ledger_data->ledger_id} due to missing email.");
+                continue;
+            }
 
-        //     $pdfContent = $this->viewPdf($ledger_data->voucher_id, $ledger_data->ledger_id);
-        //     if (!$pdfContent) {
-        //         Log::error("Failed to generate PDF for voucher ID {$ledger_data->voucher_id} and ledger ID {$ledger_data->ledger_id}.");
-        //         continue;
-        //     }
-        //      // Save PDF to project folder
-        //      $uploadpath = public_path('uploads/Emails');
-        //      if (!file_exists($uploadpath)) {
-        //         mkdir($uploadpath, 0777, true); 
-        //     }
-        //      $fileName = "voucher_{$ledger_data->voucher_id}_{$ledger_data->ledger_id}.pdf"; 
-        //      file_put_contents($uploadpath .'/'. $fileName,$pdfContent); 
-        //      $file_url= url('uploads/Emails/' . $fileName);
+            $pdfContent = $this->viewPdf($ledger_data->voucher_id, $ledger_data->ledger_id);
+            if (!$pdfContent) {
+                Log::error("Failed to generate PDF for voucher ID {$ledger_data->voucher_id} and ledger ID {$ledger_data->ledger_id}.");
+                continue;
+            }
+             // Save PDF to project folder
+             $uploadpath = public_path('uploads/Emails');
+             if (!file_exists($uploadpath)) {
+                mkdir($uploadpath, 0777, true); 
+            }
+             $fileName = "voucher_{$ledger_data->voucher_id}_{$ledger_data->ledger_id}.pdf"; 
+             file_put_contents($uploadpath .'/'. $fileName,$pdfContent); 
+             $file_url= url('uploads/Emails/' . $fileName);
 
-        //     $pdf = base64_encode($pdfContent);
+            $pdf = base64_encode($pdfContent);
 
-        //     $responsem = $this->viewMsg($ledger_data->voucher_id,$ledger_data->ledger_id);
-        //     $data = json_decode($responsem->getContent(), true);
+            $responsem = $this->viewMsg($ledger_data->voucher_id,$ledger_data->ledger_id);
+            $data = json_decode($responsem->getContent(), true);
 
-        //     $formatDate = date('F Y', strtotime($data['voucher_date']));
-        //     $message = "
-        //         Dear Member, {$data['ledger_name']}, bill for the month of <br>
-        //         $formatDate of <b>Rs {$data['credits']}</b> has been generated on {$data['voucher_date']}. <br>
-        //         Total amount to be paid <b>Rs {$data['curr_balance']}</b> on or before the due date. <br>
-        //         {$data['company_name']}
-        //     ";
+            $formatDate = date('F Y', strtotime($data['voucher_date']));
+            $message = "
+                Dear Member, {$data['ledger_name']}, bill for the month of <br>
+                $formatDate of <b>Rs {$data['credits']}</b> has been generated on {$data['voucher_date']}. <br>
+                Total amount to be paid <b>Rs {$data['curr_balance']}</b> on or before the due date. <br>
+                {$data['company_name']}
+            ";
 
-        //     // log::info($message);
-        //     $subject = "Bill for the month of $formatDate";
+            // log::info($message);
+            $subject = "Bill for the month of $formatDate";
     
-        //     $postData = [
-        //         "from" => ["address" => "noreply@irrion.in"],
-        //         "to" => [["email_address" => ["address" => $ledger_data->email]]],
-        //         "subject" => $subject,
-        //         "htmlbody" => $message,
-        //         "attachments" => [["name" => "voucher.pdf", "content" => $pdf, "mime_type" => "application/pdf"]]
-        //     ];
+            $postData = [
+                "from" => ["address" => "noreply@irrion.in"],
+                "to" => [["email_address" => ["address" => $ledger_data->email]]],
+                "subject" => $subject,
+                "htmlbody" => $message,
+                "attachments" => [["name" => "voucher.pdf", "content" => $pdf, "mime_type" => "application/pdf"]]
+            ];
     
-        //     $jsonPostData = json_encode($postData);
-        //     $curl = curl_init();
+            $jsonPostData = json_encode($postData);
+            $curl = curl_init();
     
-        //     curl_setopt_array($curl, [
-        //         CURLOPT_URL => "https://api.zeptomail.com/v1.1/email",
-        //         CURLOPT_RETURNTRANSFER => true,
-        //         CURLOPT_CUSTOMREQUEST => "POST",
-        //         CURLOPT_POSTFIELDS => $jsonPostData,
-        //         CURLOPT_HTTPHEADER => [
-        //             "accept: application/json",
-        //             "authorization: Zoho-enczapikey wSsVR60lqUSiXacsmzSuI+04mllSVgnxFU17iQH063CtGvDH8Mc4lRDIU1OgSaceFzVgE2cXp78tnk8FhGFY3osvylgGWiiF9mqRe1U4J3x17qnvhDzNXG1ekBaLLIsAzwpikmJlF88n+g==",
-        //             "content-type: application/json",
-        //         ],
-        //     ]);
+            curl_setopt_array($curl, [
+                CURLOPT_URL => "https://api.zeptomail.com/v1.1/email",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => $jsonPostData,
+                CURLOPT_HTTPHEADER => [
+                    "accept: application/json",
+                    "authorization: Zoho-enczapikey wSsVR60lqUSiXacsmzSuI+04mllSVgnxFU17iQH063CtGvDH8Mc4lRDIU1OgSaceFzVgE2cXp78tnk8FhGFY3osvylgGWiiF9mqRe1U4J3x17qnvhDzNXG1ekBaLLIsAzwpikmJlF88n+g==",
+                    "content-type: application/json",
+                ],
+            ]);
     
-        //     $response = curl_exec($curl);
-        //     $err = curl_error($curl);
-        //     curl_close($curl);
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+            curl_close($curl);
     
-        //     if ($err) {
-        //         Log::error("cURL Error for ledger ID {$ledger_data->ledger_id}: $err");
-        //         continue; 
-        //     }
+            if ($err) {
+                Log::error("cURL Error for ledger ID {$ledger_data->ledger_id}: $err");
+                continue; 
+            }
     
-        //     log::info($response);
+            log::info($response);
 
-        //     $responseDecoded = json_decode($response, true);
-        //     // if (!isset($responseDecoded['data'])) {
-        //     //     $errorMessage = $responseDecoded['message'] ?? 'Unknown error occurred.';
-        //     //     Log::error("ZeptoMail API Error for ledger ID {$ledger_data->ledger_id}: " . $errorMessage);
-        //     //     continue; // Skip incrementing email_count for failed responses
-        //     // }
-        //     if (isset($responseDecoded['data'])) {
-        //         $email_count++;
-        //         EmailLog::create([
-        //             'company_id' => $ledger_data->company_id,
-        //             'ledger_id' => $ledger_data->ledger_id,
-        //             'email' => $ledger_data->email,
-        //             'message' => $message,
-        //             'pdf_path' => $file_url,
-        //             'json_response' => json_encode($response),
-        //         ]);
-        //     }
-        //     Log::info("Successfully sent email for ledger ID {$ledger_data->ledger_id}. Emails sent count: $email_count");
-        // }
+            $responseDecoded = json_decode($response, true);
+            // if (!isset($responseDecoded['data'])) {
+            //     $errorMessage = $responseDecoded['message'] ?? 'Unknown error occurred.';
+            //     Log::error("ZeptoMail API Error for ledger ID {$ledger_data->ledger_id}: " . $errorMessage);
+            //     continue; // Skip incrementing email_count for failed responses
+            // }
+            if (isset($responseDecoded['data'])) {
+                $email_count++;
+                EmailLog::create([
+                    'company_id' => $ledger_data->company_id,
+                    'ledger_id' => $ledger_data->ledger_id,
+                    'email' => $ledger_data->email,
+                    'message' => $message,
+                    'pdf_path' => $file_url,
+                    'json_response' => json_encode($response),
+                ]);
+            }
+            Log::info("Successfully sent email for ledger ID {$ledger_data->ledger_id}. Emails sent count: $email_count");
+        }
     
         Log::info("Total successfully sent emails: $email_count");
         return redirect()->back()->with('success', "Total successfully sent emails: $email_count");

@@ -230,9 +230,15 @@
                     return data ? data : '-';
                 }},
                 {{--  {data: 'sales', name: 'sales'},  --}}
-                {data: 'outstanding', name: 'outstanding', className: 'text-end', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                {
+                    data: 'outstanding', 
+                    name: 'outstanding',
+                    className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
                 {{--  {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
                     return data ? data : '-';
                 }},  --}}

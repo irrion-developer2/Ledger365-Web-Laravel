@@ -28,172 +28,121 @@
                         </div>
                         <!--end breadcrumb-->
 
-                        <div class="row row-cols-1 row-cols-md-1 row-cols-xl-2">
+                        <div class="card" style="background: none;">
+                            <div class="card-body">
+                                <div class="row row-cols-1 row-cols-md-1 row-cols-xl-2">
 
-                            <div class="col">
-                                <div class="card radius-10 border-start border-0 border-4 border-info">
-                                    <div class="card-body">
+                                    <div class="col">
+                                        <div class="card radius-10 border-start border-0 border-4 border-info">
+                                            <div class="card-body">
+                                                    <div class="d-flex align-items-center">
+                                                        <div>
+                                                            <h4 class="my-1 text-info">Accounting</h4>
+                                                            <p class="mb-0 font-13">Get information about your accounting activities</p>
+                                                        </div>
+                                                        <div class="widgets-icons-2 rounded-circle bg-gradient-blues text-white ms-auto"><i class='bx bxs-cart'></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="pt-4">
+                                                        <h5 class="my-1"><a class="nav-link " href="{{ route('reports.daybook') }}">Daybook</a></h5>
+                                                        <hr class="border-1">
+                                                        <h5 class="my-1"><a class="nav-link " href="{{ route('reports.GroupSummary') }}">Group Summary</a></h5>
+                                                        <hr class="border-1">
+                                                        <h5 class="my-1"><a class="nav-link " href="{{ route('reports.LedgerSummary') }}">Ledger Summary</a></h5>
+                                                        <hr class="border-1">
+                                                        <h5 class="my-1"><a class="nav-link " href="{{ route('reports.PaymentRegister') }}">Payment Register</a></h5>
+                                                        <hr class="border-1">
+                                                        <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ReceiptRegister') }}">Receipt Register</a></h5>
+                                                        <hr class="border-1">
+                                                        <h5 class="my-1"><a class="nav-link " href="{{ route('otherLedgers.index') }}">other Ledgers</a></h5>
+                                                    </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col">
+                                        <div class="card radius-10 border-start border-0 border-4 border-success">
+                                        <div class="card-body">
                                             <div class="d-flex align-items-center">
                                                 <div>
-                                                    <h4 class="my-1 text-info">Accounting</h4>
-                                                    <p class="mb-0 font-13">Get information about your accounting activities</p>
+                                                    <h4 class="my-1 text-success">Sales and Outstanding</h4>
+                                                    <p class="mb-0 font-13">Find how much your customers owe</p>
                                                 </div>
-                                                <div class="widgets-icons-2 rounded-circle bg-gradient-blues text-white ms-auto"><i class='bx bxs-cart'></i>
+                                                <div class="widgets-icons-2 rounded-circle bg-gradient-ohhappiness text-white ms-auto"><i class='bx bx-money'></i>
                                                 </div>
                                             </div>
                                             <div class="pt-4">
-                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.daybook') }}">Daybook</a></h5>
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.MonthlySales') }}">Monthly Sales</a></h5>
                                                 <hr class="border-1">
-                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.GroupSummary') }}">Group Summary</a></h5>
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.MonthlyPurchase') }}">Monthly Purchase</a></h5>
                                                 <hr class="border-1">
-                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.LedgerSummary') }}">Ledger Summary</a></h5>
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers Group</a></h5>
                                                 <hr class="border-1">
-                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.PaymentRegister') }}">Payment Register</a></h5>
-                                                <hr class="border-1">
-                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ReceiptRegister') }}">Receipt Register</a></h5>
-                                                <hr class="border-1">
-                                                <h5 class="my-1"><a class="nav-link " href="{{ route('otherLedgers.index') }}">other Ledgers</a></h5>
-                                            </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col">
-                                <div class="card radius-10 border-start border-0 border-4 border-success">
-                                   <div class="card-body">
-                                       <div class="d-flex align-items-center">
-                                           <div>
-                                               <h4 class="my-1 text-success">Sales and Outstanding</h4>
-                                               <p class="mb-0 font-13">Find how much your customers owe</p>
-                                           </div>
-                                           <div class="widgets-icons-2 rounded-circle bg-gradient-ohhappiness text-white ms-auto"><i class='bx bx-money'></i>
-                                           </div>
-                                       </div>
-                                       <div class="pt-4">
-                                           {{--  <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_outstanding' => 'true']) }}">Outstanding by Customers</a></h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_ageing' => 'true']) }}">Outstanding Ageing</a></h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_collection' => 'true']) }}">Customers Collections</a></h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('customers.index', ['filter_sale' => 'true']) }}">Inactive Customers</a></h5>
-                                           <hr class="border-1">  --}}
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.MonthlySales') }}">Monthly Sales</a></h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.MonthlyPurchase') }}">Monthly Purchase</a></h5>
-                                           <hr class="border-1">
-                                           {{--  <h5 class="my-1"><a class="nav-link " href="{{ route('sales.index', ['start_date' => $startDate, 'end_date' => $endDate]) }}">Monthly Sales</a></h5>
-                                           <hr class="border-1">  --}}
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.CustomerGroup') }}">Sales by Customers Group</a></h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ItemGroup') }}">Sales by Items Group</a></h5>
-                                           
-                                       </div>
-                                   </div>
-                                </div>
-                            </div>
-
-                            <div class="col">
-                                <div class="card radius-10 border-start border-0 border-4 border-warning">
-                                   <div class="card-body">
-                                       <div class="d-flex align-items-center">
-                                           <div>
-                                               <h4 class="my-1 text-warning">Inventory</h4>
-                                               <p class="mb-0 font-13">Manage healthy stock levels</p>
-                                           </div>
-                                           <div class="widgets-icons-2 rounded-circle bg-gradient-orange text-white ms-auto"><i class='bx bxs-cart'></i>
-                                           </div>
-                                       </div>
-                                       <div class="pt-4">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('stock-items.index') }}">Stock Items</a></h5>
-                                           {{--  <hr class="border-1">  --}}
-                                       </div>
-                                   </div>
-                                </div>
-                            </div>
-
-                            <div class="col">
-                                <div class="card radius-10 border-start border-0 border-4 border-success">
-                                   <div class="card-body">
-                                       <div class="d-flex align-items-center">
-                                           <div>
-                                               <h4 class="my-1 text-success">Financial Reports</h4>
-                                               <p class="mb-0 font-13">Get Information about your Financial Details</p>
-                                           </div>
-                                           <div class="widgets-icons-2 rounded-circle bg-gradient-ohhappiness text-white ms-auto"><i class='lni lni-stats-up'></i>
-                                           </div>
-                                       </div>
-                                       <div class="pt-4">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.BalanceSheet') }}">Balance Sheet</a></h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1"><a class="nav-link " href="{{ route('reports.BalanceSheetProfitLoss') }}">Profit & Loss</a></h5>
-                                       </div>
-                                   </div>
-                                </div>
-                            </div>
-
-                            {{-- <div class="col">
-                                <div class="card radius-10 border-start border-0 border-4 border-success">
-                                   <div class="card-body">
-                                       <div class="d-flex align-items-center">
-                                           <div>
-                                               <h4 class="my-1 text-success">Orders</h4>
-                                               <p class="mb-0 font-13">Simplify Orders, Boost Efficiency, Gain Insights</p>
-                                           </div>
-                                           <div class="widgets-icons-2 rounded-circle bg-gradient-ohhappiness text-white ms-auto"><i class='bx bx-money'></i>
-                                           </div>
-                                       </div>
-                                       <div class="pt-4">
-                                           <h5 class="my-1">Sales Order Booking</h5>
-                                           <hr class="border-1">
-                                           <h5 class="my-1">Pending Sales Order</h5>
-                                       </div>
-                                   </div>
-                                </div>
-                            </div> --}}
-
-                            {{--  <div class="col">
-                                <div class="card radius-10 border-start border-0 border-4 border-danger">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center">
-                                            <div>
-                                                <h4 class="my-1 text-danger">Purchase and Payables</h4>
-                                                <p class="mb-0 font-13">Stay on top payments your business owes</p>
-                                            </div>
-                                            <div class="widgets-icons-2 rounded-circle bg-gradient-burning text-white ms-auto"><i class='bx bxs-wallet'></i>
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ItemGroup') }}">Sales by Items Group</a></h5>
                                             </div>
                                         </div>
-                                        <div class="pt-4">
-                                            <h5 class="my-1"><a class="nav-link " href="{{ route('suppliers.index', ['filter_outstanding' => 'true']) }}">Payable by Supplier</a></h5>
-                                            <hr class="border-1">
-                                            <h5 class="my-1"><a class="nav-link " href="{{ route('suppliers.index', ['filter_ageing' => 'true']) }}">Payables Ageing</a></h5>
                                         </div>
                                     </div>
-                                </div>
-                            </div>  --}}
 
-
-                            <div class="col">
-                                <div class="card radius-10 border-start border-0 border-4 border-warning">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center">
-                                            <div>
-                                                <h4 class="my-1 text-warning">Other Reports</h4>
-                                                {{-- <p class="mb-0 font-13">Stay on top payments your business owes</p> --}}
+                                    <div class="col">
+                                        <div class="card radius-10 border-start border-0 border-4 border-warning">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div>
+                                                    <h4 class="my-1 text-warning">Inventory</h4>
+                                                    <p class="mb-0 font-13">Manage healthy stock levels</p>
+                                                </div>
+                                                <div class="widgets-icons-2 rounded-circle bg-gradient-orange text-white ms-auto"><i class='bx bxs-cart'></i>
+                                                </div>
                                             </div>
-                                            <div class="widgets-icons-2 rounded-circle bg-gradient-blooker text-white ms-auto"><i class='bx bxs-wallet'></i>
+                                            <div class="pt-4">
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('stock-items.index') }}">Stock Items</a></h5>
                                             </div>
                                         </div>
-                                        <div class="pt-4">
-                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.cancelled') }}">Cancelled Records</a></h5>
-                                            <hr class="border-1">
-                                            <h5 class="my-1"><a class="nav-link " href="{{ route('reports.optional') }}">Optional Records</a></h5>
                                         </div>
                                     </div>
+
+                                    <div class="col">
+                                        <div class="card radius-10 border-start border-0 border-4 border-success">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div>
+                                                    <h4 class="my-1 text-success">Financial Reports</h4>
+                                                    <p class="mb-0 font-13">Get Information about your Financial Details</p>
+                                                </div>
+                                                <div class="widgets-icons-2 rounded-circle bg-gradient-ohhappiness text-white ms-auto"><i class='lni lni-stats-up'></i>
+                                                </div>
+                                            </div>
+                                            <div class="pt-4">
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.BalanceSheet') }}">Balance Sheet</a></h5>
+                                                <hr class="border-1">
+                                                <h5 class="my-1"><a class="nav-link " href="{{ route('reports.BalanceSheetProfitLoss') }}">Profit & Loss</a></h5>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col">
+                                        <div class="card radius-10 border-start border-0 border-4 border-warning">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center">
+                                                    <div>
+                                                        <h4 class="my-1 text-warning">Other Reports</h4>
+                                                    </div>
+                                                    <div class="widgets-icons-2 rounded-circle bg-gradient-blooker text-white ms-auto"><i class='bx bxs-wallet'></i>
+                                                    </div>
+                                                </div>
+                                                <div class="pt-4">
+                                                    <h5 class="my-1"><a class="nav-link " href="{{ route('reports.cancelled') }}">Cancelled Records</a></h5>
+                                                    <hr class="border-1">
+                                                    <h5 class="my-1"><a class="nav-link " href="{{ route('reports.optional') }}">Optional Records</a></h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                 </div>
                             </div>
-
-
                         </div>
 
 

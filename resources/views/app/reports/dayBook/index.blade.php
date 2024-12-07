@@ -243,8 +243,18 @@
                 {data: 'company_name', name: 'company_name'},
                 {data: 'voucher_type_name', name: 'voucher_type_name'},
                 {data: 'voucher_number', name: 'voucher_number'},
-                {data: 'debit', name: 'debit', className: 'text-end'},
-                {data: 'credit', name: 'credit', className: 'text-end'},
+                {data: 'debit', name: 'debit', className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
+                {data: 'credit', name: 'credit', className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
             ]
         });
 

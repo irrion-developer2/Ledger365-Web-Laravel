@@ -122,7 +122,7 @@ class SalesController extends Controller
                 ->addIndexColumn()
                 ->addColumn('debit', function ($data) {
                     $totalDebit = $data->invoice_amount;
-                    return indian_format(abs($totalDebit));
+                    return (abs($totalDebit));
                 })
                 ->addColumn('voucher_date', function ($entry) {
                     return \Carbon\Carbon::parse($entry->voucher_date)->format('d-M-Y');

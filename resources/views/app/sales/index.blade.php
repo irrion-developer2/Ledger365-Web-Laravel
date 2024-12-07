@@ -237,9 +237,15 @@
                     //     return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     // }
                 },
-                {data: 'debit', name: 'debit', className: 'text-end', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                {
+                    data: 'debit', 
+                    name: 'debit',
+                    className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
             ],
             {{--  footerCallback: function (row, data, start, end, display) {
                 var api = this.api();

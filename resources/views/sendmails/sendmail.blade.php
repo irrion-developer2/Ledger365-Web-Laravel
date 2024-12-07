@@ -35,13 +35,14 @@
             <div class="card-body">
                 <div class="row justify-content-between">
                     <div class="col-5 mb-3 d-flex">
+                        <button id="back" class="btn btn-primary btn-sm ms-auto" style="display:none;">back</button>
                         <select name="company_id" id="company_id" class="form-select mx-2">
                         <option>Select company</option>
                             @foreach($companys as $company)
                             <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
                             @endforeach
                         </select>
-                        <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
+                        <input type="date" class="form-control mx-2" id="date" name="date">
                     </div>
                     <div class="col-4">
                         <div class="alert" role="alert" style="display: none;">
@@ -214,14 +215,22 @@
         $(document).on('click', '.view-details', function () {
             let companyId = $(this).data('company-id');
             let date = $(this).data('date');
+            console.log('Company ID:', companyId, 'Date:', date);
 
-
-            // Hide the first table
             $('#companys-wrapper').hide();
-
-            // Show the second table
             $('#send-mail-wrapper').show();
+            $('#send-all-btn').show();
+            // $('#back').show();
+            $('#company_id').val(companyId);
+            $('#company_id').trigger('change');
         });
+        
+        // $(document).on('click', '#back', function () {
+        //     $('#send-mail-wrapper').hide();
+        //     $('#send-all-btn').hide();
+        //     $('#back').hide();
+        //     $('#companys-wrapper').show();
+        // });
 
     </script>
 @endpush

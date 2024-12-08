@@ -691,6 +691,29 @@ class LedgerController extends Controller
                     $unitId = TallyUnit::where('unit_name', $unitName)->where('company_id', $companyId)->first();
                     $unitIds = $unitId ? $unitId->unit_id : null;
 
+                    $openingRate = isset($stockItemData['OPENINGRATE'])
+                        ? (is_numeric($cleaned = preg_replace('/[^-0-9.]/', '', $stockItemData['OPENINGRATE']))
+                            ? (float)$cleaned
+                            : 0)
+                        : 0;
+
+                    $openingValue = isset($stockItemData['OPENINGVALUE'])
+                        ? (is_numeric($cleaned = preg_replace('/[^-0-9.]/', '', $stockItemData['OPENINGVALUE']))
+                            ? (float)$cleaned
+                            : 0)
+                        : 0;
+                    $openingBalance = isset($stockItemData['OPENINGBALANCE'])
+                        ? (is_numeric($cleaned = preg_replace('/[^-0-9.]/', '', $stockItemData['OPENINGBALANCE']))
+                            ? (float)$cleaned
+                            : 0)
+                        : 0;
+
+                    // if opening value is negative then opening balance will be negative make sure
+                    // opening balance is negative
+                    if ($openingValue < 0 && $openingBalance > 0) {
+                        $openingBalance = -$openingBalance;
+                    }
+
                     $tallyStockItem = TallyItem::updateOrCreate(
                         ['item_guid' => $stockItemData['GUID'] ?? null],
                         [
@@ -749,21 +772,9 @@ class LedgerController extends Controller
                             'denominator' => $stockItemData['DENOMINATOR'] ?? null,
                             'basic_rate_of_excise' => $stockItemData['BASICRATEOFEXCISE'] ?? null,
                             'base_units' => $stockItemData['BASEUNITS'] ?? null,
-                            'opening_balance' => isset($stockItemData['OPENINGBALANCE'])
-                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGBALANCE']))
-                                    ? (float)$cleaned
-                                    : 0)
-                                : 0,
-                            'opening_value' => isset($stockItemData['OPENINGVALUE'])
-                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGVALUE']))
-                                    ? (float)$cleaned
-                                    : 0)
-                                : 0,
-                            'opening_rate' => isset($stockItemData['OPENINGRATE'])
-                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGRATE']))
-                                    ? (float)$cleaned
-                                    : 0)
-                                : 0,
+                            'opening_balance' => $openingBalance,
+                            'opening_value' => $openingValue,
+                            'opening_rate' => $openingRate,
                             // 'unit' => $unit,
                             'igst_rate' => $igstRate,
                             'hsn_code' => $stockItemData['HSNDETAILS.LIST']['HSNCODE'] ?? null,

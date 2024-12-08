@@ -691,6 +691,11 @@ class LedgerController extends Controller
                     $unitId = TallyUnit::where('unit_name', $unitName)->where('company_id', $companyId)->first();
                     $unitIds = $unitId ? $unitId->unit_id : null;
 
+                    $itemName = $stockItemData['NAME'] ?? null;
+                    if (strlen($itemName) > 255) {
+                        $itemName = substr($itemName, 0, 255);
+                    }
+
                     $openingRate = isset($stockItemData['OPENINGRATE'])
                         ? (is_numeric($cleaned = preg_replace('/[^-0-9.]/', '', $stockItemData['OPENINGRATE']))
                             ? (float)$cleaned
@@ -720,7 +725,7 @@ class LedgerController extends Controller
                             'company_id' => $companyId,
                             'item_group_id' => $itemGroupIds,
                             'unit_id' => $unitIds,
-                            'item_name' => $stockItemData['NAME'] ?? null,
+                            'item_name' => $itemName,
                             'parent' => $stockItemData['PARENT'] ?? null,
                             'category' => $stockItemData['CATEGORY'] ?? null,
                             'gst_applicable' => isset($stockItemData['GSTAPPLICABLE']) && $stockItemData['GSTAPPLICABLE'] === 'Yes',

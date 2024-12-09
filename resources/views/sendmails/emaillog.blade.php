@@ -26,12 +26,10 @@
                     <table id="email-log-table" class="table table-striped table-bordered" style="width:100%">
                         <thead>
                             <tr>
-                                <th>#</th>
+                                <th>{{ __('Sr.No.') }}</th>
                                 <th>{{ __('Company Id') }}</th>
                                 <th>{{ __('Ledger Id') }}</th>
                                 <th>{{ __('Email') }}</th>
-                                {{-- <th>{{ __('Message') }}</th> --}}
-                                <th>{{ __('PDF Path') }}</th>
                                 <th>{{ __('Created At') }}</th>
                             </tr>
                         </thead>
@@ -78,8 +76,6 @@
                 { data: 'company_id', name: 'company_id' },
                 { data: 'ledger_id', name: 'ledger_id' },
                 { data: 'email', name: 'email' },
-                // { data: 'message', name: 'message' },
-                { data: 'pdf_path', name: 'pdf_path' },
                 { data: 'created_at', name: 'created_at' },
             ],
             order: [[1, 'asc']],

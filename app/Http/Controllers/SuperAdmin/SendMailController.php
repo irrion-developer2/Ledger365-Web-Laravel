@@ -477,13 +477,8 @@ class SendMailController extends Controller
         if ($request->ajax()) {
             $data = EmailLog::select(['email_id', 'company_id', 'ledger_id', 'email', 'message', 'pdf_path', 'created_at']);
             return DataTables::of($data)
-            // ->editColumn('message', function ($row) {
-            //     return strlen($row->message) > 50 
-            //         ? substr($row->message, 0, 50) . '...' 
-            //         : $row->message;
-            // })
             ->editColumn('created_at', function ($row) {
-                return $row->created_at ? $row->created_at->format('d-m-Y') : '';
+                return $row->created_at ? $row->created_at->format('d-m-Y H:i:s') : '';
             })
             ->make(true);
         }

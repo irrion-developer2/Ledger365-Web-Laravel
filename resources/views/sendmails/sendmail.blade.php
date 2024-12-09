@@ -34,12 +34,12 @@
 
             <div class="card-body">
                 <div class="row justify-content-between">
-                    <div class="col-5 mb-3 d-flex">
+                    <div class="col-3 mb-3 d-flex">
                         <button id="back" class="btn btn-primary btn-sm ms-auto" style="display:none;">back</button>
-                        <select name="company_id" id="company_id" class="form-select mx-2">
-                        <option value="1">Select company</option>
+                        <select name="company_id" id="company_id" class="form-select mx-2" style="display:none;">
+                        <option>Select company</option>
                             @foreach($companys as $company)
-                            <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
+                                <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
                             @endforeach
                         </select>
                         <input type="date" class="form-control mx-2" id="date" name="date">
@@ -220,6 +220,7 @@
             $('#companys-wrapper').hide();
             $('#send-mail-wrapper').show();
             $('#send-all-btn').show();
+            $('#company_id').show();
             // $('#back').show();
             $('#company_id').val(companyId);
             $('#company_id').trigger('change');

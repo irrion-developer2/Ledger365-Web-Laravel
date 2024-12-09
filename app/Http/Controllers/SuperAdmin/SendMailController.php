@@ -330,6 +330,7 @@ class SendMailController extends Controller
                 )
                 ->orderBy('tally_ledgers.ledger_name', 'asc')
                 ->get();
+                count($ledger_datas);
         }
     
         if (!$ledger_datas || $ledger_datas->isEmpty()) {

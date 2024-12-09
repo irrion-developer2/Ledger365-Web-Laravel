@@ -1,20 +1,28 @@
 @extends("layouts.main")
-@section('title', __('Balance Sheet | PreciseCA'))
+@section('title', __('Ledger Group | PreciseCA'))
 
 @section("style")
     <link href="https://unpkg.com/vue2-datepicker@3.10.2/index.css" rel="stylesheet">
+    <style>
+        .text-wrap {
+            white-space: normal !important; /* Allow text wrapping */
+            word-wrap: break-word; /* Break long words */
+            max-width: 200px; /* Set a reasonable max width */
+        }
+    </style>
+
 @endsection
 
 @section("wrapper")
     <div class="page-wrapper">
         <div class="page-content pt-2">
             <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-2">
-                <div class="breadcrumb-title pe-3">Balance Sheet</div>
+                <div class="breadcrumb-title pe-3">Report</div>
                 <div class="ps-3">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Profit & Loss A/c</li>
+                            <li class="breadcrumb-item active" aria-current="page">All Ledger and Group</li>
                         </ol>
                     </nav>
                 </div>
@@ -28,11 +36,11 @@
                             <div class="col-lg-3">
                                 <form id="dateRangeForm">
                                     <div class="input-group">
-                                        <date-picker 
-                                            v-model="dateRange" 
-                                            :range="true" 
-                                            format="YYYY-MM-DD" 
-                                            :number-of-months="2" 
+                                        <date-picker
+                                            v-model="dateRange"
+                                            :range="true"
+                                            format="YYYY-MM-DD"
+                                            :number-of-months="2"
                                             placeholder="Select Date Range"
                                             :time-picker="false"
                                             value-type="format">
@@ -46,9 +54,9 @@
                                     <select id="custom_date_range" name="custom_date_range" class="form-select" @change="updateCustomRange">
                                         <template v-for="group in customDateRangeOptions">
                                             <optgroup :label="group.label">
-                                                <option 
-                                                    v-for="option in group.options" 
-                                                    :key="option.value" 
+                                                <option
+                                                    v-for="option in group.options"
+                                                    :key="option.value"
                                                     :value="option.value"
                                                     :selected="option.value === customDateRange">
                                                     @{{ option.text }}
@@ -62,10 +70,14 @@
                     </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
-                        <table id="profit-balance-sheet-datatable" class="stripe row-border order-column" style="width:100%">
+                        <table id="ledger-group-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
+                                    <th>Level</th>
                                     <th>Ledger Group</th>
+                                    <th>Type</th>
+                                    {{--  <th>Id</th>  --}}
+                                    <th>Ledger Name</th>
                                     <th>Opening Balance</th>
                                     <th>Total Debit</th>
                                     <th>Total Credit</th>
@@ -82,6 +94,10 @@
                                     <th></th>
                                     <th></th>
                                     <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    {{--  <th></th>  --}}
                                 </tr>
                             </tfoot>
                         </table>
@@ -163,7 +179,7 @@
             },
             reloadTableData() {
                 if (this.tableInitialized) {
-                    $('#profit-balance-sheet-datatable').DataTable().ajax.reload(null, false);
+                    $('#ledger-group-datatable').DataTable().ajax.reload(null, false);
                 }
             }
         },
@@ -182,7 +198,7 @@
             if (startDate && endDate) {
                 this.dateRange = [startDate, endDate];
             }
-            $('#profit-balance-sheet-datatable').on('init.dt', () => {
+            $('#ledger-group-datatable').on('init.dt', () => {
                 this.tableInitialized = true;
             });
         }
@@ -190,16 +206,17 @@
 
 
     $(document).ready(function() {
-        const dataTable = $('#profit-balance-sheet-datatable').DataTable({
+        const dataTable = $('#ledger-group-datatable').DataTable({
             fixedColumns: { start: 1 },
             processing: true,
             serverSide: true,
             paging: false,
+            order: [[1, 'asc']],
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
             ajax: {
-                url: "{{ route('BalanceSheetProfitLoss.get-data') }}",
+                url: "{{ route('LedgerGroup.get-data') }}",
                 type: 'GET',
                 data: function (d) {
                     const vueInstance = document.getElementById('vue-datepicker-app').__vue__;
@@ -211,34 +228,21 @@
                 }
             },
             columns: [
+                {data: 'level', name: 'level', render: data => data || '-'},
                 {
-                    data: 'ledger_group_hierarchy',
-                    name: 'ledger_group_hierarchy',
-                    {{--  render: function (data, type, row) {
-                        const ledgerGroupHierarchy = row.ledger_group_hierarchy || ''; 
-                        
-                        const url = "{{ route('get-ledger-details') }}" + "?ledger_group_hierarchy=" + encodeURIComponent(ledgerGroupHierarchy);
-                
-                        return `<a href="${url}">${ledgerGroupHierarchy}</a>`;
-                    }  --}}
-                }, 
+                    data: 'hierarchy',
+                    name: 'hierarchy',
+                    className: 'text-wrap', // Custom class for wrapping text
+                    render: data => data || '-' // Render function remains the same
+                },
+                {data: 'type', name: 'type', render: data => data || '-'},    
+                {{--  {data: 'id', name: 'id', render: data => data || '-'},      --}}
+                {data: 'name', name: 'name', render: data => data || '-'},                
                 {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: data => data || '-'},
                 {data: 'total_debit', name: 'total_debit', className: 'text-end', render: data => data || '-'},
                 {data: 'total_credit', name: 'total_credit', className: 'text-end', render: data => data || '-'},
                 {data: 'closing_balance', name: 'closing_balance', className: 'text-end', render: data => data || '-'},
             ],
-            {{--  footerCallback: function (row, data, start, end, display) {
-                const api = this.api();
-                const columnIndexes = { openingBalance: 1, closingBalance: 4 };
-                
-                const totals = {
-                    openingBalance: api.column(columnIndexes.openingBalance).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
-                    closingBalance: api.column(columnIndexes.closingBalance).data().reduce((a, b) => (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0), 0),
-                };
-
-                $(api.column(columnIndexes.openingBalance).footer()).html(jsIndianFormat(Math.abs(totals.openingBalance)));
-                $(api.column(columnIndexes.closingBalance).footer()).html(jsIndianFormat(Math.abs(totals.closingBalance)));
-            },  --}}
             search: {
                 orthogonal: { search: 'plain' }
             }

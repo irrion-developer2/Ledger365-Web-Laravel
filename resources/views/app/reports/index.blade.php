@@ -55,6 +55,8 @@
                                                         <h5 class="my-1"><a class="nav-link " href="{{ route('reports.ReceiptRegister') }}">Receipt Register</a></h5>
                                                         <hr class="border-1">
                                                         <h5 class="my-1"><a class="nav-link " href="{{ route('otherLedgers.index') }}">Other Ledgers</a></h5>
+                                                        <hr class="border-1">
+                                                        <h5 class="my-1"><a class="nav-link " href="{{ route('reports.LedgerGroup') }}">All Ledger and Group</a></h5>
                                                     </div>
                                             </div>
                                         </div>

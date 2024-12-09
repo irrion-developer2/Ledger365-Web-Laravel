@@ -14,15 +14,15 @@ return new class extends Migration
      */
     public function up()
     {
+        // Drop the procedure if it already exists
         DB::unprepared('DROP PROCEDURE IF EXISTS get_ledger_details_by_group;');
 
+        // Create the stored procedure
         DB::unprepared("
             CREATE PROCEDURE get_ledger_details_by_group(
                 IN p_company_ids VARCHAR(255),
                 IN p_start_date DATE,
-                IN p_end_date DATE,
-                IN p_ledger_group_hierarchy VARCHAR(1000),
-                IN p_type VARCHAR(50)
+                IN p_end_date DATE
             )
             BEGIN
                 WITH RECURSIVE ledger_group_hierarchy AS (
@@ -38,25 +38,10 @@ return new class extends Migration
                         tally_ledger_groups lg
                     WHERE
                         (lg.parent IS NULL OR COALESCE(lg.parent, '') = '')
-                        AND FIND_IN_SET(lg.company_id, p_company_ids) > 0
-                        /* Handle p_ledger_group_hierarchy if provided */
-                        AND (
-                            p_ledger_group_hierarchy IS NULL
-                            OR p_ledger_group_hierarchy = ''
-                            OR lg.ledger_group_name IN (
-                                SELECT TRIM(value) FROM (
-                                    SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(p_ledger_group_hierarchy, ',', numbers.n), ',', -1) AS value
-                                    FROM 
-                                        (SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 
-                                         UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 
-                                         UNION ALL SELECT 9 UNION ALL SELECT 10) numbers
-                                    WHERE numbers.n <= 1 + (LENGTH(p_ledger_group_hierarchy) - LENGTH(REPLACE(p_ledger_group_hierarchy, ',', '')))
-                                ) AS split_values
-                            )
-                        )
-    
+                        AND FIND_IN_SET(lg.company_id, p_company_ids)
+                
                     UNION ALL
-    
+                
                     -- Recursive case: select child ledger groups
                     SELECT
                         lg_child.ledger_group_id,
@@ -70,22 +55,7 @@ return new class extends Migration
                     INNER JOIN
                         ledger_group_hierarchy lg_h ON lg_child.parent = lg_h.ledger_group_name
                     WHERE
-                        FIND_IN_SET(lg_child.company_id, p_company_ids) > 0
-                        /* Handle p_ledger_group_hierarchy if provided */
-                        AND (
-                            p_ledger_group_hierarchy IS NULL
-                            OR p_ledger_group_hierarchy = ''
-                            OR lg_child.ledger_group_name IN (
-                                SELECT TRIM(value) FROM (
-                                    SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(p_ledger_group_hierarchy, ',', numbers.n), ',', -1) AS value
-                                    FROM 
-                                        (SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 
-                                         UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 
-                                         UNION ALL SELECT 9 UNION ALL SELECT 10) numbers
-                                    WHERE numbers.n <= 1 + (LENGTH(p_ledger_group_hierarchy) - LENGTH(REPLACE(p_ledger_group_hierarchy, ',', '')))
-                                ) AS split_values
-                            )
-                        )
+                        FIND_IN_SET(lg_child.company_id, p_company_ids)
                 ),
                 ledger_balances AS (
                     SELECT
@@ -108,10 +78,12 @@ return new class extends Migration
                             INNER JOIN
                                 tally_vouchers v ON vh.voucher_id = v.voucher_id
                             WHERE
-                                v.voucher_date < p_start_date
+                                (
+                                    p_start_date IS NULL OR v.voucher_date < p_start_date
+                                )
                                 AND (v.is_optional = 0 OR v.is_optional IS NULL)
                                 AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
-                                AND FIND_IN_SET(v.company_id, p_company_ids) > 0
+                                AND FIND_IN_SET(v.company_id, p_company_ids)
                             GROUP BY
                                 vh.ledger_id
                         ) vab ON vab.ledger_id = l.ledger_id
@@ -127,15 +99,20 @@ return new class extends Migration
                             INNER JOIN
                                 tally_vouchers v ON vh.voucher_id = v.voucher_id
                             WHERE
-                                v.voucher_date BETWEEN p_start_date AND p_end_date
+                                (
+                                    (p_start_date IS NULL AND p_end_date IS NULL)
+                                    OR (p_start_date IS NULL AND v.voucher_date <= p_end_date)
+                                    OR (p_end_date IS NULL AND v.voucher_date >= p_start_date)
+                                    OR (v.voucher_date BETWEEN p_start_date AND p_end_date)
+                                )
                                 AND (v.is_optional = 0 OR v.is_optional IS NULL)
                                 AND (v.is_cancelled = 0 OR v.is_cancelled IS NULL)
-                                AND FIND_IN_SET(v.company_id, p_company_ids) > 0
+                                AND FIND_IN_SET(v.company_id, p_company_ids)
                             GROUP BY
                                 vh.ledger_id
                         ) vai ON vai.ledger_id = l.ledger_id
                     WHERE
-                        FIND_IN_SET(l.company_id, p_company_ids) > 0
+                        FIND_IN_SET(l.company_id, p_company_ids)
                 ),
                 ledger_hierarchy AS (
                     -- Combine ledgers with their full hierarchical paths
@@ -178,7 +155,7 @@ return new class extends Migration
                         lg_h.ledger_group_id,
                         lg_h.ledger_group_name
                 )
-                -- Final selection with type filtering
+                -- Final selection
                 SELECT
                     level,
                     hierarchy,
@@ -221,13 +198,9 @@ return new class extends Migration
                         FROM
                             ledger_hierarchy
                     ) fh
-                WHERE
-                    (p_type = 'Group' AND type = 'Group')
-                    OR (p_type = 'Ledger' AND type = 'Ledger')
-                    OR (p_type IS NULL OR p_type = '')
                 ORDER BY
                     hierarchy;
-            END
+            END;
         ");
     }
 
@@ -238,6 +211,7 @@ return new class extends Migration
      */
     public function down()
     {
+        // Drop the stored procedure if it exists
         DB::unprepared('DROP PROCEDURE IF EXISTS get_ledger_details_by_group;');
     }
 };

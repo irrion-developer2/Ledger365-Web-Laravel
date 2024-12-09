@@ -6,14 +6,14 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\App\SalesController;
-use App\Http\Controllers\App\CompanyController;
 
+use App\Http\Controllers\App\CompanyController;
 use App\Http\Controllers\App\AnalyticController;
 use App\Http\Controllers\App\ColumnarController;
 use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\EmployeeController;
-use App\Http\Controllers\App\SupplierController;
 
+use App\Http\Controllers\App\SupplierController;
 use App\Http\Controllers\App\StockItemController;
 use App\Http\Controllers\SuperAdmin\UserController;
 use App\Http\Controllers\App\Reports\ReportController;
@@ -24,6 +24,7 @@ use App\Http\Controllers\App\Reports\ReportCashBankController;
 use App\Http\Controllers\App\Reports\ReportOptionalController;
 use App\Http\Controllers\App\Reports\ReportCancelledController;
 use App\Http\Controllers\App\Reports\ReportItemGroupController;
+use App\Http\Controllers\App\Reports\ReportLedgerGroupController;
 use App\Http\Controllers\App\Reports\ReportBalanceSheetController;
 use App\Http\Controllers\App\Reports\ReportGroupSummaryController;
 use App\Http\Controllers\App\Reports\ReportCustomerGroupController;
@@ -203,6 +204,11 @@ Route::middleware([
 
         Route::get('/BalanceAssetSheet/ledger-details', [ReportBalanceSheetController::class, 'LedgerDetails'])->name('get-ledger-details');
         Route::get('/BalanceAssetSheet/get-data', [ReportBalanceSheetController::class, 'getLedgerDetails'])->name('ledger.get-data');
+
+        
+        Route::get('/LedgerGroup', [ReportLedgerGroupController::class, 'index'])->name('reports.LedgerGroup');
+        Route::get('/LedgerGroup/get-data', [ReportLedgerGroupController::class, 'getData'])->name('LedgerGroup.get-data');
+        
 
         Route::resource('employees', EmployeeController::class);
         Route::get('/employees/employees/get-data', [EmployeeController::class, 'getData'])->name('employees.get-data');

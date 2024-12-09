@@ -189,7 +189,7 @@
             </li>
             @endif
             
-            @if(auth()->check() && auth()->user()->status == 'Active' && auth()->user()->role == 'Administrative')
+            {{-- @if(auth()->check() && auth()->user()->status == 'Active' && auth()->user()->role == 'Administrative')
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('sendmail') ? 'active' : '' }}" href="{{ route('sendmail') }}">
                     <div class="menu-title d-flex align-items-center">Send Emails</div>
@@ -202,6 +202,31 @@
                 <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs('block-email.index') ? 'active' : '' }}" href="{{ route('block-email.index') }}">
                     <div class="menu-title d-flex align-items-center">Block Emails</div>
                 </a>
+            </li>
+            @endif --}}
+
+            @if(auth()->check() && auth()->user()->status == 'Active' && auth()->user()->role == 'Administrative')
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle dropdown-toggle-nocaret {{ request()->routeIs(['sendmail', 'block-email.index']) ? 'active' : '' }}" 
+                href="#" 
+                id="emailDropdown" 
+                role="button" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false">
+                    <div class="menu-title d-flex align-items-center">Email</div>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="emailDropdown">
+                    <li>
+                        <a class="dropdown-item {{ request()->routeIs('sendmail') ? 'active' : '' }}" href="{{ route('sendmail') }}">
+                            Send Email
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item {{ request()->routeIs('block-email.index') ? 'active' : '' }}" href="{{ route('block-email.index') }}">
+                            Block Email
+                        </a>
+                    </li>
+                </ul>
             </li>
             @endif
             

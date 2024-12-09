@@ -100,10 +100,8 @@ class UserDataTable extends DataTable
             Column::make('No')->data('DT_RowIndex')->name('DT_RowIndex')->searchable(false)->orderable(false),
             Column::make('name')->title(__('Name')),
             Column::make('email')->title(__('Email')),
-            Column::make('tally_connector_id')->title(__('Tally Connector Id')),
             Column::make('role')->title(__('Role')),
             Column::make('created_at')->title(__('Created At')),
-            Column::make('updated_at')->title(__('Updated At')),
             Column::make('action')->title(__('action')),
         ];
     }

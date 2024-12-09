@@ -19,45 +19,14 @@
                 </nav>
             </div>
         </div>
-        <!--end breadcrumb-->
-
-
-         <!--start email wrapper-->
-         <div class="email-wrapper">
-            <div class="email-sidebar">
-                <div class="email-sidebar-header d-grid"> <a href="javascript:;"  onclick="history.back();" class="btn btn-primary compose-mail-btn"><i class='bx bx-left-arrow-alt me-2'></i> Sales by Items Group</a>
-                </div>
-                <div class="email-sidebar-content">
-                    <div class="email-navigation" style="height: 530px;">
-                        <div class="list-group list-group-flush">
-                            @foreach($menuItems as $item)
-                                <a href="{{ route('reports.ItemGroupLedger', ['ItemGroupLedger' => $item->item_group_id]) }}" class="list-group-item d-flex align-items-center {{ request()->route('ItemGroupLedger') == $item->item_group_id ? 'active' : '' }}" style="border-top: none;">
-                                    <i class='bx {{ $item->icon ?? 'bx-default-icon' }} me-3 font-20'></i>
-                                    <span>{{ $item->item_group_name }}</span>
-                                    @if(isset($item->badge))
-                                        <span class="badge bg-primary rounded-pill ms-auto">{{ $item->badge }}</span>
-                                    @endif
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="email-header d-xl-flex align-items-center padding-0" style="height: auto;">
-                
-                <div class="d-flex align-items-center">
-                    <div class="">
-                        <h4 class="my-1 text-info">{{ $itemGroupLedger->item_group_name }} </h4>
-                    </div>
-                </div>
-               
-            </div>
             
-            <div class="email-content py-2">
-                <div class="">
-                    <div class="email-list">
-                        <div class="table-responsive table-responsive-scroll  border-0">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-lg-flex align-items-center gap-2">
+                            <h4 class="my-1 text-info">{{ $itemGroupLedger->item_group_name }} </h4>
+                        </div>
+
+                        <div class="table-responsive table-responsive-scroll border-0">
                             <table class="stripe row-border order-column" id="item-group-ledger-datatable" width="100%">
                                 <thead>
                                     <tr>
@@ -93,30 +62,11 @@
 
                     </div>
                 </div>
-            </div>
-        
-            <!--start email overlay-->
-            <div class="overlay email-toggle-btn-mobile"></div>
-            <!--end email overlay-->
         </div>
-        <!--end email wrapper-->
-
-
-            
+ 
     </div>
 </div>
-
-
-
-
 @endsection
-@push('javascript')
-<script>
-	new PerfectScrollbar('.email-navigation');
-	new PerfectScrollbar('.email-list');
-</script>
-
-@endpush
 @section("script")
 @include('layouts.includes.datatable-js-css')
 <script src="{{ url('assets/js/NumberFormatter.js') }}"></script>

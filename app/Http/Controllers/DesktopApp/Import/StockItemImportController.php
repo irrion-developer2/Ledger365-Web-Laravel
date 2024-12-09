@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers\DesktopApp\Import;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MasterImportRequest;
-use App\Services\Import\TallyVoucherService;
+use App\Services\Import\TallyStockItemService;
+use Illuminate\Http\Request;
 
-class VoucherImportController extends Controller
+class StockItemImportController extends Controller
 {
 
-    protected $tallyVoucherService;
+    protected $tallyStockItemService;
 
-    public function __construct(TallyVoucherService $tallyVoucherService)
+    public function __construct(TallyStockItemService $tallyStockItemService)
     {
-        $this->tallyVoucherService = $tallyVoucherService;
+        $this->tallyStockItemService = $tallyStockItemService;
     }
 
     public function import(MasterImportRequest $request)
     {
-        $response = $this->tallyVoucherService->importVoucherJson($request);
+        $response = $this->tallyStockItemService->importStockItemJson($request);
 
         if ($response instanceof \Illuminate\Http\JsonResponse) {
             $data = $response->getData(true);

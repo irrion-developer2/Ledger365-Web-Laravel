@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\App\Reports;
 
-use App\Http\Controllers\Controller;
 use Carbon\Carbon;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
-use App\Models\TallyVoucher;
-use Illuminate\Support\Facades\DB;
 use App\Services\ReportService;
+use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Http;
 
-class ReportDayBookController extends Controller
+class ReportLedgerGroupController extends Controller
 {
+
     protected $reportService;
 
     public function __construct(ReportService $reportService)
@@ -22,9 +22,10 @@ class ReportDayBookController extends Controller
         $this->reportService = $reportService;
     }
 
+
     public function index()
     {
-        return view ('app.reports.dayBook.index');
+        return view ('app.reports.ledgerGroup.index');
     }
 
     public function getData(Request $request)
@@ -41,11 +42,11 @@ class ReportDayBookController extends Controller
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
-            $isCancelled = $request->get('is_cancelled', 0);
-            $isOptional = $request->get('is_optional', 0);
-            $voucherTypeName = $request->get('voucher_type_name');
+            $hierarchyNames = $request->get('ledger_group_hierarchy');
+            $types = $request->get('type');
 
-            $voucherTypeName = ($voucherTypeName && strtolower($voucherTypeName) !== 'null' && trim($voucherTypeName) !== '') ? $voucherTypeName : null;
+            $hierarchyNames = (!empty($hierarchyNames)) ? implode(',', $hierarchyNames) : null;
+
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
 
@@ -82,32 +83,29 @@ class ReportDayBookController extends Controller
 
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "CALL get_daybook_data(?, ?, ?, ?, ?, ?)";
+            $sql = "CALL get_ledger_details_by_group(?, ?, ?, ?, ?)";
 
-
-            Log::info("Calling Stored Procedure get_daybook_data", [
+            Log::info("Calling Stored Procedure get_ledger_details_by_group", [
                 'sql' => $sql,
                 'params' => [
-                    'company_ids' => $companyIdsList,
-                    'start_date' => $startDate,
-                    'end_date' => $endDate,
-                    'is_cancelled' => $isCancelled,
-                    'is_optional' => $isOptional,
-                    'voucher_type_name' => $voucherTypeName,
+                    'p_company_ids' => $companyIdsList,
+                    'p_start_date' => $startDate,
+                    'p_end_date' => $endDate,
+                    'p_types' => $types,
+                    'p_hierarchy_names' => $hierarchyNames
                 ]
             ]);
 
             try {
-                $dayBook = DB::select($sql, [ 
-                    $companyIdsList,
-                    $startDate,
-                    $endDate,
-                    $isCancelled,
-                    $isOptional,
-                    $voucherTypeName,
+                $dayBook = DB::select($sql, [
+                    $companyIdsList,    
+                    $startDate,         
+                    $endDate,   
+                    $types,         
+                    $hierarchyNames, 
                 ]);
             } catch (\Exception $e) {
-                Log::error('Error executing stored procedure get_daybook_data:', [
+                Log::error('Error executing stored procedure get_ledger_details_by_group:', [
                     'error' => $e->getMessage(),
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
@@ -116,25 +114,33 @@ class ReportDayBookController extends Controller
                 return response()->json(['error' => 'Failed to retrieve data.'], 500);
             }
 
+            // dd($dayBook);
+            
             $endTime1 = microtime(true);
             $executionTime1 = $endTime1 - $startTime;
-            Log::info('Total first DB request execution time for ReportDayBookController.getData:', [
+            Log::info('Total first DB request execution time for ReportLedgerGroupController.getData:', [
                 'time_taken' => $executionTime1 . ' seconds'
             ]);
 
             $dataTable = DataTables::of($dayBook)
                 ->addIndexColumn()
-                ->addColumn('credit', function ($data) {
-                    return (abs($data->total_credit));
+                ->addColumn('opening_balance', function ($data) {
+                    return indian_format($data->opening_balance);
                 })
-                ->addColumn('debit', function ($data) {
-                    return (abs($data->total_debit));
+                ->addColumn('total_debit', function ($data) {
+                    return indian_format($data->total_debit);
+                })
+                ->addColumn('total_credit', function ($data) {
+                    return indian_format($data->total_credit);
+                })
+                ->addColumn('closing_balance', function ($data) {
+                    return indian_format($data->closing_balance);
                 })
                 ->make(true);
 
             $endTime = microtime(true);
             $executionTime = $endTime - $startTime;
-            Log::info('Total end execution time for ReportDayBookController.getData:', [
+            Log::info('Total end execution time for ReportLedgerGroupController.getData:', [
                 'time_taken' => $executionTime . ' seconds'
             ]);
 

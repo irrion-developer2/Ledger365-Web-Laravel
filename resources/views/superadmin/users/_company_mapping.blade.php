@@ -31,8 +31,8 @@
                         <table id="users-company-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Guid</th>
-                                    <th>Alter Id</th>
+                                    {{--  <th>Guid</th>
+                                    <th>Alter Id</th>  --}}
                                     <th>Company Name</th>
                                     <th>State</th>
                                     <th>License Number </th>
@@ -44,8 +44,8 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th></th>
-                                    <th></th>
+                                    {{--  <th></th>
+                                    <th></th>  --}}
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -60,8 +60,8 @@
                                 <thead>
                                     <tr>
                                         <th><input type="checkbox" id="select-all"></th>
-                                        <th>Guid</th>
-                                        <th>Alter Id</th>
+                                        {{--  <th>Guid</th>
+                                        <th>Alter Id</th>  --}}
                                         <th>Company Name</th>
                                         <th>State</th>
                                         <th>License Number</th>
@@ -73,11 +73,11 @@
                                 <tfoot>
                                     <tr>
                                         <th></th>
-                                        <th>Guid</th>
-                                        <th>Alter Id</th>
-                                        <th>Company Name</th>
-                                        <th>State</th>
-                                        <th>License Number</th>
+                                        {{--  <th>Guid</th>
+                                        <th>Alter Id</th>  --}}
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -118,12 +118,12 @@
                 }
             },
             columns: [
-                {data: 'company_guid', name: 'company_guid', render: function(data, type, row) {
+                {{--  {data: 'company_guid', name: 'company_guid', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'alter_id', name: 'alter_id', render: function(data, type, row) {
                     return data ? data : '-';
-                }},
+                }},  --}}
                 {data: 'company_name', name: 'company_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
@@ -207,12 +207,12 @@
                         return `<input type="checkbox" class="company-checkbox" name="company_ids[]" value="${row.company_id}" ${data ? 'checked' : ''}>`;
                     }
                 },
-                {data: 'company_guid', name: 'company_guid', render: function(data, type, row) {
+                {{--  {data: 'company_guid', name: 'company_guid', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {data: 'alter_id', name: 'alter_id', render: function(data, type, row) {
                     return data ? data : '-';
-                }},
+                }},  --}}
                 {data: 'company_name', name: 'company_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},

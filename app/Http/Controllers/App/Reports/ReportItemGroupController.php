@@ -29,7 +29,7 @@ class ReportItemGroupController extends Controller
 
     public function index()
     {
-        return View('app.reports.itemGroup.index1');
+        return View('app.reports.itemGroup.index');
     }
 
     public function getData(Request $request)

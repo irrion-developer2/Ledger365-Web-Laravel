@@ -1,5 +1,5 @@
 @extends("layouts.main")
-@section('title', __('Invoices | PreciseCA'))
+@section('title', __('Balance Sheet | PreciseCA'))
 
 @section("style")
     <link href="https://unpkg.com/vue2-datepicker@3.10.2/index.css" rel="stylesheet">
@@ -9,12 +9,12 @@
     <div class="page-wrapper">
         <div class="page-content pt-2">
             <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-2">
-                <div class="breadcrumb-title pe-3">Invoices</div>
+                <div class="breadcrumb-title pe-3">Balance Sheet</div>
                 <div class="ps-3">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 p-0">
                             <li class="breadcrumb-item"><a href="javascript:;"><i class="bx bx-home-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Invoices</li>
+                            <li class="breadcrumb-item active" aria-current="page">Balance Sheet Ledger Details</li>
                         </ol>
                     </nav>
                 </div>
@@ -25,6 +25,11 @@
                     <!-- Vue App for Date Picker -->
                     <div id="vue-datepicker-app">
                         <div class="d-lg-flex align-items-center gap-2">
+                                 
+                            <div class="col-lg-6">
+                                <h5>Details for {{ $ledgerGroupHierarchy }}</h5>
+                            </div>
+
                             <div class="col-lg-3">
                                 <form id="dateRangeForm">
                                     <div class="input-group">
@@ -58,38 +63,32 @@
                                     </select>
                                 </form>
                             </div>
-
-                            {{--  <div class="col-lg-7 text-end">
-                                <a href="{{ route('columnar.index') }}" class="btn btn-outline-primary border-1">
-                                    <span>Sales Columnar Report</span>
-                                </a>
-                            </div>  --}}
                         </div>
                     </div>
+
                     <div class="table-responsive table-responsive-scroll border-0">
-                        <table id="sales-datatable" class="stripe row-border order-column" style="width:100%">
+                        <table id="balance-sheet-ledger-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>Ledger Name</th>
-                                    <th>Company Name</th>
-                                    <th>Invoice Date</th>
-                                    <th>Invoice Number</th>
-                                    <th>Invoice Amount</th>
-                                    {{--  <th>Place Of Supply</th>  --}}
+                                    <th>Opening Balance</th>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
+                                    <th>Closing Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {{-- Data will be populated by AJAX --}}
                             </tbody>
-                            {{--  <tfoot>
+                            <tfoot>
                                 <tr>
-                                    <th>Total</th>
+                                    <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
                                 </tr>
-                            </tfoot>  --}}
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -169,7 +168,7 @@
             },
             reloadTableData() {
                 if (this.tableInitialized) {
-                    $('#sales-datatable').DataTable().ajax.reload(null, false);
+                    $('#balance-sheet-ledger-datatable').DataTable().ajax.reload(null, false);
                 }
             }
         },
@@ -188,26 +187,27 @@
             if (startDate && endDate) {
                 this.dateRange = [startDate, endDate];
             }
-            $('#sales-datatable').on('init.dt', () => {
+            $('#balance-sheet-ledger-datatable').on('init.dt', () => {
                 this.tableInitialized = true;
             });
         }
     });
 
+
     $(document).ready(function() {
-        const dataTable = $('#sales-datatable').DataTable({
+        const dataTable = $('#balance-sheet-ledger-datatable').DataTable({
             fixedColumns: { start: 1 },
             processing: true,
             serverSide: true,
-            paging: true,
+            paging: false,
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
-            order: [[2, 'asc']],
             ajax: {
-                url: "{{ route('sales.get-data') }}",
+                url: "{{ route('ledger.get-data') }}",
                 type: 'GET',
                 data: function (d) {
+                    d.ledger_group_hierarchy = "{{ $ledgerGroupHierarchy }}";
                     const vueInstance = document.getElementById('vue-datepicker-app').__vue__;
                     if (vueInstance.dateRange.length === 2) {
                         d.start_date = vueInstance.dateRange[0];
@@ -217,46 +217,12 @@
                 }
             },
             columns: [
-                {data: 'ledger_name', name: 'ledger_name',
-                    render: function(data, type, row) {
-                        let url = '{{ route("customers.show", ":guid") }}';
-                        url = url.replace(':guid', row.ledger_guid);
-                        return `<a href="${url}" style="color: #337ab7;">${data}</a>`;
-                    }
-                },
-                {data: 'company_name', name: 'company_name', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'voucher_date', name: 'voucher_date', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'voucher_number', name: 'voucher_number',
-                    // render: function(data, type, row) {
-                    //     var url = '{{ route("sales.items", ":id") }}';
-                    //     url = url.replace(':id', row.voucher_id);
-                    //     return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
-                    // }
-                },
-                {
-                    data: 'debit', 
-                    name: 'debit',
-                    className: 'text-end',
-                    render: function (data) {
-                        if (!data) return '-';
-                        return jsIndianFormat(data);
-                    }
-                },
+                {data: 'name', name: 'name', render: data => data || '-'},             
+                {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: data => data || '-'},
+                {data: 'total_debit', name: 'total_debit', className: 'text-end', render: data => data || '-'},
+                {data: 'total_credit', name: 'total_credit', className: 'text-end', render: data => data || '-'},
+                {data: 'closing_balance', name: 'closing_balance', className: 'text-end', render: data => data || '-'},
             ],
-            {{--  footerCallback: function (row, data, start, end, display) {
-                var api = this.api();
-                var InvoiceAmountToTotal = 3;
-
-                var InvoiceAmounttotal = api.column(InvoiceAmountToTotal).data().reduce(function (a, b) {
-                    return (parseFloat(sanitizeNumber(a)) || 0) + (parseFloat(sanitizeNumber(b)) || 0);
-                }, 0);
-
-                $(api.column(InvoiceAmountToTotal).footer()).html(jsIndianFormat(Math.abs(InvoiceAmounttotal)));
-            },  --}}
             search: {
                 orthogonal: { search: 'plain' }
             }

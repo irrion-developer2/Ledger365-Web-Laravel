@@ -5,21 +5,21 @@ namespace App\Http\Controllers\DesktopApp\Import;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MasterImportRequest;
-use App\Services\Import\TallyVoucherService;
+use App\Services\Import\TallyVoucherTypeService;
 
-class VoucherImportController extends Controller
+class VoucherTypeImportController extends Controller
 {
 
-    protected $tallyVoucherService;
+    protected $tallyVoucherTypeService;
 
-    public function __construct(TallyVoucherService $tallyVoucherService)
+    public function __construct(TallyVoucherTypeService $tallyVoucherTypeService)
     {
-        $this->tallyVoucherService = $tallyVoucherService;
+        $this->tallyVoucherTypeService = $tallyVoucherTypeService;
     }
 
     public function import(MasterImportRequest $request)
     {
-        $response = $this->tallyVoucherService->importVoucherJson($request);
+        $response = $this->tallyVoucherTypeService->importVoucherTypeJson($request);
 
         if ($response instanceof \Illuminate\Http\JsonResponse) {
             $data = $response->getData(true);

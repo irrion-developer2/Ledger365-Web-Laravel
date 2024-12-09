@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('address5')->nullable();
             $table->date('books_from')->nullable();
             $table->date('audited_upto')->nullable();
-            $table->string('email',100)->nullable();
+            $table->string('email')->nullable();
             $table->string('pincode',10)->nullable();
             $table->string('phone_number',50)->nullable();
             $table->string('mobile_number',50)->nullable();

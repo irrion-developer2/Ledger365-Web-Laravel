@@ -277,16 +277,21 @@
                         $('#totalCredit').text(jsIndianFormat(totalCredit));
 
                         var firstRowRunningBalance = parseAmount(data[0]?.running_balance || '0');
-                        var firstRowAmount = data.length > 0 && data[0].amount
-                            ? parseAmount(data[0].amount)
+                        {{--  console.log(firstRowRunningBalance);  --}}
+
+                        var firstRowCreditAmount = data.length > 0 && data[0].credit_amount
+                            ? parseAmount(data[0].credit_amount)
                             : 0;
-                            
-                        var OeningB = firstRowRunningBalance - firstRowAmount;
+                        var firstRowDebitAmount = data.length > 0 && data[0].debit_amount
+                            ? parseAmount(data[0].debit_amount)
+                            : 0;
+
+                        var OpeningB = firstRowRunningBalance - (firstRowCreditAmount - firstRowDebitAmount);
 
                         var lastRowRunningBalance = parseAmount(data[data.length - 1]?.running_balance || '0');
 
                         $('#totalRunningBalance').text(totalRunningBalance.toFixed(2));
-                        $('#openingBalance').text(jsIndianFormat(OeningB));
+                        $('#openingBalance').text(jsIndianFormat(OpeningB));
                         $('#outstanding').text(jsIndianFormat(lastRowRunningBalance));
                         $('#outstandingBalance').text(totalRunningBalance.toFixed(2));
                     }

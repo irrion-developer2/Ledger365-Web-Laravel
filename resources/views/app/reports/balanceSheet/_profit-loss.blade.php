@@ -211,7 +211,17 @@
                 }
             },
             columns: [
-                {data: 'ledger_group_hierarchy', name: 'ledger_group_hierarchy', render: data => data || '-'},
+                {
+                    data: 'hierarchy',
+                    name: 'hierarchy',
+                    render: function (data, type, row) {
+                        const ledgerGroupHierarchy = row.hierarchy || ''; 
+                        
+                        const url = "{{ route('get-ledger-details') }}" + "?ledger_group_hierarchy=" + encodeURIComponent(ledgerGroupHierarchy);
+                
+                        return `<a href="${url}">${ledgerGroupHierarchy}</a>`;
+                    }
+                },  
                 {data: 'opening_balance', name: 'opening_balance', className: 'text-end', render: data => data || '-'},
                 {data: 'total_debit', name: 'total_debit', className: 'text-end', render: data => data || '-'},
                 {data: 'total_credit', name: 'total_credit', className: 'text-end', render: data => data || '-'},

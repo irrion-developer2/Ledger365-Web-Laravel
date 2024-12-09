@@ -52,30 +52,52 @@ class TallyCompanyService
             $addressList = $companyData['ADDRESS.LIST']['ADDRESS'] ?? null;
             $address = is_array($addressList) ? implode(", ", $addressList) : (is_string($addressList) ? $addressList : null);
 
-            $tallyCompany = TallyCompany::updateOrCreate(
-                [
-                    'company_guid' => $companyData['GUID'][''] ?? null,
-                ],
-                [
-                    'alter_id' => $companyData['ALTERID'][''] ?? null,
-                    'company_name' => $companyData['NAME'][0] ?? null,
-                    'state' => $companyData['STATENAME'][''] ?? null,
-                    'license_number' => $licenseNumber,
-                    'starting_from' => $companyData['STARTINGFROM'][''] ?? null,
-                    'address' => $address,
-                    'books_from' => $companyData['BOOKSFROM'][''] ?? null,
-                    'audited_upto' => $companyData['AUDITEDUPTO'][''] ?? null,
-                    'email' => $companyData['EMAIL'][''] ?? null,
-                    'pincode' => $companyData['PINCODE'][''] ?? null,
-                    'phone_number' => $companyData['PHONENUMBER'][''] ?? null,
-                    'mobile_number' => $companyData['MOBILENUMBERS.LIST']['MOBILENUMBERS'] ?? null,
-                    'income_tax_number' => $companyData['INCOMETAXNUMBER'][''] ?? null,
-                    'company_number' => $companyData['COMPANYNUMBER'][''] ?? null,
-                ]
+            $email = $companyData['EMAIL'] ?? null;
 
-            );
+            if (is_array($email)) {
+                Log::info('Email is an array', ['email' => $email]);
+                // Extract the value with the empty string key
+                $email = $email[""] ?? null;
+                Log::info('Extracted email value', ['email' => $email]);
+            }
 
-            $insertedRecordsCount++;
+            if (is_string($email) && strlen($email) > 255) {
+                $email = substr($email, 0, 255);
+            } else {
+                $email = "";
+            }
+
+
+            try {
+                $tallyCompany = TallyCompany::updateOrCreate(
+                    [
+                        'company_guid' => $companyData['GUID'][''] ?? null,
+                    ],
+                    [
+                        'alter_id' => $companyData['ALTERID'][''] ?? null,
+                        'company_name' => $companyData['NAME'][0] ?? null,
+                        'state' => $companyData['STATENAME'][''] ?? null,
+                        'license_number' => $licenseNumber,
+                        'starting_from' => $companyData['STARTINGFROM'][''] ?? null,
+                        'address' => $address,
+                        'books_from' => $companyData['BOOKSFROM'][''] ?? null,
+                        'audited_upto' => $companyData['AUDITEDUPTO'][''] ?? null,
+                        'email' => $email,
+                        'pincode' => $companyData['PINCODE'][''] ?? null,
+                        'phone_number' => $companyData['PHONENUMBER'][''] ?? null,
+                        'mobile_number' => $companyData['MOBILENUMBERS.LIST']['MOBILENUMBERS'] ?? null,
+                        'income_tax_number' => $companyData['INCOMETAXNUMBER'][''] ?? null,
+                        'company_number' => $companyData['COMPANYNUMBER'][''] ?? null,
+                    ]
+                );
+                if ($tallyCompany) {
+                    $insertedRecordsCount++;
+                }
+            } catch (\Exception $e) {
+                Log::error('Error creating company record: ' . $e->getMessage(), [
+                    'companyData' => $companyData,
+                ]);
+            }
 
             return response()->json([
                 'message' => 'Tally Company data processed successfully.',

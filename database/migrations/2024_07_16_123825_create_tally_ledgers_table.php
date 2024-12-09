@@ -49,7 +49,7 @@ return new class extends Migration
             $table->string('ledger_gst_registration_type', 50)->nullable();
             $table->string('gst_in', 20)->nullable();
             $table->string('phone_number', 50)->nullable();
-            $table->string('email', 100)->nullable();
+            $table->string('email')->nullable();
             $table->date('mailing_applicable_from')->nullable();
             $table->string('pincode', 10)->nullable();
             $table->string('mailing_name', 100)->nullable();

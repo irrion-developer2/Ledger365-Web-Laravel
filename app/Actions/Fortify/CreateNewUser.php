@@ -55,7 +55,7 @@ class CreateNewUser implements CreatesNewUsers
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone' => ['required', 'numeric', 'unique:users'], // Ensure phone is unique
-            'password' => $this->passwordRules(),
+            // 'password' => $this->passwordRules(),
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         ])->validate();
 
@@ -67,7 +67,7 @@ class CreateNewUser implements CreatesNewUsers
                     'phone' => $input['phone'],
                     'role' => $input['role'],
                     'tally_connector_id' => $input['tally_connector_id'],
-                    'password' => Hash::make($input['password']),
+                    // 'password' => Hash::make($input['password']),
                     'remember_token' => Str::random(60),
                 ]);
 

@@ -210,7 +210,7 @@
             fixedColumns: { start: 1 },
             processing: true,
             serverSide: true,
-            paging: false,
+            paging: true,
             order: [[1, 'asc']],
             scrollCollapse: true,
             scrollX: true,

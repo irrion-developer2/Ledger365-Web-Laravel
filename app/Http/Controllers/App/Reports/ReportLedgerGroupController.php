@@ -42,10 +42,10 @@ class ReportLedgerGroupController extends Controller
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
             $customDateRange = $request->get('custom_date_range');
-            // $ledgerGroupHierarchy = $request->get('ledger_group_hierarchy');
-            // $type = $request->get('type');
+            $hierarchyNames = $request->get('ledger_group_hierarchy');
+            $types = $request->get('type');
 
-            // $ledgerGroupHierarchy = (!empty($ledgerGroupHierarchy)) ? implode(',', $ledgerGroupHierarchy) : null;
+            $hierarchyNames = (!empty($hierarchyNames)) ? implode(',', $hierarchyNames) : null;
 
             $startDate = ($startDate && strtolower($startDate) !== 'null') ? $startDate : null;
             $endDate = ($endDate && strtolower($endDate) !== 'null') ? $endDate : null;
@@ -83,14 +83,16 @@ class ReportLedgerGroupController extends Controller
 
             $companyIdsList = implode(',', $companyIds);
 
-            $sql = "CALL get_ledger_details_by_group(?, ?, ?)";
+            $sql = "CALL get_ledger_details_by_group(?, ?, ?, ?, ?)";
 
             Log::info("Calling Stored Procedure get_ledger_details_by_group", [
                 'sql' => $sql,
                 'params' => [
-                    'company_ids' => $companyIdsList,
-                    'start_date' => $startDate,
-                    'end_date' => $endDate
+                    'p_company_ids' => $companyIdsList,
+                    'p_start_date' => $startDate,
+                    'p_end_date' => $endDate,
+                    'p_types' => $types,
+                    'p_hierarchy_names' => $hierarchyNames
                 ]
             ]);
 
@@ -98,7 +100,9 @@ class ReportLedgerGroupController extends Controller
                 $dayBook = DB::select($sql, [
                     $companyIdsList,    
                     $startDate,         
-                    $endDate, 
+                    $endDate,   
+                    $types,         
+                    $hierarchyNames, 
                 ]);
             } catch (\Exception $e) {
                 Log::error('Error executing stored procedure get_ledger_details_by_group:', [

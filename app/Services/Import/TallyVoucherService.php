@@ -147,6 +147,22 @@ class TallyVoucherService
                     }
 
 
+                    
+                    $narration = $voucherData['NARRATION'] ?? null;
+
+                    if (is_array($narration)) {
+                        Log::info('narration is an array', ['narration' => $narration]);
+                        // Extract the value with the empty string key
+                        $narration = $narration[""] ?? null;
+                        Log::info('Extracted narration value', ['narration' => $narration]);
+                    }
+
+                    if (is_string($narration) && strlen($narration) > 255) {
+                        $narration = substr($narration, 0, 255);
+                    } else {
+                        $narration = "";
+                    }
+
                     // Log::info('jsonFilePath Data:', ['jsonFilePath' => $jsonFilePath]);
 
                     $tallyVoucher = TallyVoucher::updateOrCreate(
@@ -169,7 +185,7 @@ class TallyVoucherService
                             'country_of_residense' => $voucherData['COUNTRYOFRESIDENCE'] ?? null,
                             'gst_registration_type' => $voucherData['GSTREGISTRATIONTYPE'] ?? null,
                             'numbering_style' => $voucherData['NUMBERINGSTYLE'] ?? null,
-                            'narration' => $voucherData['NARRATION'] ?? null,
+                            'narration' => $narration,
                             'order_no' => $voucherData['INVOICEORDERLIST.LIST']['BASICPURCHASEORDERNO'] ?? null,
                             'order_date' => $voucherData['INVOICEORDERLIST.LIST']['BASICORDERDATE'] ?? null,
                             'ship_doc_no' => $voucherData['BASICSHIPDOCUMENTNO'] ?? null,

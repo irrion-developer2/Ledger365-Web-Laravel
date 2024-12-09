@@ -39,9 +39,9 @@ return new class extends Migration
                     WHERE
                         (lg.parent IS NULL OR COALESCE(lg.parent, '') = '')
                         AND FIND_IN_SET(lg.company_id, p_company_ids)
-                
+
                     UNION ALL
-                
+
                     -- Recursive case: select child ledger groups
                     SELECT
                         lg_child.ledger_group_id,

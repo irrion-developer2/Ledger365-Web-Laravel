@@ -13,6 +13,7 @@ class BlockEmail extends Model
     public $timestamps = true;
     protected $fillable = [
         'email', 
+        'remark',
         'created_at', 
         'updated_at'
     ];

@@ -38,3 +38,5 @@ Command to check collation of database:
 * Revort last changes on your_branch_name
 
 - git reset --hard origin/your_branch_name
+
+- git -c credential.helper= push ledger365-repo main

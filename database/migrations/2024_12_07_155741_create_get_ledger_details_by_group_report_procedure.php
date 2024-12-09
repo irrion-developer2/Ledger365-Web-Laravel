@@ -19,6 +19,8 @@ return new class extends Migration
 
         // Create the stored procedure
         DB::unprepared("
+
+                DELIMITER $$
                 CREATE PROCEDURE get_ledger_details_by_group(
                     IN company_ids VARCHAR(255),  -- e.g., '1,2,3'
                     IN start_date DATE,
@@ -165,7 +167,7 @@ return new class extends Migration
                 ORDER BY hierarchy;
 
                 END$$
-
+                DELIMITER ;
         ");
     }
 

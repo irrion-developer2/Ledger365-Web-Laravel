@@ -24,6 +24,8 @@
                                             <form class="row g-3" method="POST" action="{{ route('register') }}">
                                                 @csrf
                                             {{-- <form class="row g-3"> --}}
+                                                <input type="hidden" class="form-control" name="role" value="Owner">
+                                              
                                                 <div class="col-12">
                                                     <label for="inputUsername" class="form-label">Username</label>
                                                     <input type="text" name="name" :value="old('name')" required class="form-control" id="inputUsername" placeholder="Jhon">
@@ -40,15 +42,14 @@
                                                     <label for="inputTallyConnectorId" class="form-label">Tally Connector Id</label>
                                                     <input type="text" class="form-control" id="inputTallyConnectorId" placeholder="Enter Tally Connector Id"  name="tally_connector_id" :value="old('tally_connector_id')">
                                                 </div>
-                                                <div class="col-12">
+                                                {{--  <div class="col-12">
                                                     <label for="inputRole" class="form-label">Role</label>
                                                     <select class="form-select mb-3" aria-label="Default select example" name="role">
                                                         <option selected="">Select Role</option>
                                                         <option value="Administrative">Super Admin</option>
                                                         <option value="Owner">Company Owner</option>
-                                                        {{-- <option value="Employee">Staff Member</option> --}}
                                                     </select>
-                                                </div>
+                                                </div>  --}}
                                                 {{--  <div class="col-12">
                                                     <label for="inputChoosePassword" class="form-label">Password</label>
                                                     <div class="input-group" id="show_hide_password">

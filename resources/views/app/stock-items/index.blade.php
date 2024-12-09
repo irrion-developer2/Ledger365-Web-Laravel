@@ -67,8 +67,8 @@
                                 <tr>
                                     <th>Item Name</th>
                                     <th>HSN Code</th>
-                                    <th>Opening qty</th>
-                                    <th>Closing Value</th>
+                                    <th>Opening Qty</th>
+                                    <th>Opening Value</th>
                                     <th>Average Rate</th>
                                 </tr>
                             </thead>

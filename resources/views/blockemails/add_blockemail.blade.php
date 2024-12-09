@@ -32,6 +32,11 @@
                         <span class="invalid-feedback">{{ $message }}</span>
                     @enderror
                 </div>
+                <div class="mb-3">
+                    <label for="remark" class="form-label">Remark</label>
+                    <input type="text" class="form-control" 
+                        id="remark" name="remark" placeholder="Enter Remark" value="" >
+                </div>
                 <button type="submit" class="btn btn-primary w-20">Add Email</button>
             </form>
         </div>

@@ -141,18 +141,14 @@ class TallyVoucherService
                         ->where('company_Id', $companyId)
                         ->value('voucher_type_id');
 
-                    // if vouchertypeid is null print query
                     if (!$voucherTypeId) {
                         Log::error('Voucher Type ID not found for voucher type: ' . $voucherType . ' and company ID: ' . $companyId);
                     }
 
-
-                    
                     $narration = $voucherData['NARRATION'] ?? null;
 
                     if (is_array($narration)) {
                         Log::info('narration is an array', ['narration' => $narration]);
-                        // Extract the value with the empty string key
                         $narration = $narration[""] ?? null;
                         Log::info('Extracted narration value', ['narration' => $narration]);
                     }

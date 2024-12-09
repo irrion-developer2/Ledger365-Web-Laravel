@@ -35,3 +35,6 @@ Command to check collation of database:
 * git merge origin/main
 * git add .
 * git commit - m "Commit message"
+* Revort last changes on your_branch_name
+
+- git reset --hard origin/your_branch_name

@@ -234,6 +234,7 @@ Route::middleware([
         Route::get('pdf/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewPdf'])->name('view-pdf');
         Route::get('msg/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewMsg'])->name('view-msg');
         Route::get('receipt/{voucher_id}/{ledger_id}', [SendMailController::class, 'viewReceipt'])->name('view-receipt');
+        Route::get('/email-log', [SendMailController::class, 'getData'])->name('email-log.getData');
 
         Route::get('/block-email', [BlockEmailController::class, 'index'])->name('block-email.index');
         Route::post('/block-email', [BlockEmailController::class, 'store'])->name('block-email.store');

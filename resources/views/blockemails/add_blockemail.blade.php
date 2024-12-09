@@ -44,7 +44,7 @@
 
     <div class="card">
         <div class="card-body">
-            <div id="send-mail-wrapper" class="table-responsive">
+            <div class="table-responsive">
                 <table id="block-mail-table" class="table table-striped table-bordered" style="width:100%">
                     <thead>
                         <tr>

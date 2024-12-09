@@ -222,6 +222,11 @@
                         </a>
                     </li>
                     <li>
+                        <a class="dropdown-item {{ request()->routeIs('email-log.getData') ? 'active' : '' }}" href="{{ route('email-log.getData') }}">
+                            View Log
+                        </a>
+                    </li>
+                    <li>
                         <a class="dropdown-item {{ request()->routeIs('block-email.index') ? 'active' : '' }}" href="{{ route('block-email.index') }}">
                             Block Email
                         </a>

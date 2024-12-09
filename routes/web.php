@@ -231,7 +231,6 @@ Route::middleware([
         Route::post('users/{user}/company-mapping/update', [UserController::class, 'updateCompanyMapping'])->name('companiesMapping.update');
     });
 
-    //  JET STREAM
     require __DIR__ . '/auth.php';
 });
 

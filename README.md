@@ -35,8 +35,18 @@ Command to check collation of database:
 * git merge origin/main
 * git add .
 * git commit - m "Commit message"
-* Revort last changes on your_branch_name
 
-- git reset --hard origin/your_branch_name
 
-- git -c credential.helper= push ledger365-repo main
+PreciseCA-Laravel-PHP       (Repo)
+	main
+	ledger365-smruti
+	ledger365-apeksha
+	ledger365
+
+Ledger365-Laravel-Web       (Repo)
+	main
+
+
+* change repo and push code in main branch 
+- git checkout ledger-365
+- git -c credential.helper= push ledger365-repo ledger-365(our branch name):main

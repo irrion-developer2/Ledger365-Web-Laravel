@@ -108,5 +108,29 @@ class UserSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+
+            \App\Models\User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'tester@example.com',
+                'phone' => '1212121212',
+                'is_phone_verified' => 1,
+                'otp' => '654321',
+                'otp_expires_at' => now()->addMinutes(10),
+                'role' => 'Owner',
+                'owner_employee_id' => null,
+                'tally_connector_id' => Str::random(10),
+                'status' => 'Active',
+                'email_verified_at' => now(),
+                'password' => Hash::make('alicepassword'),
+                'two_factor_secret' => null,
+                'two_factor_recovery_codes' => null,
+                'two_factor_confirmed_at' => null,
+                'remember_token' => Str::random(10),
+                'current_team_id' => null,
+                'profile_photo_path' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
     }
 }

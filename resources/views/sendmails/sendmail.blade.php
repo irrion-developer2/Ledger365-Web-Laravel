@@ -42,7 +42,7 @@
                                 <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
                             @endforeach
                         </select>
-                        <input type="date" class="form-control mx-2" id="date" name="date">
+                        <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
                     </div>
                     <div class="col-4">
                         <div class="alert" role="alert" style="display: none;">
@@ -57,6 +57,7 @@
                         <thead>
                             <tr>
                                 <th>{{ __('Company Name') }}</th>
+                                <th>{{ __('Ledger') }}</th>
                                 <th>{{ __('Email') }}</th>
                                 <th>{{ __('Bill') }}</th>
                                 <th>{{ __('Action') }}</th>
@@ -123,6 +124,7 @@
             },
             columns: [
                 { data: 'company_name', name: 'company_name' },
+                { data: 'ledger', name: 'ledger' },
                 { data: 'email', name: 'email' },
                 { data: 'bill', name: 'bill' },
                 { data: 'action', name: 'action', orderable: false, searchable: false },

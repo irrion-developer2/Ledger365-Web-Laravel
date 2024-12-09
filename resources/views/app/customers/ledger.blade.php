@@ -66,9 +66,9 @@
                         <table id="ledger-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Ledger Name</th>
                                     <th>Company Name</th>
-                                    <th>GSTIN</th>
+                                    <th>Ledger Name</th>
+                                    <th>Group Name</th>
                                     {{--  <th>Sales</th>  --}}
                                     <th>outstanding</th>
                                     {{--  <th>
@@ -218,6 +218,7 @@
                 }
             },
             columns: [
+                {data: 'company_name', name: 'company_name', render: data => data || '-'},
                 {data: 'ledger_name', name: 'ledger_name',
                     render: function(data, type, row) {
                         var url = '{{ route("customers.show", ":guid") }}';
@@ -225,14 +226,19 @@
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     }
                 },
-                {data: 'company_name', name: 'company_name', render: data => data || '-'},
-                {data: 'party_gst_in', name: 'party_gst_in', render: function(data, type, row) {
+                {data: 'ledger_group_name', name: 'ledger_group_name', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
                 {{--  {data: 'sales', name: 'sales'},  --}}
-                {data: 'outstanding', name: 'outstanding', className: 'text-end', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                {
+                    data: 'outstanding', 
+                    name: 'outstanding',
+                    className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
                 {{--  {data: 'payment_collection', name: 'payment_collection', render: function(data, type, row) {
                     return data ? data : '-';
                 }},  --}}

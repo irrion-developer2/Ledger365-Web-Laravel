@@ -127,78 +127,6 @@ class LedgerController extends Controller
         return response()->json(['message' => 'License is valid and active'], 200);
     }
 
-    public function companyJsonImport(Request $request)
-    {
-        try {
-            $this->validateLicenseNumber($request);
-
-            $jsonData = null;
-            $fileName = 'tally_company_data_' . date('YmdHis') . '.json';
-
-            if ($request->hasFile('uploadFile')) {
-                $uploadedFile = $request->file('uploadFile');
-                $jsonFilePath = storage_path('app/' . $fileName);
-                $uploadedFile->move(storage_path('app'), $fileName);
-                $jsonData = file_get_contents($jsonFilePath);
-            } else {
-                $jsonData = $request->getContent();
-                $jsonFilePath = storage_path('app/' . $fileName);
-                file_put_contents($jsonFilePath, $jsonData);
-            }
-
-            $data = json_decode($jsonData, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
-            }
-
-            if (!isset($data['BODY']['DATA']['TALLYMESSAGE']['COMPANY'])) {
-                throw new \Exception('COMPANY data not found in JSON structure.');
-            }
-            $companyData = $data['BODY']['DATA']['TALLYMESSAGE']['COMPANY'];
-            // Log::info('Company data found in Tally Message', ['companyData' => $companyData]);
-
-            $insertedRecordsCount = 0;
-
-            $licenseNumber = $request->input('license_number');
-
-            $tallyCompany = TallyCompany::updateOrCreate(
-                [
-                    'company_guid' => $companyData['GUID'][''] ?? null,
-                ],
-                [
-                    'alter_id' => $companyData['ALTERID'][''] ?? null,
-                    'company_name' => $companyData['NAME'][0] ?? null,
-                    'state' => $companyData['STATENAME'][''] ?? null,
-                    'license_number' => $licenseNumber,
-                    'starting_from' => $companyData['STARTINGFROM'][''] ?? null,
-                    'address' => isset($companyData['ADDRESS.LIST']['ADDRESS']) ? implode(", ", $companyData['ADDRESS.LIST']['ADDRESS']) : null,
-                    'books_from' => $companyData['BOOKSFROM'][''] ?? null,
-                    'audited_upto' => $companyData['AUDITEDUPTO'][''] ?? null,
-                    'email' => $companyData['EMAIL'][''] ?? null,
-                    'pincode' => $companyData['PINCODE'][''] ?? null,
-                    'phone_number' => $companyData['PHONENUMBER'][''] ?? null,
-                    'mobile_number' => $companyData['MOBILENUMBERS.LIST']['MOBILENUMBERS'] ?? null,
-                    'income_tax_number' => $companyData['INCOMETAXNUMBER'][''] ?? null,
-                    'company_number' => $companyData['COMPANYNUMBER'][''] ?? null,
-                ]
-
-            );
-
-            $insertedRecordsCount++;
-
-            return response()->json([
-                'message' => 'Tally Company data processed successfully.',
-                'records_inserted' => $insertedRecordsCount
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error in companyJsonImport function', [
-                'error' => $e->getMessage()
-            ]);
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
     public function masterJsonImport(Request $request)
     {
         try {
@@ -426,52 +354,76 @@ class LedgerController extends Controller
                         }
                     }
 
-                    $tallyLedger = TallyLedger::updateOrCreate(
-                        ['ledger_guid' => $guid],
-                        [
-                            'company_id' => $companyId,
-                            'ledger_group_id' => $ledgerGroupId,
-                            'alter_id' => $ledgerData['ALTERID'] ?? null,
-                            'ledger_name' => $languageName,
-                            'alias1' => $alias1,
-                            'alias2' => $alias2,
-                            'alias3' => $alias3,
-                            'parent' => $ledgerData['PARENT'] ?? null,
-                            'tax_classification_name' => html_entity_decode($ledgerData['TAXCLASSIFICATIONNAME'] ?? null),
-                            'tax_type' => $ledgerData['TAXTYPE'] ?? null,
-                            'bill_credit_period' => $ledgerData['BILLCREDITPERIOD'] ?? null,
-                            'credit_limit' => !empty($ledgerData['CREDITLIMIT']) ? $ledgerData['CREDITLIMIT'] : null,
-                            'gst_type' => html_entity_decode($ledgerData['GSTTYPE'] ?? null),
-                            'party_gst_in' => $party_gst_in,
-                            'gst_duty_head' => $ledgerData['GSTDUTYHEAD'] ?? null,
-                            'service_category' => html_entity_decode($ledgerData['SERVICECATEGORY'] ?? null),
-                            'gst_registration_type' => $ledgerData['GSTREGISTRATIONTYPE'] ?? null,
-                            'excise_ledger_classification' => html_entity_decode($ledgerData['EXCISELEDGERCLASSIFICATION'] ?? null),
-                            'excise_duty_type' => html_entity_decode($ledgerData['EXCISEDUTYTYPE'] ?? null),
-                            'excise_nature_of_purchase' => html_entity_decode($ledgerData['EXCISENATUREOFPURCHASE'] ?? null),
-                            'is_bill_wise_on' => isset($ledgerData['ISBILLWISEON']) && $ledgerData['ISBILLWISEON'] === 'Yes',
-                            'is_cost_centres_on' => isset($ledgerData['ISCOSTCENTRESON']) && $ledgerData['ISCOSTCENTRESON'] === 'Yes',
-                            'opening_balance' => !empty($ledgerData['OPENINGBALANCE']) ? $ledgerData['OPENINGBALANCE'] : null,
-                            'applicable_from' => $applicableFrom,
-                            'ledger_gst_registration_type' => $ledgerData['LEDGSTREGDETAILS.LIST']['GSTREGISTRATIONTYPE'] ?? null,
-                            'gst_in' => $gst_in,
-                            'email' => $ledgerData['EMAIL'] ?? null,
-                            'phone_number' => substr($ledgerData['LEDGERMOBILE'] ?? null, 0, 20),
-                            'mailing_applicable_from' => $mailingApplicableFrom,
-                            'pincode' => $pincode,
-                            'mailing_name' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['MAILINGNAME'] ?? null),
-                            'address' => $addressList,
-                            'state' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['STATE'] ?? null),
-                            'country' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['COUNTRY'] ?? null),
-                        ]
-                    );
+                    $email = $ledgerData['EMAIL'] ?? null;
 
-                    if ($tallyLedger) {
-                        $ledgerCount++;
+                    if (is_array($email)) {
+                        Log::info('Email is an array', ['email' => $email]);
+                        // Extract the value with the empty string key
+                        $email = $email[""] ?? null;
+                        Log::info('Extracted email value', ['email' => $email]);
                     }
-                    if (!$tallyLedger) {
+
+                    if (is_string($email) && strlen($email) > 255) {
+                        $email = substr($email, 0, 255);
+                    } else {
+                        $email = "";
+                    }
+
+                    try {
+                        $tallyLedger = TallyLedger::updateOrCreate(
+                            ['ledger_guid' => $guid],
+                            [
+                                'company_id' => $companyId,
+                                'ledger_group_id' => $ledgerGroupId,
+                                'alter_id' => $ledgerData['ALTERID'] ?? null,
+                                'ledger_name' => $languageName,
+                                'alias1' => $alias1,
+                                'alias2' => $alias2,
+                                'alias3' => $alias3,
+                                'parent' => $ledgerData['PARENT'] ?? null,
+                                'tax_classification_name' => html_entity_decode($ledgerData['TAXCLASSIFICATIONNAME'] ?? null),
+                                'tax_type' => $ledgerData['TAXTYPE'] ?? null,
+                                'bill_credit_period' => $ledgerData['BILLCREDITPERIOD'] ?? null,
+                                'credit_limit' => !empty($ledgerData['CREDITLIMIT']) ? $ledgerData['CREDITLIMIT'] : null,
+                                'gst_type' => html_entity_decode($ledgerData['GSTTYPE'] ?? null),
+                                'party_gst_in' => $party_gst_in,
+                                'gst_duty_head' => $ledgerData['GSTDUTYHEAD'] ?? null,
+                                'service_category' => html_entity_decode($ledgerData['SERVICECATEGORY'] ?? null),
+                                'gst_registration_type' => $ledgerData['GSTREGISTRATIONTYPE'] ?? null,
+                                'excise_ledger_classification' => html_entity_decode($ledgerData['EXCISELEDGERCLASSIFICATION'] ?? null),
+                                'excise_duty_type' => html_entity_decode($ledgerData['EXCISEDUTYTYPE'] ?? null),
+                                'excise_nature_of_purchase' => html_entity_decode($ledgerData['EXCISENATUREOFPURCHASE'] ?? null),
+                                'is_bill_wise_on' => isset($ledgerData['ISBILLWISEON']) && $ledgerData['ISBILLWISEON'] === 'Yes',
+                                'is_cost_centres_on' => isset($ledgerData['ISCOSTCENTRESON']) && $ledgerData['ISCOSTCENTRESON'] === 'Yes',
+                                'opening_balance' => !empty($ledgerData['OPENINGBALANCE']) ? $ledgerData['OPENINGBALANCE'] : null,
+                                'applicable_from' => $applicableFrom,
+                                'ledger_gst_registration_type' => $ledgerData['LEDGSTREGDETAILS.LIST']['GSTREGISTRATIONTYPE'] ?? null,
+                                'gst_in' => $gst_in,
+                                'email' => $email,
+                                'phone_number' => substr($ledgerData['LEDGERMOBILE'] ?? null, 0, 20),
+                                'mailing_applicable_from' => $mailingApplicableFrom,
+                                'pincode' => $pincode,
+                                'mailing_name' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['MAILINGNAME'] ?? null),
+                                'address' => $addressList,
+                                'state' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['STATE'] ?? null),
+                                'country' => html_entity_decode($ledgerData['LEDMAILINGDETAILS.LIST']['COUNTRY'] ?? null),
+                            ]
+                        );
+                        if ($tallyLedger) {
+                            $ledgerCount++;
+                        }
+                    } catch (\Exception $e) {
+                        // log in detail
+                        Log::error('Error creating ledger record: ' . $e->getMessage(), [
+                            'ledgerData' => $ledgerData,
+                            'companyGuid' => $companyGuid,
+                            'companyId' => $companyId,
+                        ]);
+                    }
+
+                    /*if (!$tallyLedger) {
                         throw new \Exception('Failed to create or update tally ledger record.');
-                    }
+                    }*/
                 }
             }
 
@@ -739,13 +691,41 @@ class LedgerController extends Controller
                     $unitId = TallyUnit::where('unit_name', $unitName)->where('company_id', $companyId)->first();
                     $unitIds = $unitId ? $unitId->unit_id : null;
 
+                    $itemName = $stockItemData['NAME'] ?? null;
+                    if (strlen($itemName) > 255) {
+                        $itemName = substr($itemName, 0, 255);
+                    }
+
+                    $openingRate = isset($stockItemData['OPENINGRATE'])
+                        ? (is_numeric($cleaned = preg_replace('/[^-0-9.]/', '', $stockItemData['OPENINGRATE']))
+                            ? (float)$cleaned
+                            : 0)
+                        : 0;
+
+                    $openingValue = isset($stockItemData['OPENINGVALUE'])
+                        ? (is_numeric($cleaned = preg_replace('/[^-0-9.]/', '', $stockItemData['OPENINGVALUE']))
+                            ? (float)$cleaned
+                            : 0)
+                        : 0;
+                    $openingBalance = isset($stockItemData['OPENINGBALANCE'])
+                        ? (is_numeric($cleaned = preg_replace('/[^-0-9.]/', '', $stockItemData['OPENINGBALANCE']))
+                            ? (float)$cleaned
+                            : 0)
+                        : 0;
+
+                    // if opening value is negative then opening balance will be negative make sure
+                    // opening balance is negative
+                    if ($openingValue < 0 && $openingBalance > 0) {
+                        $openingBalance = -$openingBalance;
+                    }
+
                     $tallyStockItem = TallyItem::updateOrCreate(
                         ['item_guid' => $stockItemData['GUID'] ?? null],
                         [
                             'company_id' => $companyId,
                             'item_group_id' => $itemGroupIds,
                             'unit_id' => $unitIds,
-                            'item_name' => $stockItemData['NAME'] ?? null,
+                            'item_name' => $itemName,
                             'parent' => $stockItemData['PARENT'] ?? null,
                             'category' => $stockItemData['CATEGORY'] ?? null,
                             'gst_applicable' => isset($stockItemData['GSTAPPLICABLE']) && $stockItemData['GSTAPPLICABLE'] === 'Yes',
@@ -797,21 +777,9 @@ class LedgerController extends Controller
                             'denominator' => $stockItemData['DENOMINATOR'] ?? null,
                             'basic_rate_of_excise' => $stockItemData['BASICRATEOFEXCISE'] ?? null,
                             'base_units' => $stockItemData['BASEUNITS'] ?? null,
-                            'opening_balance' => isset($stockItemData['OPENINGBALANCE'])
-                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGBALANCE']))
-                                    ? (float)$cleaned
-                                    : 0)
-                                : 0,
-                            'opening_value' => isset($stockItemData['OPENINGVALUE'])
-                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGVALUE']))
-                                    ? (float)$cleaned
-                                    : 0)
-                                : 0,
-                            'opening_rate' => isset($stockItemData['OPENINGRATE'])
-                                ? (is_numeric($cleaned = preg_replace('/[^0-9.]/', '', $stockItemData['OPENINGRATE']))
-                                    ? (float)$cleaned
-                                    : 0)
-                                : 0,
+                            'opening_balance' => $openingBalance,
+                            'opening_value' => $openingValue,
+                            'opening_rate' => $openingRate,
                             // 'unit' => $unit,
                             'igst_rate' => $igstRate,
                             'hsn_code' => $stockItemData['HSNDETAILS.LIST']['HSNCODE'] ?? null,
@@ -1148,7 +1116,7 @@ class LedgerController extends Controller
                 ->where('company_id', $companyId)
                 ->value('ledger_id');
 
-            
+
             if (!$ledgerId) {
                 Log::error('Ledger not found', [
                     'ledger_name' => $ledgerName,

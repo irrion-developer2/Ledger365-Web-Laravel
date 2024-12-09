@@ -125,10 +125,10 @@ class ReportDayBookController extends Controller
             $dataTable = DataTables::of($dayBook)
                 ->addIndexColumn()
                 ->addColumn('credit', function ($data) {
-                    return indian_format(abs($data->total_credit));
+                    return (abs($data->total_credit));
                 })
                 ->addColumn('debit', function ($data) {
-                    return indian_format(abs($data->total_debit));
+                    return (abs($data->total_debit));
                 })
                 ->make(true);
 

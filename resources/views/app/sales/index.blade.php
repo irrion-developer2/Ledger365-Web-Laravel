@@ -75,7 +75,7 @@
                                     <th>Invoice Date</th>
                                     <th>Invoice Number</th>
                                     <th>Invoice Amount</th>
-                                    <th>Place Of Supply</th>
+                                    {{--  <th>Place Of Supply</th>  --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -203,6 +203,7 @@
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
+            order: [[2, 'asc']],
             ajax: {
                 url: "{{ route('sales.get-data') }}",
                 type: 'GET',
@@ -236,12 +237,15 @@
                     //     return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
                     // }
                 },
-                {data: 'debit', name: 'debit', className: 'text-end', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'place_of_supply', name: 'place_of_supply', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                {
+                    data: 'debit', 
+                    name: 'debit',
+                    className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
             ],
             {{--  footerCallback: function (row, data, start, end, display) {
                 var api = this.api();

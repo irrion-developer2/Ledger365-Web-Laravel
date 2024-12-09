@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\DesktopApp\Import;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\CompanyImportRequest;
-use App\Services\Import\TallyVoucherService;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\MasterImportRequest;
+use App\Services\Import\TallyVoucherService;
 
 class VoucherImportController extends Controller
 {
@@ -17,7 +17,7 @@ class VoucherImportController extends Controller
         $this->tallyVoucherService = $tallyVoucherService;
     }
 
-    public function import(CompanyImportRequest $request)
+    public function import(MasterImportRequest $request)
     {
         $response = $this->tallyVoucherService->importVoucherJson($request);
 

@@ -113,7 +113,7 @@ class SupplierController extends Controller
                 ->addIndexColumn()
                 ->addColumn('outstanding', function ($data) {
                     $outstanding = $data->outstanding;
-                    return indian_format(($outstanding));
+                    return ($outstanding);
                 })
                 ->make(true);
 

@@ -82,7 +82,7 @@
                             <div class="d-flex align-items-center">
                                 <div>
                                     <p class="mb-0 text-secondary">No. Of Customers</p>
-                                    <h4 class="my-1 text-success">{{ indian_format(abs($numberOfCustomers)) }}</h4>
+                                    <h4 class="my-1 text-success">{{ ($numberOfCustomers) }}</h4>
                                 </div>
 
                                     <div class="widgets-icons-2 rounded-circle bg-gradient-ohhappiness text-white ms-auto">

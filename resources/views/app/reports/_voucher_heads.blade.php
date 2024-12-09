@@ -29,79 +29,40 @@
                 </nav>
             </div>
         </div>
-        <!--end breadcrumb-->
 
+        <div class="card">
+            <div class="card-body">
+                <div class="d-lg-flex align-items-center gap-2">
+                    <h4 class="my-1 text-info">{{ $voucherHead->ledger_name }} </h4>
+                </div>
 
-         <!--start email wrapper-->
-         <div class="email-wrapper">
-            <div class="email-sidebar">
-                <div class="email-sidebar-header d-grid"> <a href="javascript:;" class="btn btn-primary compose-mail-btn" onclick="history.back();"><i class='bx bx-left-arrow-alt me-2'></i> Voucher Head</a>
+                <div class="table-responsive table-responsive-scroll border-0">
+                    <table class="table table-striped" id="voucher-head-table" width="100%">
+                        <thead>
+                            <tr>
+                                <td>Date</td>
+                                <td>Transaction Type</td>
+                                <td>Transaction</td>
+                                <td>Debit</td>
+                                <td>Credit</td>
+                                <td>Running Balance</td>
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>
+                                <th>Total</th>
+                                <th colspan="2"></th>
+                                <th id="total-debit" style="text-align:right"></th>
+                                <th id="total-credit" style="text-align:right"></th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
-                <div class="email-sidebar-content">
-                    <div class="email-navigation" style="height: 530px;">
-                        <div class="list-group list-group-flush">
-                            @foreach($menuItems as $item)
-                                <a href="{{ route('reports.VoucherHead', ['VoucherHead' => $item->ledger_guid]) }}" class="list-group-item d-flex align-items-center {{ request()->route('VoucherHead') == $item->ledger_guid ? 'active' : '' }}" style="border-top: none;">
-                                    <i class='bx {{ $item->icon ?? 'bx-default-icon' }} me-3 font-20'></i>
-                                    <span>{{ $item->ledger_name }}</span>
-                                    @if(isset($item->badge))
-                                        <span class="badge bg-primary rounded-pill ms-auto">{{ $item->badge }}</span>
-                                    @endif
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
+
             </div>
-
-            <div class="email-header d-xl-flex align-items-center padding-0" style="height: auto;">
-                
-                <div class="d-flex align-items-center">
-                    <div class="">
-                        <h4 class="my-1 text-info">{{ $voucherHead->ledger_name }} </h4>
-                    </div>
-                </div>
-               
-            </div>
-            
-            <div class="email-content py-2">
-                <div class="">
-                    <div class="email-list">
-                        
-                        <div class="table-responsive table-responsive-scroll  border-0">
-                            <table class="table table-striped" id="voucher-head-table" width="100%">
-                                <thead>
-                                    <tr>
-                                        <td>Date</td>
-                                        <td>Transaction Type</td>
-                                        <td>Transaction</td>
-                                        <td>Debit</td>
-                                        <td>Credit</td>
-                                        <td>Running Balance</td>
-                                    </tr>
-                                </thead>
-                                <tfoot>
-                                    <tr>
-                                        <th>Total</th>
-                                        <th colspan="2"></th>
-                                        <th id="total-debit" style="text-align:right"></th>
-                                        <th id="total-credit" style="text-align:right"></th>
-                                        <th></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        
-            <!--start email overlay-->
-            <div class="overlay email-toggle-btn-mobile"></div>
-            <!--end email overlay-->
         </div>
-        <!--end email wrapper-->
-   
+        
     </div>
 </div>
 
@@ -128,9 +89,9 @@
                 },
                 { data: 'voucher_type_name', name: 'voucher_type_name', className: 'text-center' },
                 { data: 'voucher_number', name: 'voucher_number', className: 'text-center',
-                    render: function(data, type, row) {
+                    {{--  render: function(data, type, row) {
                         return '<a href="{{ url('reports/VoucherItem') }}/' + row.voucher_id + '">' + data + '</a>';
-                    }
+                    }  --}}
                 },
                 { data: 'debit', name: 'debit', className: 'text-end' },
                 { data: 'credit', name: 'credit', className: 'text-end' },

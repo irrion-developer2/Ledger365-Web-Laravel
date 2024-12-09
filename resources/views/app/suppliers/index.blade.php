@@ -220,9 +220,15 @@
                 {data: 'party_gst_in', name: 'party_gst_in', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'outstanding', name: 'outstanding', className: 'text-end', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                {
+                    data: 'outstanding', 
+                    name: 'outstanding',
+                    className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
             ],
             footerCallback: function (row, data, start, end, display) {
                 var api = this.api();

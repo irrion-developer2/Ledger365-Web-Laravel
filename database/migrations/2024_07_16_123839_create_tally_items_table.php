@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreign('unit_id')->references('unit_id')->on('tally_units');
 
             $table->integer('alter_id')->nullable();
-            $table->string('item_name',150);
+            $table->string('item_name');
             $table->string('alias1',100)->nullable();
             $table->string('alias2',100)->nullable();
             $table->string('alias3',100)->nullable();

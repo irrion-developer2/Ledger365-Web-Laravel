@@ -16,7 +16,7 @@ class BlockEmailController extends Controller
             $data = BlockEmail::select(['id', 'email', 'remark', 'created_at']);
             return DataTables::of($data)
                 ->editColumn('created_at', function ($row) {
-                    return $row->created_at ? $row->created_at->format('Y-m-d') : '';
+                    return $row->created_at ? $row->created_at->format('d-m-Y') : '';
                 })
                 ->make(true);
         }

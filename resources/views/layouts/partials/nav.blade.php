@@ -167,7 +167,7 @@
                     </div>
                     <div class="ms-auto dropy-icon"><i class="bx bx-chevron-down"></i></div>
                 </a>
-                <ul class="dropdown-menu" style="width: auto">
+                <ul class="dropdown-menu" style="width: auto;max-height: 200px; overflow-y: auto;">
                     @foreach($companies as $company)
                         @php
                             $isChecked = in_array($company->company_id, $selectedCompanyIds);
@@ -219,6 +219,11 @@
                     <li>
                         <a class="dropdown-item {{ request()->routeIs('sendmail') ? 'active' : '' }}" href="{{ route('sendmail') }}">
                             Send Email
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item {{ request()->routeIs('email-log.getData') ? 'active' : '' }}" href="{{ route('email-log.getData') }}">
+                            View Log
                         </a>
                     </li>
                     <li>

@@ -2,7 +2,7 @@
 @section('title', __('Stock Items | PreciseCA'))
 
 @section("style")
-    <link href="assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet"/>
+    <link href="https://unpkg.com/vue2-datepicker@3.10.2/index.css" rel="stylesheet">
 @endsection
 
 @section("wrapper")
@@ -22,18 +22,54 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="d-lg-flex align-items-center gap-3"></div>
+                    <!-- Vue App for Date Picker -->
+                    <div id="vue-datepicker-app">
+                        <div class="d-lg-flex align-items-center gap-2">
+                            <div class="col-lg-3">
+                                <form id="dateRangeForm">
+                                    <div class="input-group">
+                                        <date-picker 
+                                            v-model="dateRange" 
+                                            :range="true" 
+                                            format="YYYY-MM-DD" 
+                                            :number-of-months="2" 
+                                            placeholder="Select Date Range"
+                                            :time-picker="false"
+                                            value-type="format">
+                                        </date-picker>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="col-lg-2">
+                                <form id="customDateForm">
+                                    <select id="custom_date_range" name="custom_date_range" class="form-select" @change="updateCustomRange">
+                                        <template v-for="group in customDateRangeOptions">
+                                            <optgroup :label="group.label">
+                                                <option 
+                                                    v-for="option in group.options" 
+                                                    :key="option.value" 
+                                                    :value="option.value"
+                                                    :selected="option.value === customDateRange">
+                                                    @{{ option.text }}
+                                                </option>
+                                            </optgroup>
+                                        </template>
+                                    </select>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="table-responsive table-responsive-scroll border-0">
-
                         <table id="stockItem-datatable" class="stripe row-border order-column" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>Item Name</th>
                                     <th>HSN Code</th>
-                                    <th>Closing Stock</th>
-                                    <th>Avg pr Rate</th>
-                                    <th>Amount</th>
+                                    <th>Opening qty</th>
+                                    <th>Closing Value</th>
+                                    <th>Average Rate</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -58,21 +94,121 @@
 
 @section("script")
 @include('layouts.includes.datatable-js-css')
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+<script src="https://unpkg.com/vue2-datepicker@3.10.2/index.min.js"></script>
+<script src="{{ url('assets/js/NumberFormatter.js') }}"></script>
+
 <script>
-    $(document).ready(function() {
-        new DataTable('#stockItem-datatable', {
-            fixedColumns: {
-                start: 1,
+    Vue.component('date-picker', window.DatePicker.default || window.DatePicker);
+
+    new Vue({
+        el: '#vue-datepicker-app',
+        data: {
+            dateRange: [],
+            customDateRange: "{{ request('custom_date_range') }}",
+            tableInitialized: false,
+            customDateRangeOptions: [
+                {
+                    label: "General",
+                    options: [
+                        { text: "All", value: "all" }
+                    ]
+                },
+                {
+                    label: "Monthly",
+                    options: [
+                        { text: "This Month", value: "this_month" },
+                        { text: "Last Month", value: "last_month" }
+                    ]
+                },
+                {
+                    label: "Quarterly",
+                    options: [
+                        { text: "This Quarter", value: "this_quarter" },
+                        { text: "Prev Quarter", value: "prev_quarter" }
+                    ]
+                },
+                {
+                    label: "Yearly",
+                    options: [
+                        { text: "This Year", value: "this_year" },
+                        { text: "Prev Year", value: "prev_year" }
+                    ]
+                }
+            ]
+        },
+        methods: {
+            resetDateRange() {
+                this.dateRange = [];
+                this.updateURL();
+                this.reloadTableData();
             },
+            updateCustomRange(event) {
+                this.customDateRange = event.target.value;
+                this.updateURL();
+                this.reloadTableData();
+            },
+            updateURL() {
+                const url = new URL(window.location.href);
+                if (this.dateRange.length === 2) {
+                    url.searchParams.set('start_date', this.dateRange[0]);
+                    url.searchParams.set('end_date', this.dateRange[1]);
+                } else {
+                    url.searchParams.delete('start_date');
+                    url.searchParams.delete('end_date');
+                }
+                url.searchParams.set('custom_date_range', this.customDateRange);
+                window.history.pushState({}, '', url.toString());
+            },
+            reloadTableData() {
+                if (this.tableInitialized) {
+                    $('#stockItem-datatable').DataTable().ajax.reload(null, false);
+                }
+            }
+        },
+        watch: {
+            dateRange(newRange) {
+                if (newRange.length === 2) {
+                    this.updateURL();
+                    this.reloadTableData();
+                }
+            }
+        },
+        mounted() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const startDate = urlParams.get('start_date');
+            const endDate = urlParams.get('end_date');
+            if (startDate && endDate) {
+                this.dateRange = [startDate, endDate];
+            }
+            $('#stockItem-datatable').on('init.dt', () => {
+                this.tableInitialized = true;
+            });
+        }
+    });
+
+
+    $(document).ready(function() {
+        const dataTable = $('#stockItem-datatable').DataTable({
+            fixedColumns: { start: 1 },
             processing: true,
             serverSide: true,
-            paging: false,
+            paging: true,
             scrollCollapse: true,
             scrollX: true,
             scrollY: 300,
             ajax: {
                 url: "{{ route('StockItem.get-data') }}",
                 type: 'GET',
+                data: function (d) {
+                    const vueInstance = document.getElementById('vue-datepicker-app').__vue__;
+                    if (vueInstance.dateRange.length === 2) {
+                        d.start_date = vueInstance.dateRange[0];
+                        d.end_date = vueInstance.dateRange[1];
+                    }
+                    d.custom_date_range = vueInstance.customDateRange || "all";
+                }
             },
             columns: [
                 {data: 'item_name', name: 'item_name',
@@ -85,27 +221,35 @@
                 {data: 'hsn_code', name: 'hsn_code', render: function(data, type, row) {
                     return data ? data : '-';
                 }},
-                {data: 'closing_stock', name: 'closing_stock', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'opening_rate', name: 'opening_rate', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
-                {data: 'overall_amount', name: 'overall_amount', className: 'text-end', render: function(data, type, row) {
-                    return data ? data : '-';
-                }},
+                {data: 'opening_qty', name: 'opening_qty', className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
+                {data: 'closing_value', name: 'closing_value', className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
+                {data: 'average_rate', name: 'average_rate', className: 'text-end',
+                    render: function (data) {
+                        if (!data) return '-';
+                        return jsIndianFormat(data);
+                    }
+                },
             ],
             search: {
-                orthogonal: {
-                    search: 'plain'
-                }
+                orthogonal: { search: 'plain' }
             }
         });
 
+        
         function sanitizeNumber(value) {
             return value ? value.toString().replace(/[^0-9.-]+/g, "") : "0";
         }
-
+        
     });
 </script>
 @endsection

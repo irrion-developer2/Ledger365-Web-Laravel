@@ -88,9 +88,9 @@ class ReportLedgerGroupController extends Controller
             Log::info("Calling Stored Procedure get_ledger_details_by_group", [
                 'sql' => $sql,
                 'params' => [
-                    'p_company_ids' => $companyIdsList,
-                    'p_start_date' => $startDate,
-                    'p_end_date' => $endDate
+                    'company_ids' => $companyIdsList,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate
                 ]
             ]);
 

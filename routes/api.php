@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DesktopApp\Import\StockItemImportController;
-use App\Http\Controllers\DesktopApp\Import\LedgerController;
 use App\Http\Controllers\DesktopApp\Import\VoucherTypeImportController;
 use App\Http\Controllers\DesktopApp\Import\MasterImportController;
 use App\Http\Controllers\DesktopApp\Import\CompanyImportController;
@@ -26,7 +25,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/companies', [CompanyImportController::class, 'import'])->name('companies.import');
 
-Route::post('/license_check', [LedgerController::class, 'licenseCheckJsonImport'])->name('license.import');
+//Route::post('/license_check', [LedgerController::class, 'licenseCheckJsonImport'])->name('license.import');
 
 Route::post('/master', [MasterImportController::class, 'import'])->name('master.import');
 
@@ -36,4 +35,4 @@ Route::post('/voucher_types', [VoucherTypeImportController::class, 'import'])->n
 
 Route::post('/vouchers', [VoucherImportController::class, 'import'])->name('voucher.import');
 
-Route::post('/reports', [LedgerController::class, 'reportJsonImport'])->name('report.import');
+//Route::post('/reports', [LedgerController::class, 'reportJsonImport'])->name('report.import');

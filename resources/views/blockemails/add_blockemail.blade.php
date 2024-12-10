@@ -95,7 +95,7 @@
                 { data: 'created_at', name: 'created_at' },
                 // { data: 'action', name: 'action', orderable: false, searchable: false },
             ],
-            order: [[1, 'asc']],
+            order: [[1, 'desc']],
             language: {
                 paginate: {
                     next: '<i class="ti ti-chevron-right"></i> next',

@@ -13,7 +13,8 @@ class BlockEmailController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = BlockEmail::select(['id', 'email', 'remark', 'created_at']);
+            $data = BlockEmail::select(['id', 'email', 'remark', 'created_at'])
+            ->orderBy('id', 'desc');;
             return DataTables::of($data)
                 ->editColumn('created_at', function ($row) {
                     return $row->created_at ? $row->created_at->format('d-m-Y') : '';

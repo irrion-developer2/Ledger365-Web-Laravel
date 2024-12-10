@@ -12,11 +12,13 @@ class EmailLog extends Model
     protected $primaryKey = 'email_id';
     protected $fillable = [
         'company_id', 
-        'ledger_id', 
+        'ledger_id',
+        'Ledger alias', 
         'email', 
         'message', 
         'pdf_path', 
         'json_response', 
+        'status',
         'created_at', 
         'updated_at'
     ];

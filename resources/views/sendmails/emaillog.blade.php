@@ -5,7 +5,7 @@
     <div class="page-content pt-2">
         <!--breadcrumb-->
         <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-2">
-            <div class="breadcrumb-title pe-3">EMail</div>
+            <div class="breadcrumb-title pe-3">Email</div>
             <div class="ps-3">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0 p-0">
@@ -27,10 +27,13 @@
                         <thead>
                             <tr>
                                 <th>{{ __('Sr.No.') }}</th>
-                                <th>{{ __('Company Id') }}</th>
-                                <th>{{ __('Ledger Id') }}</th>
+                                <th>{{ __('Date') }}</th>
+                                <th>{{ __('Company Name') }}</th>
+                                <th>{{ __('Ledger Name') }}</th>
+                                <th>{{ __('Ledger alias') }}</th>
                                 <th>{{ __('Email') }}</th>
-                                <th>{{ __('Created At') }}</th>
+                                <th>{{ __('status') }}</th>
+                                <th>{{ __('Action') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -73,10 +76,13 @@
             },
             columns: [
                 { data: 'email_id', name: 'email_id' },
+                { data: 'created_at', name: 'created_at' },
                 { data: 'company_id', name: 'company_id' },
+                { data: 'ledger_name', name: 'ledger_name' },
                 { data: 'ledger_id', name: 'ledger_id' },
                 { data: 'email', name: 'email' },
-                { data: 'created_at', name: 'created_at' },
+                { data: 'ledger_id', name: 'ledger_id' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ],
             order: [[1, 'asc']],
             language: {
@@ -89,7 +95,6 @@
             }
         });
 
-            
         });
 
     </script>

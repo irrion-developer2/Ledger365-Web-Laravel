@@ -17,16 +17,16 @@ return new class extends Migration
             $table->increments('email_id');  
             $table->integer('company_id')->nullable();
             $table->integer('ledger_id')->nullable(); 
+            $table->string('Ledger alias',100)->nullable();
             $table->string('email',100)->nullable();
             $table->text('message')->nullable();  
             $table->string('pdf_path',200)->nullable();  
-            $table->text('json_response')->nullable();   
+            $table->text('json_response')->nullable();
+            $table->text('status')->nullable();   
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
-
-    
 
     /**
      * Reverse the migrations.

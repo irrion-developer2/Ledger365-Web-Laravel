@@ -472,14 +472,36 @@ class SendMailController extends Controller
 
     }
 
-    public function getData(Request $request)
+    public function emailLogData(Request $request)
     {
         if ($request->ajax()) {
-            $data = EmailLog::select(['email_id', 'company_id', 'ledger_id', 'email', 'message', 'pdf_path', 'created_at']);
+            $data = EmailLog::select([
+                'email_logs.email_id',
+                'email_logs.company_id', // Fully qualify company_id
+                'email_logs.ledger_id',
+                'email_logs.email',
+                'email_logs.message',
+                'email_logs.pdf_path',
+                'email_logs.created_at',
+                'tally_ledgers.ledger_name',
+                'tally_companies.company_name'
+            ])
+            ->leftJoin('tally_ledgers', 'email_logs.ledger_id', '=', 'tally_ledgers.ledger_id')
+            ->leftJoin('tally_companies', 'email_logs.company_id', '=', 'tally_companies.company_id')
+            ->get();
             return DataTables::of($data)
             ->editColumn('created_at', function ($row) {
                 return $row->created_at ? $row->created_at->format('d-m-Y H:i:s') : '';
             })
+            ->editColumn('company_id', function ($row) {
+                return $row->company_name;
+            })
+            ->editColumn('ledger_id', function ($row) {
+                return $row->ledger_name;
+            })
+            // ->addColumn('action', function ($ledger_data) {
+            //     return view('sendmails._action', compact('ledger_data'))->render();
+            // })
             ->make(true);
         }
 

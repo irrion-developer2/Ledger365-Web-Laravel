@@ -77,12 +77,12 @@
             columns: [
                 { data: 'email_id', name: 'email_id' },
                 { data: 'created_at', name: 'created_at' },
-                { data: 'company_id', name: 'company_id' },
+                { data: 'company_name', name: 'company_name' },
                 { data: 'ledger_name', name: 'ledger_name' },
-                { data: 'ledger_id', name: 'ledger_id' },
+                { data: 'ledger_alias', name: 'ledger_alias' },
                 { data: 'email', name: 'email' },
-                { data: 'ledger_id', name: 'ledger_id' },
-                { data: 'action', name: 'action', orderable: false, searchable: false },
+                { data: 'status', name: 'status' },
+                { data: 'emailaction', name: 'emailaction', orderable: false, searchable: false },
             ],
             order: [[1, 'asc']],
             language: {

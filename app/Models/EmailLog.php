@@ -13,7 +13,7 @@ class EmailLog extends Model
     protected $fillable = [
         'company_id', 
         'ledger_id',
-        'Ledger alias', 
+        'ledger_alias', 
         'email', 
         'message', 
         'pdf_path', 

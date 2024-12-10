@@ -477,11 +477,13 @@ class SendMailController extends Controller
         if ($request->ajax()) {
             $data = EmailLog::select([
                 'email_logs.email_id',
-                'email_logs.company_id', // Fully qualify company_id
+                'email_logs.company_id',
                 'email_logs.ledger_id',
+                'email_logs.ledger_alias',
                 'email_logs.email',
                 'email_logs.message',
                 'email_logs.pdf_path',
+                'email_logs.status',
                 'email_logs.created_at',
                 'tally_ledgers.ledger_name',
                 'tally_companies.company_name'
@@ -499,9 +501,10 @@ class SendMailController extends Controller
             ->editColumn('ledger_id', function ($row) {
                 return $row->ledger_name;
             })
-            // ->addColumn('action', function ($ledger_data) {
-            //     return view('sendmails._action', compact('ledger_data'))->render();
-            // })
+            ->addColumn('emailaction', function ($row) {
+                return view('sendmails._emailaction', compact('row'))->render();
+            })
+            ->rawColumns(['emailaction'])
             ->make(true);
         }
 

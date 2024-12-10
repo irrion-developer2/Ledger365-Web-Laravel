@@ -1,7 +1,6 @@
 <x-guest-layout>
     <x-jet-authentication-card>
         <x-slot name="logo">
-            {{-- <x-jet-authentication-card-logo /> --}}
         </x-slot>
 
         <div class="wrapper">
@@ -21,47 +20,26 @@
                                         </div>
                                         <x-jet-validation-errors class="mb-4 text-danger" />
                                         <div class="form-body">
-                                            <form class="row g-3" method="POST" action="{{ route('register') }}">
+                                            <form class="row g-3" method="POST" action="{{ route('register.submit') }}">
                                                 @csrf
-                                            {{-- <form class="row g-3"> --}}
                                                 <input type="hidden" class="form-control" name="role" value="Owner">
-                                              
+                                            
                                                 <div class="col-12">
                                                     <label for="inputUsername" class="form-label">Username</label>
-                                                    <input type="text" name="name" :value="old('name')" required class="form-control" id="inputUsername" placeholder="Jhon">
+                                                    <input type="text" name="name" value="{{ old('name') }}" required class="form-control" id="inputUsername" placeholder="Jhon">
                                                 </div>
                                                 <div class="col-12">
                                                     <label for="inputEmailAddress" class="form-label">Email Address</label>
-                                                    <input type="email" class="form-control" id="inputEmailAddress" placeholder="example@user.com"  name="email" :value="old('email')" required>
+                                                    <input type="email" class="form-control" id="inputEmailAddress" placeholder="example@user.com"  name="email" value="{{ old('email') }}" required>
                                                 </div>
                                                 <div class="col-12">
                                                     <label for="inputMobileNumber" class="form-label">Mobile Number</label>
-                                                    <input type="number" name="phone" :value="old('phone')" required class="form-control" id="inputMobileNumber" placeholder="Enter Your Monile Number">
+                                                    <input type="number" name="phone" value="{{ old('phone') }}" required class="form-control" id="inputMobileNumber" placeholder="Enter Your Mobile Number">
                                                 </div>
                                                 <div class="col-12">
                                                     <label for="inputTallyConnectorId" class="form-label">Tally Connector Id</label>
-                                                    <input type="text" class="form-control" id="inputTallyConnectorId" placeholder="Enter Tally Connector Id"  name="tally_connector_id" :value="old('tally_connector_id')">
+                                                    <input type="text" class="form-control" id="inputTallyConnectorId" placeholder="Enter Tally Connector Id"  name="tally_connector_id" value="{{ old('tally_connector_id') }}">
                                                 </div>
-                                                {{--  <div class="col-12">
-                                                    <label for="inputRole" class="form-label">Role</label>
-                                                    <select class="form-select mb-3" aria-label="Default select example" name="role">
-                                                        <option selected="">Select Role</option>
-                                                        <option value="Administrative">Super Admin</option>
-                                                        <option value="Owner">Company Owner</option>
-                                                    </select>
-                                                </div>  --}}
-                                                {{--  <div class="col-12">
-                                                    <label for="inputChoosePassword" class="form-label">Password</label>
-                                                    <div class="input-group" id="show_hide_password">
-                                                        <input type="password" name="password" required class="form-control border-end-0" id="inputChoosePassword" value="******" placeholder="Enter Password"> <a href="javascript:;" class="input-group-text bg-transparent"><i class='bx bx-hide'></i></a>
-                                                    </div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label for="inputChoosePassword" class="form-label">Confirm Password</label>
-                                                    <div class="input-group" id="show_hide_password">
-                                                        <input type="password"  name="password_confirmation" required class="form-control border-end-0" id="inputChoosePassword" value="******" placeholder="Enter Password"> <a href="javascript:;" class="input-group-text bg-transparent"><i class='bx bx-hide'></i></a>
-                                                    </div>
-                                                </div>  --}}
                                                 <div class="col-12">
                                                     <div class="d-grid">
                                                         <button type="submit" class="btn btn-primary">Sign up</button>

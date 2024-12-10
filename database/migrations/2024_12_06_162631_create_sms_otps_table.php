@@ -16,11 +16,12 @@ return new class extends Migration
         Schema::create('sms_otps', function (Blueprint $table) {
             $table->id();
             $table->string('phone_number',50)->unique()->nullable();
-            $table->integer('session_id');
-            $table->string('otp',50)->nullable();
-            $table->string('attempts',100);
-            $table->boolean('success')->default(false);
+            $table->string('session_id')->nullable();
+            $table->string('otp')->nullable();
+            $table->string('attempts',100)->nullable();
+            $table->boolean('success')->default(false)->nullable();
             
+            $table->timestamp('expires_at')->useCurrent();
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });

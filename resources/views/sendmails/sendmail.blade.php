@@ -42,6 +42,7 @@
                                 <option value="{{ $company->company_id }}">{{ $company->company_name }}</option>
                             @endforeach
                         </select>
+                        <!-- value="<?php echo date('Y-m-01'); ?>" -->
                         <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
                     </div>
                     <div class="col-4">
@@ -161,6 +162,14 @@
                 { data: 'company_name', name: 'company_name' },
                 { data: 'action', name: 'action', orderable: false, searchable: false },
             ],
+            rowCallback: function (row, data) {
+                if (data.blocked_email) {
+                    $(row).css({
+                        'color': 'red'
+                    });
+                    $(row).find('.mail, .whatsapp').addClass('disabled');
+                }
+            },
             order: [[1, 'asc']],
             language: {
                 paginate: {

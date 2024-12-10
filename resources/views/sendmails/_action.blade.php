@@ -33,19 +33,19 @@
     <a href="{{ route('view-pdf', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id] ) }}" 
         class="btn btn-warning btn-sm ms-2" 
         target="_blank">
-         Bill
+        Bill
      </a>
-     
+    
     <a href="{{ route('view-receipt', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" 
         class="btn btn-secondary btn-sm ms-2">
-        Receipt
+        Receipt 
      </a>
 
-    <a href="{{ route('send-email', ['send_voucher_id' => $ledger_data->voucher_id, 'send_ledger_id' => $ledger_data->ledger_id]) }}" class="btn btn-primary btn-sm ms-2">
+    <a href="{{ route('send-email', ['send_voucher_id' => $ledger_data->voucher_id, 'send_ledger_id' => $ledger_data->ledger_id]) }}" class="btn btn-primary btn-sm ms-2 mail">
         Mail
     </a>
 
-    <a href="{{ route('send-whatsapp', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" class="btn btn-success btn-sm ms-2">whatsapp</a>
+    <a href="{{ route('send-whatsapp', ['voucher_id' => $ledger_data->voucher_id, 'ledger_id' => $ledger_data->ledger_id]) }}" class="btn btn-success btn-sm ms-2 whatsapp">whatsapp</a>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -90,6 +90,7 @@
                 }
             });
         });
+
     </script>
 
 </body>

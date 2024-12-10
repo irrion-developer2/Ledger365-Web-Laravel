@@ -114,11 +114,14 @@ class SendMailController extends Controller
                         ->whereNotNull('tally_ledgers.alias1')
                         ->where('tally_ledgers.alias1', '!=', '')
 
+                        ->leftJoin('block_emails', 'block_emails.email', '=', 'tally_ledgers.email')
+
                         ->select('tally_ledgers.*',
                                 'tally_voucher_heads.amount',
                                 'tally_voucher_heads.voucher_id',
                                 'tally_vouchers.voucher_date',
-                                'tally_companies.company_name')
+                                'tally_companies.company_name',
+                                'block_emails.email as blocked_email')
                         ->orderBy('tally_ledgers.ledger_name', 'asc')
                         ->get();
                 } else {
@@ -248,7 +251,7 @@ class SendMailController extends Controller
 
         $pdf = Pdf::loadView('sendmails.receipt', compact('receipt','curr_balance_words','recipt_ledger_name'));
         return $pdf->stream('receipt.pdf');
-        }else{
+        } else {
             return redirect()->back()->with('error', 'Their are no last Receipt');
         }
     }
@@ -352,6 +355,8 @@ class SendMailController extends Controller
                 ->whereNotNull('tally_ledgers.alias1')
                 ->where('tally_ledgers.alias1', '!=', '')
 
+                ->join('block_emails','tally_ledgers.email','!=','block_emails.email')
+
                 ->select(
                     'tally_ledgers.*',
                     'tally_voucher_heads.amount',
@@ -385,7 +390,7 @@ class SendMailController extends Controller
              if (!file_exists($uploadpath)) {
                 mkdir($uploadpath, 0777, true); 
             }
-             $fileName = "voucher_{$ledger_data->voucher_id}_{$ledger_data->ledger_id}.pdf"; 
+             $fileName = "voucher_{$ledger_data->voucher_id}_{$ledger_data->ledger_id}.pdf";
              file_put_contents($uploadpath .'/'. $fileName,$pdfContent); 
              $file_url= url('uploads/Emails/' . $fileName);
 

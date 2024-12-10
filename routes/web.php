@@ -5,14 +5,15 @@ use Laravel\Jetstream\Jetstream;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\App\SalesController;
+use App\Http\Controllers\RegisterController;
 
+use App\Http\Controllers\App\SalesController;
 use App\Http\Controllers\App\CompanyController;
 use App\Http\Controllers\App\AnalyticController;
 use App\Http\Controllers\App\ColumnarController;
 use App\Http\Controllers\App\CustomerController;
-use App\Http\Controllers\App\EmployeeController;
 
+use App\Http\Controllers\App\EmployeeController;
 use App\Http\Controllers\App\SupplierController;
 use App\Http\Controllers\App\StockItemController;
 use App\Http\Controllers\SuperAdmin\UserController;
@@ -48,6 +49,16 @@ Route::get('/',function(){
 
 Route::post('/send-otp', [AuthController::class, 'sendOTP'])->name('send-otp');
 Route::post('/verify-otp', [AuthController::class, 'verifyOTP'])->name('verify-otp');
+
+Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+Route::post('/register', [RegisterController::class, 'register'])->name('register.submit');
+
+// OTP Verification Routes
+Route::get('register/verify-otp', [RegisterController::class, 'showVerifyOtpForm'])->name('verify-register-otp');
+Route::post('register/verify-otp', [RegisterController::class, 'verifyOtp'])->name('verify-otp.submit');
+
+// Resend OTP Route
+Route::post('/resend-otp', [RegisterController::class, 'resendOtp'])->name('resend-otp');
 
 Route::middleware([
     'auth:sanctum',
@@ -251,7 +262,6 @@ Route::middleware([
         Route::post('/block-email', [BlockEmailController::class, 'store'])->name('block-email.store');
     });
 
-    //  JET STREAM
     require __DIR__ . '/auth.php';
 });
 

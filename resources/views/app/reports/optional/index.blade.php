@@ -229,11 +229,11 @@
                     return data ? data : '-';
                 }},
                 {data: 'voucher_number', name: 'voucher_number',
-                    render: function(data, type, row) {
+                    {{--  render: function(data, type, row) {
                         var url = '{{ route("reports.VoucherItem", ":id") }}';
                         url = url.replace(':id', row.id);
                         return '<a href="' + url + '" style="color: #337ab7;">' + data + '</a>';
-                    }
+                    }  --}}
                 },
                 {data: 'debit', name: 'debit', className: 'text-end', render: function(data, type, row) {
                     return data ? data : '-';

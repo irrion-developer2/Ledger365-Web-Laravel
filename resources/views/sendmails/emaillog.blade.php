@@ -84,7 +84,7 @@
                 { data: 'status', name: 'status' },
                 { data: 'emailaction', name: 'emailaction', orderable: false, searchable: false },
             ],
-            order: [[1, 'asc']],
+            order: [[0, 'desc']],
             language: {
                 paginate: {
                     next: '<i class="ti ti-chevron-right"></i> next',

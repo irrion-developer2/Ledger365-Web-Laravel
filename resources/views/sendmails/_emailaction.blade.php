@@ -11,17 +11,15 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="emailMessageModalLabel">Email Message</h5>
+                <h5 class="modal-title" id="emailMessageModalLabel">Message</h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                {{-- <p><strong>Email:</strong> <span id="modal-email"></span></p> --}}
-                <p><strong>Message:</strong></p>
                 <p id="modal-message"></p>
             </div>
-            <div class="modal-footer">
+            {{-- <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
+            </div> --}}
         </div>
     </div>
 </div>

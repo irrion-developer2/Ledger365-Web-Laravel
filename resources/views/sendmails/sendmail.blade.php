@@ -43,7 +43,7 @@
                             @endforeach
                         </select>
                         <!-- value="<?php echo date('Y-m-01'); ?>" -->
-                        <input type="date" class="form-control mx-2" id="date" name="date" value="2022-04-01">
+                        <input type="date" class="form-control mx-2" id="date" name="date" value="<?php echo date('Y-m-01'); ?>">
                     </div>
                     <div class="col-4">
                         <div class="alert" role="alert" style="display: none;">
